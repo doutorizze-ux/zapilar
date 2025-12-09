@@ -32,7 +32,7 @@ export class WhatsappService implements OnModuleInit {
         const apiKey = this.configService.get<string>('GEMINI_API_KEY');
         if (apiKey) {
             this.genAI = new GoogleGenerativeAI(apiKey);
-            this.model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
+            this.model = this.genAI.getGenerativeModel({ model: "gemini-1.0-pro" });
         } else {
             console.warn('GEMINI_API_KEY not found. AI features disabled.');
         }
@@ -157,8 +157,10 @@ export class WhatsappService implements OnModuleInit {
                 responseText = response.text();
             } catch (error) {
                 console.error('AI Generation Error:', error);
-                const errorMsg = error instanceof Error ? error.message : String(error);
-                responseText = `Olá! Tive um problema técnico (${errorMsg}). Tente novamente mais tarde.`;
+                // Fallback to keyword search if AI fails
+                responseText = contextVehicles.length > 0
+                    ? `Encontrei estes veículos para você:\n${contextVehicles.map(v => `🚗 ${v.name} - R$ ${v.price}`).join('\n')}`
+                    : 'Olá! Não entendi bem ou não encontrei esse modelo. Tente buscar por marca ou modelo (ex: Hilux).';
             }
         } else {
             responseText = contextVehicles.length > 0
