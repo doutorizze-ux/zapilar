@@ -1,5 +1,5 @@
-import { Trash2, Plus, MessageSquare } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Trash2, Plus, MessageSquare, Upload } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import { API_URL } from '../config';
 
 interface Faq {
@@ -14,6 +14,7 @@ export function TrainingPage() {
     const [loading, setLoading] = useState(true);
     const [newQuestion, setNewQuestion] = useState('');
     const [newAnswer, setNewAnswer] = useState('');
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const fetchFaqs = async () => {
         setLoading(true);
@@ -77,11 +78,76 @@ export function TrainingPage() {
         }
     };
 
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        try {
+            const text = await file.text();
+            const lines = text.split('\n');
+            let count = 0;
+
+            setLoading(true);
+
+            // Simple loop import (can be optimized with bulk endpoint later)
+            for (const line of lines) {
+                // Support semicolon or comma if not quoted
+                // Simple split by ; preferred
+                const parts = line.split(';');
+                if (parts.length >= 2) {
+                    const q = parts[0].trim();
+                    const a = parts.slice(1).join(';').trim(); // Join rest in case answer has semicolons
+
+                    if (q && a) {
+                        await fetch(`${API_URL}/faqs`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ question: q, answer: a })
+                        });
+                        count++;
+                    }
+                }
+            }
+            alert(`Importação concluída! ${count} perguntas adicionadas.`);
+            fetchFaqs();
+        } catch (error) {
+            console.error(error);
+            alert('Erro ao importar arquivo.');
+            setLoading(false);
+        } finally {
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
     return (
         <div className="space-y-8">
-            <div>
-                <h2 className="text-3xl font-bold text-gray-900">Treinamento do Chatbot</h2>
-                <p className="text-gray-500 mt-1">Ensine o bot a responder perguntas frequentes automaticamente.</p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h2 className="text-3xl font-bold text-gray-900">Treinamento do Chatbot</h2>
+                    <p className="text-gray-500 mt-1">Ensine o bot a responder perguntas frequentes automaticamente.</p>
+                </div>
+                <div className="flex gap-2">
+                    <input
+                        type="file"
+                        accept=".csv,.txt"
+                        className="hidden"
+                        ref={fileInputRef}
+                        onChange={handleFileUpload}
+                    />
+                    <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
+                    >
+                        <Upload className="w-5 h-5" />
+                        Importar CSV
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -116,6 +182,15 @@ export function TrainingPage() {
                             Adicionar Regra
                         </button>
                     </form>
+
+                    <div className="mt-6 p-4 bg-gray-50 rounded-xl text-sm text-gray-500">
+                        <h4 className="font-semibold text-gray-700 mb-2">Formato para Importação:</h4>
+                        <p>Crie um arquivo texto ou CSV com cada linha no formato:</p>
+                        <code className="block bg-white p-2 mt-2 rounded border border-gray-200 text-xs">
+                            pergunta;resposta<br />
+                            outra pergunta;outra resposta
+                        </code>
+                    </div>
                 </div>
 
                 {/* List */}
