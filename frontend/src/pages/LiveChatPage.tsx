@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { API_URL } from '../config';
 import { MessageSquare, Send, Bot, User, PauseCircle, PlayCircle } from 'lucide-react';
