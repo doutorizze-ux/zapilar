@@ -147,10 +147,10 @@ export function LandingPage() {
                                             <span className="text-sm">Voltar</span>
                                         </div>
                                         <div className="w-10 h-10 bg-gray-200 rounded-full overflow-hidden flex-shrink-0 border border-gray-300">
-                                            <div className="w-full h-full bg-green-100 flex items-center justify-center text-xs font-bold text-green-700">L</div>
+                                            <div className="w-full h-full bg-green-100 flex items-center justify-center text-xs font-bold text-green-700">Z</div>
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="font-bold text-black text-sm truncate">Loja de Carros</p>
+                                            <p className="font-bold text-black text-sm truncate">ZapCar</p>
                                             <p className="text-[10px] text-gray-500">Conta comercial</p>
                                         </div>
                                     </div>
@@ -190,7 +190,7 @@ export function LandingPage() {
 
                                             <div className="mt-2 bg-gray-50 rounded-lg p-1 border border-gray-100">
                                                 <div className="relative h-32 rounded bg-gray-200 overflow-hidden">
-                                                    <img src="/car-suv.png" className="w-full h-full object-cover" alt="Carro" />
+                                                    <img src="/hilux-mockup.jpg" className="w-full h-full object-cover" alt="Carro" />
                                                     <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded backdrop-blur-sm">4 fotos</div>
                                                 </div>
                                                 <div className="p-2">
