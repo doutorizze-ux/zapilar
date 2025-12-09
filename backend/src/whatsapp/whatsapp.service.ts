@@ -99,75 +99,76 @@ export class WhatsappService implements OnModuleInit {
     private async handleMessage(message: Message, userId: string) {
         const msg = message.body.toLowerCase();
 
-        // 1. Fetch available vehicles FOR THIS STORE ONLY
-        const allVehicles = await this.vehiclesService.findAll(userId);
+        // 1. Get User Context
+        const user = await this.usersService.findById(userId);
+        const storeName = user?.storeName || "ZapCar";
 
-        // 2. Simple keyword filter
-        const contextVehicles = allVehicles.filter(v =>
-            msg.includes(v.name.toLowerCase()) ||
-            msg.includes(v.brand.toLowerCase()) ||
-            msg.includes(v.model.toLowerCase()) ||
-            msg.includes('ver') ||
-            msg.includes('tem') ||
-            msg.includes('lista') ||
-            msg.includes('estoque')
-        ).slice(0, 5);
+        // 2. Fallback Logic Helper
+        const fallbackResponse = async (): Promise<string> => {
+            const greetings = ['oi', 'ola', 'olá', 'bom dia', 'boa tarde', 'boa noite', 'tudo bem', 'epa', 'opa'];
+            if (greetings.some(g => msg.includes(g) && msg.length < 15)) {
+                return `Olá! 👋 Bem-vindo à *${storeName}*.\n\nSou seu assistente virtual. Digite o nome do carro que procura (ex: *Hilux*, *Civic*) ou digite *Estoque* para ver nossas novidades!`;
+            }
 
-        // 3. Generate AI Response
+            if (msg.includes('endereço') || msg.includes('local') || msg.includes('onde fica')) {
+                return `📍 Estamos localizados em: [Seu Endereço Aqui - Configure no Painel].\nVenha nos visitar!`;
+            }
+
+            // aggressive keyword search if AI fails
+            const allVehicles = await this.vehiclesService.findAll(userId);
+            const matches = allVehicles.filter(v =>
+                msg.includes(v.name.toLowerCase()) ||
+                msg.includes(v.brand.toLowerCase()) ||
+                msg.includes(v.model.toLowerCase()) ||
+                (v.name + v.brand + v.model).toLowerCase().includes(msg)
+            ).slice(0, 5);
+
+            if (matches.length > 0) {
+                return `Encontrei essas opções para você 🚘:\n\n${matches.map(v => `🔹 *${v.brand} ${v.name}* ${v.model}\n   📅 ${v.year} | 💰 R$ ${v.price.toLocaleString('pt-BR')}`).join('\n\n')}\n\nGostou de algum? Digite *Tenho interesse*!`;
+            } else {
+                // Show 3 random featured cars
+                const featured = allVehicles.slice(0, 3);
+                if (featured.length > 0) {
+                    return `Poxa, não encontrei exatamente o que você pediu. 😕\n\nMas olha só o que acabou de chegar:\n\n${featured.map(v => `🔥 *${v.brand} ${v.name}*\n   � R$ ${v.price.toLocaleString('pt-BR')}`).join('\n\n')}\n\nDigite o nome de um desses para ver mais fotos!`;
+                }
+                return `Olá! Não encontrei esse modelo no momento. 😕\n\nTente buscar por marca (ex: *Fiat*, *Toyota*) ou digite *Estoque* para ver tudo.`;
+            }
+        };
+
+        // 3. Try AI Generation
         let responseText = '';
-
         if (this.model) {
             try {
-                const user = await this.usersService.findById(userId);
-                const phoneLink = user?.phone ? `https://wa.me/55${user.phone.replace(/\D/g, '')}` : 'https://wa.me/5511999999999';
-                const storeName = user?.storeName || "Zapicar";
+                // Fetch relevant vehicles first for AI context
+                // ... (Use same aggressive filtering as fallback to give AI good context)
+                const allVehicles = await this.vehiclesService.findAll(userId);
+                const contextVehicles = allVehicles.filter(v =>
+                    msg.includes(v.name.toLowerCase()) ||
+                    msg.includes(v.brand.toLowerCase()) ||
+                    msg.includes(v.model.toLowerCase())
+                ).slice(0, 5);
 
                 const prompt = `
-                Atue como o assistente virtual oficial da "${storeName}". Sua missão é qualificar o lead e levar ao agendamento.
+                Atue como vendedor sênior da loja "${storeName}". 
+                Cliente disse: "${message.body}"
                 
-                O cliente disse: "${message.body}"
+                Carros Disponíveis (Filtro): ${JSON.stringify(contextVehicles.map(v => `${v.brand} ${v.name} (${v.year}) - R$ ${v.price}`))}.
                 
-                ESTOQUE DISPONÍVEL PARA ESTA CONSULTA:
-                ${JSON.stringify(contextVehicles.map(v => `${v.brand} ${v.name} ${v.model} (${v.year}) - R$ ${v.price}`))}
-                
-                DIRETRIZES ESTRATÉGICAS:
-                1. **ABERTURA (Se o cliente disser apenas "Oi", "Olá", "Tudo bem")**:
-                   NÃO diga "não entendi". Diga exatamente:
-                   "Olá! 🚗 Sou o assistente virtual da ${storeName}.
-                   Posso te ajudar a encontrar seu próximo carro. Você procura por SUVs, Sedans ou Hatchs?"
-                
-                2. **CONSULTA DE VEÍCULO**:
-                   Se o estoque acima tiver carros que combinam com o pedido:
-                   - Apresente as opções resumidamente.
-                   - Destaque o melhor custo-benefício.
-                   - **OBRIGATÓRIO:** Termine a mensagem perguntando: "Gostou de alguma opção? Quer ver mais fotos ou agendar um Test-Drive? 🗓️"
-
-                3. **AGENDAMENTO / HUMANO**:
-                   - Se o cliente quiser "Test-Drive" ou "Ver o carro": Pergunte "Ótimo! Qual o melhor dia e horário para você?"
-                   - Se o cliente parecer confuso ou pedir "Humano": Envie: "Vou chamar um consultor para te ajudar! Clique aqui: ${phoneLink}"
-
-                4. **PERSONALIDADE**:
-                   - Use Português do Brasil natural.
-                   - Use emojis para quebrar o gelo.
-                   - Seja proativo. Não deixe a conversa morrer.
-            `;
+                Se não houver carros na lista acima, diga que não encontrou exato mas convide para visitar a loja.
+                Se houver, apresente-os com entusiasmo.
+                Se for apenas "Oi", seja curto e simpático: "Olá! Bem vindo à ${storeName}. O que procura hoje?"
+                `;
 
                 const result = await this.model.generateContent(prompt);
                 const response = await result.response;
                 responseText = response.text();
             } catch (error) {
-                console.error('AI Generation Error:', error);
-                // Fallback to keyword search if AI fails
-                responseText = contextVehicles.length > 0
-                    ? `Encontrei estes veículos para você:\n${contextVehicles.map(v => `🚗 ${v.name} - R$ ${v.price}`).join('\n')}`
-                    : 'Olá! Não entendi bem ou não encontrei esse modelo. Tente buscar por marca ou modelo (ex: Hilux).';
+                console.error('AI Failed, using fallback strategy', error);
+                responseText = await fallbackResponse();
             }
         } else {
-            responseText = contextVehicles.length > 0
-                ? `Encontrei estes veículos para você:\n${contextVehicles.map(v => `🚗 ${v.name} - R$ ${v.price}`).join('\n')}`
-                : 'Olá! Não entendi bem ou não encontrei esse modelo. Tente buscar por marca ou modelo (ex: Hilux).';
+            responseText = await fallbackResponse();
         }
-
         // 4. Reply
         await message.reply(responseText);
 
