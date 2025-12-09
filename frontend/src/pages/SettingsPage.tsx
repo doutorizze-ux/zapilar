@@ -117,6 +117,17 @@ export function SettingsPage() {
         }
     };
 
+    const getImageUrl = (url?: string) => {
+        if (!url) return "";
+        if (url.includes('localhost:3000')) {
+            return url.replace('http://localhost:3000', API_URL).replace('https://localhost:3000', API_URL);
+        }
+        if (url.startsWith('/')) {
+            return `${API_URL}${url}`;
+        }
+        return url;
+    };
+
     return (
         <div className="max-w-4xl mx-auto space-y-8">
             <div>
@@ -131,7 +142,7 @@ export function SettingsPage() {
                         <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border-2 border-gray-200">
                                 {user.logoUrl ? (
-                                    <img src={user.logoUrl} alt="Logo" className="w-full h-full object-cover" />
+                                    <img src={getImageUrl(user.logoUrl)} alt="Logo" className="w-full h-full object-cover" />
                                 ) : (
                                     <Store className="w-8 h-8 text-gray-400" />
                                 )}

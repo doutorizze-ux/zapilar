@@ -64,7 +64,7 @@ export class UsersController {
     }))
     async uploadLogo(@Request() req, @UploadedFile() file: Express.Multer.File) {
         if (!file) throw new Error('File not found');
-        const logoUrl = `http://localhost:3000/uploads/${file.filename}`;
+        const logoUrl = `/uploads/${file.filename}`;
         return this.usersService.updateById(req.user.userId, { logoUrl });
     }
 }
