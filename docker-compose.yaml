@@ -34,7 +34,7 @@ services:
       dockerfile: Dockerfile
       args:
         # Important: Frontend needs to know Backend URL at build time
-        VITE_API_URL: ${VITE_API_URL:-https://k0kgcs8s8gsc0wkgc00gcgkc.82.29.62.95.sslip.io}
+        VITE_API_URL: ${VITE_API_URL}
     image: zapcar-frontend
     container_name: zapcar_frontend
     restart: always
