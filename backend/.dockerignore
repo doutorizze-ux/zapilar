@@ -1,0 +1,10 @@
+node_modules
+dist
+.git
+.gitignore
+*.db
+test-asaas.js
+npm-debug.log
+yarn-error.log
+.env
+uploads/
