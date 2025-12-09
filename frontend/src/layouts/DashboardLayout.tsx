@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Car, Settings, LogOut, Smartphone, CreditCard, BookOpen } from 'lucide-react';
+import { LayoutDashboard, Car, Settings, LogOut, Smartphone, CreditCard, BookOpen, Menu, X } from 'lucide-react';
 import { cn } from '../utils';
 import { useState, useEffect } from 'react';
 
@@ -17,6 +17,7 @@ export function DashboardLayout() {
     const navigate = useNavigate();
     const [storeInfo, setStoreInfo] = useState<{ name: string; logoUrl: string; subscriptionId?: string; subscriptionStatus?: string } | null>(null);
     const [loading, setLoading] = useState(true);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -70,13 +71,16 @@ export function DashboardLayout() {
     useEffect(() => {
         if (!loading && storeInfo) {
             const isPlansPage = location.pathname === '/dashboard/plans';
-            // Redirect if no subscription OR subscription is not active
-            // Allow admin or maybe handle 'PENDING' differently if desired, but blocking access is safer
             if ((!storeInfo.subscriptionId || (storeInfo.subscriptionStatus !== 'ACTIVE' && storeInfo.subscriptionStatus !== 'RECEIVED' && storeInfo.subscriptionStatus !== 'CONFIRMED')) && !isPlansPage) {
                 navigate('/dashboard/plans');
             }
         }
     }, [loading, storeInfo, location.pathname, navigate]);
+
+    // Close mobile menu on route change
+    useEffect(() => {
+        setIsMobileMenuOpen(false);
+    }, [location.pathname]);
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -85,15 +89,30 @@ export function DashboardLayout() {
 
     if (loading) return <div className="h-screen flex items-center justify-center">Carregando...</div>;
 
-    // Filter sidebar based on subscription
     const filteredSidebarItems = (!storeInfo?.subscriptionId)
         ? sidebarItems.filter(item => item.path === '/dashboard/plans')
         : sidebarItems;
 
     return (
-        <div className="flex h-screen bg-gray-50 text-gray-900 font-sans">
-            <aside className="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col">
-                <div className="p-6 border-b border-gray-100 flex items-center justify-start h-[88px]">
+        <div className="flex h-screen bg-gray-50 text-gray-900 font-sans overflow-hidden">
+            {/* Mobile Header */}
+            <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 z-30 flex items-center justify-between px-4">
+                <div className="flex items-center gap-3">
+                    <img src={storeInfo?.logoUrl || "/logo-dark.png"} alt="Logo" className="w-8 h-8 rounded-lg object-cover" />
+                    <span className="font-bold text-gray-900 truncate max-w-[150px]">{storeInfo?.name || 'Zapicar'}</span>
+                </div>
+                <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-gray-600">
+                    {isMobileMenuOpen ? <X /> : <Menu />}
+                </button>
+            </div>
+
+            {/* Sidebar */}
+            <aside className={cn(
+                "fixed inset-y-0 left-0 z-20 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out md:relative md:translate-x-0",
+                isMobileMenuOpen ? "translate-x-0" : "-translate-x-full",
+                "flex flex-col pt-16 md:pt-0" // Add padding top for mobile header
+            )}>
+                <div className="hidden md:flex p-6 border-b border-gray-100 items-center justify-start h-[88px]">
                     {storeInfo?.name && storeInfo.name !== 'Zapicar' ? (
                         <div className="flex items-center gap-3">
                             {storeInfo.logoUrl && (
@@ -108,7 +127,7 @@ export function DashboardLayout() {
                     )}
                 </div>
 
-                <nav className="flex-1 p-4 space-y-1">
+                <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
                     {filteredSidebarItems.map((item) => (
                         <Link
                             key={item.path}
@@ -134,7 +153,15 @@ export function DashboardLayout() {
                 </div>
             </aside>
 
-            <main className="flex-1 overflow-auto bg-gray-50 p-8">
+            {/* Overlay for mobile */}
+            {isMobileMenuOpen && (
+                <div
+                    className="fixed inset-0 bg-black/50 z-10 md:hidden"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                />
+            )}
+
+            <main className="flex-1 overflow-auto bg-gray-50 p-4 md:p-8 pt-20 md:pt-8 w-full">
                 <Outlet />
             </main>
         </div>
