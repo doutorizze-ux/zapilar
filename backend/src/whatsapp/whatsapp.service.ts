@@ -214,10 +214,20 @@ export class WhatsappService implements OnModuleInit {
 
                     for (const imageUrl of imagesToSend) {
                         try {
-                            if (imageUrl && (imageUrl.startsWith('http') || imageUrl.startsWith('https'))) {
-                                const media = await MessageMedia.fromUrl(imageUrl);
+                            if (!imageUrl) continue;
+
+                            let finalUrl = imageUrl;
+                            // If relative path, prepend localhost (Docker container internal access)
+                            if (imageUrl.startsWith('/')) {
+                                const port = process.env.PORT || 3000;
+                                finalUrl = `http://localhost:${port}${imageUrl}`;
+                            }
+
+                            if (finalUrl.startsWith('http')) {
+                                console.log(`Sending image: ${finalUrl}`);
+                                const media = await MessageMedia.fromUrl(finalUrl);
                                 await client.sendMessage(message.from, media);
-                                await delay(1000); // 1s delay
+                                await delay(1000);
                             }
                         } catch (e) {
                             console.error(`Failed to send image for ${car.name}:`, e);
