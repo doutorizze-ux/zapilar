@@ -130,16 +130,12 @@ export class WhatsappService implements OnModuleInit {
 
             // aggressive keyword search
             if (contextVehicles.length > 0) {
-                return `Encontrei essas opções para você 🚘:\n\n${contextVehicles.map(v =>
-                    `🔹 *${v.brand} ${v.name}* ${v.model}\n   📅 ${v.year} | � ${v.km}km\n   ⛽ ${v.fuel} | ⚙️ ${v.transmission}\n   �💰 *R$ ${v.price.toLocaleString('pt-BR')}*`
-                ).join('\n\n-----------------\n\n')}\n\nGostou de algum? Digite *Tenho interesse*!`;
+                return `Encontrei ${contextVehicles.length} opção(ões) para você! 🚘\n\nVeja os detalhes abaixo:`;
             } else {
                 // Show 3 random featured cars
                 const featured = allVehicles.slice(0, 3);
                 if (featured.length > 0) {
-                    return `Poxa, não encontrei exatamente esse modelo. 😕\n\nMas olha só o que acabou de chegar:\n\n${featured.map(v =>
-                        `🔥 *${v.brand} ${v.name}*\n   📅 ${v.year} | 💰 R$ ${v.price.toLocaleString('pt-BR')}`
-                    ).join('\n\n')}\n\nDigite o nome de um desses para ver mais fotos!`;
+                    return `Poxa, não encontrei exatamente esse modelo. 😕\n\nMas olha só o que acabou de chegar no nosso estoque:`;
                 }
                 return `Olá! Não encontrei esse modelo no momento. 😕\n\nTente buscar por marca (ex: *Fiat*, *Toyota*) ou digite *Estoque* para ver tudo.`;
             }
@@ -155,23 +151,24 @@ export class WhatsappService implements OnModuleInit {
             try {
                 // Enrich context for AI
                 const params = contextVehicles.map(v =>
-                    `${v.brand} ${v.name} ${v.model} (${v.year}) - R$ ${v.price} - ${v.km}km - ${v.fuel} - ${v.transmission} - Cor: ${v.color}`
+                    `${v.brand} ${v.name} ${v.model} (${v.year})`
                 ).join('\n');
 
                 const prompt = `
                 Atue como vendedor sênior da loja "${storeName}". 
                 Cliente disse: "${message.body}"
                 
-                Carros Disponíveis (Detalhes Completos):
+                Eu tenho esses carros em estoque que correspondem à busca (resumo):
                 ${params}
                 
-                Se houver carros:
-                - Apresente o carro com detalhes importantes (KM, Cambio, Preço).
-                - Use emojis.
-                - Venda o peixe! Destaque a oportunidade.
+                Se houver veículos listados acima:
+                - Responda ao cliente criando expectativa e convidando para ver as fotos abaixo.
+                - NÃO dite os preços ou fichas técnicas na mensagem de texto, pois o sistema enviará fichas individuais logo em seguida.
+                - Se o cliente fez uma pergunta específica (ex: "tem teto solar?"), você pode responder se souber, mas foque em apresentar os carros.
                 
-                Se não houver carros exatos na lista (apenas recomendações genéricas ou vazio):
-                - Diga que não encontrou o exato, mas convide para a loja.
+                Se a lista estiver vazia:
+                - Diga que não encontrou o exato, mas mostre os destaques (se houver, o sistema enviará).
+                - Seja simpático e use emojis.
                 `;
 
                 const result = await this.model.generateContent(prompt);
@@ -185,15 +182,33 @@ export class WhatsappService implements OnModuleInit {
             responseText = await fallbackResponse();
         }
 
-        // 5. Reply Text
+        // 5. Reply with Intro
         await message.reply(responseText);
 
-        // 6. Send Images (Improved)
-        if (contextVehicles.length > 0) {
-            const client = this.clients.get(userId);
-            if (!client) return;
+        // 6. Send Cars (Card + Images) Sequentially
+        const client = this.clients.get(userId);
+        if (!client) return;
 
-            for (const car of contextVehicles.slice(0, 3)) { // Limit to 3 cars to avoid spam
+        // Determine which vehicles to show
+        let vehiclesToShow = contextVehicles;
+        // If no match but we have featured (fallback logic for empty search)
+        if (vehiclesToShow.length === 0 && !responseText.includes('Não encontrei') && responseText.includes('acabou de chegar')) {
+            vehiclesToShow = allVehicles.slice(0, 3);
+        }
+
+        if (vehiclesToShow.length > 0) {
+            for (const car of vehiclesToShow.slice(0, 5)) { // Limit to 5 cars
+                // A. Send Specs Text
+                const specs = `🔹 *${car.brand} ${car.name}* ${car.model || ''}
+📅 Ano: ${car.year} | 🚦 Km: ${car.km || 'N/A'}
+⛽ Combustível: ${car.fuel} | ⚙️ Câmbio: ${car.transmission}
+🎨 Cor: ${car.color}
+💰 *R$ ${Number(car.price).toLocaleString('pt-BR')}*`;
+
+                await client.sendMessage(message.from, specs);
+                await delay(800);
+
+                // B. Send Images
                 if (car.images && car.images.length > 0) {
                     const imagesToSend = car.images.slice(0, 4); // Max 4 images per car
 
@@ -201,14 +216,18 @@ export class WhatsappService implements OnModuleInit {
                         try {
                             if (imageUrl && (imageUrl.startsWith('http') || imageUrl.startsWith('https'))) {
                                 const media = await MessageMedia.fromUrl(imageUrl);
-                                await client.sendMessage(message.from, media, { caption: `📸 ${car.brand} ${car.name} (${car.year})` });
-                                await delay(1500); // 1.5s delay between images
+                                await client.sendMessage(message.from, media);
+                                await delay(1000); // 1s delay
                             }
                         } catch (e) {
                             console.error(`Failed to send image for ${car.name}:`, e);
                         }
                     }
                 }
+
+                await delay(1500); // Delay between vehicles
+                await client.sendMessage(message.from, '--------------------------------');
+                await delay(500);
             }
         }
     }
