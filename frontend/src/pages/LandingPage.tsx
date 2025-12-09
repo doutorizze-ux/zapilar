@@ -366,5 +366,6 @@ export function LandingPage() {
                 <div className="absolute inset-0 bg-[#25D366] rounded-full animate-ping opacity-40"></div>
                 <MessageCircle className="w-8 h-8 text-white relative z-10 fill-white" />
             </a>
-            );
+        </div>
+    );
 }
