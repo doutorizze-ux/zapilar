@@ -28,8 +28,10 @@
     "@nestjs/mapped-types": "^2.1.0",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/platform-socket.io": "^11.1.9",
     "@nestjs/serve-static": "^5.0.4",
     "@nestjs/typeorm": "^11.0.0",
+    "@nestjs/websockets": "^11.1.9",
     "@types/multer": "^2.0.0",
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
@@ -41,6 +43,7 @@
     "qrcode-terminal": "^0.12.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "socket.io": "^4.8.1",
     "sqlite3": "^5.1.7",
     "typeorm": "^0.3.28",
     "whatsapp-web.js": "^1.34.2"

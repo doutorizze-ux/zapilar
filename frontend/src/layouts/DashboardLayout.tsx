@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Car, Settings, LogOut, Smartphone, CreditCard, BookOpen, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Car, Settings, LogOut, Smartphone, CreditCard, BookOpen, Menu, X, MessageSquare } from 'lucide-react';
 import { cn } from '../utils';
 import { useState, useEffect } from 'react';
 
@@ -7,6 +7,7 @@ const sidebarItems = [
     { icon: LayoutDashboard, label: 'Visão Geral', path: '/dashboard' },
     { icon: CreditCard, label: 'Planos', path: '/dashboard/plans' },
     { icon: Car, label: 'Veículos', path: '/dashboard/vehicles' },
+    { icon: MessageSquare, label: 'Conversas (Ao Vivo)', path: '/dashboard/chat' },
     { icon: Smartphone, label: 'WhatsApp', path: '/dashboard/whatsapp' },
     { icon: BookOpen, label: 'Treinamento', path: '/dashboard/training' },
     { icon: Settings, label: 'Configurações', path: '/dashboard/settings' },

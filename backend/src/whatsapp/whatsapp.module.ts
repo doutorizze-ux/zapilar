@@ -7,10 +7,12 @@ import { FaqModule } from '../faq/faq.module';
 
 import { LeadsModule } from '../leads/leads.module';
 
+import { ChatGateway } from './chat.gateway';
+
 @Module({
     imports: [VehiclesModule, UsersModule, FaqModule, LeadsModule],
-    providers: [WhatsappService],
-    exports: [WhatsappService],
+    providers: [WhatsappService, ChatGateway],
+    exports: [WhatsappService, ChatGateway],
     controllers: [WhatsappController],
 })
 export class WhatsappModule { }
