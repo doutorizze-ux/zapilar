@@ -16,7 +16,15 @@ import { AdminFinancialPage } from './pages/admin/AdminFinancialPage';
 import { StorePlansPage } from './pages/StorePlansPage';
 import { TrainingPage } from './pages/TrainingPage';
 
+import { useEffect } from 'react';
+import { API_URL } from './config';
+
 function App() {
+  useEffect(() => {
+    console.log('🚀 ZapCar Application Started');
+    console.log('📡 Connected to Backend API:', API_URL);
+  }, []);
+
   return (
     <BrowserRouter>
       <AuthProvider>
