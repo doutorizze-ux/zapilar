@@ -61,7 +61,10 @@ export function SettingsPage() {
         navigate('/login');
     };
 
+    const [isSaving, setIsSaving] = useState(false);
+
     const handleSaveProfile = async () => {
+        setIsSaving(true);
         try {
             const token = localStorage.getItem('token');
             const response = await fetch(`${API_URL}/users/profile`, {
@@ -81,9 +84,17 @@ export function SettingsPage() {
                     phone: updatedUser.phone
                 }));
                 setIsEditing(false);
+                alert('Perfil atualizado com sucesso!');
+            } else {
+                const errorData = await response.json().catch(() => ({}));
+                console.error('Save error:', response.status, errorData);
+                alert(`Erro ao salvar: ${response.status} - ${errorData.message || 'Tente novamente.'}`);
             }
         } catch (error) {
             console.error('Failed to update profile', error);
+            alert('Erro de conexão ao tentar salvar. Verifique sua internet.');
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -199,8 +210,16 @@ export function SettingsPage() {
                     </div>
                     <div className="flex items-end">
                         {isEditing ? (
-                            <button onClick={handleSaveProfile} className="w-full py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
-                                <Save className="w-5 h-5" /> Salvar Alterações
+                            <button
+                                onClick={handleSaveProfile}
+                                disabled={isSaving}
+                                className="w-full py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isSaving ? 'Salvando...' : (
+                                    <>
+                                        <Save className="w-5 h-5" /> Salvar Alterações
+                                    </>
+                                )}
                             </button>
                         ) : (
                             <button onClick={() => setIsEditing(true)} className="w-full py-2 text-gray-600 bg-gray-50 hover:bg-gray-100 hover:text-blue-600 border border-gray-200 rounded-xl transition-colors flex items-center justify-center gap-2">
