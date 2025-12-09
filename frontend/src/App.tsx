@@ -14,6 +14,7 @@ import { AdminPlansPage } from './pages/admin/AdminPlansPage';
 import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 import { AdminFinancialPage } from './pages/admin/AdminFinancialPage';
 import { StorePlansPage } from './pages/StorePlansPage';
+import { TrainingPage } from './pages/TrainingPage';
 
 function App() {
   return (
@@ -38,6 +39,7 @@ function App() {
             <Route index element={<DashboardHome />} />
             <Route path="vehicles" element={<VehiclesPage />} />
             <Route path="whatsapp" element={<WhatsappPage />} />
+            <Route path="training" element={<TrainingPage />} />
             <Route path="plans" element={<StorePlansPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>

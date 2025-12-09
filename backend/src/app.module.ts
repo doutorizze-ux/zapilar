@@ -13,6 +13,7 @@ import { WhatsappModule } from './whatsapp/whatsapp.module';
 import { AuthModule } from './auth/auth.module';
 import { AsaasModule } from './integrations/asaas/asaas.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+import { FaqModule } from './faq/faq.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { SubscriptionsModule } from './subscriptions/subscriptions.module';
     AuthModule,
     AsaasModule,
     SubscriptionsModule,
+    FaqModule,
   ],
   controllers: [AppController],
   providers: [AppService],

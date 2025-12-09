@@ -6,6 +6,7 @@ import { VehiclesService } from '../vehicles/vehicles.service';
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 
 import { UsersService } from '../users/users.service';
+import { FaqService } from '../faq/faq.service';
 
 @Injectable()
 export class WhatsappService implements OnModuleInit {
@@ -19,7 +20,8 @@ export class WhatsappService implements OnModuleInit {
     constructor(
         private vehiclesService: VehiclesService,
         private configService: ConfigService,
-        private usersService: UsersService
+        private usersService: UsersService,
+        private faqService: FaqService
     ) { }
 
     onModuleInit() {
@@ -144,9 +146,13 @@ export class WhatsappService implements OnModuleInit {
             (v.name + v.brand + v.model).toLowerCase().includes(msg)
         ).slice(0, 5);
 
-        // 4. Try AI Generation
+        // 4. Try FAQ Match First
+        const faqMatch = await this.faqService.findMatch(userId, msg);
         let responseText = '';
-        if (this.model) {
+
+        if (faqMatch) {
+            responseText = faqMatch;
+        } else if (this.model) {
             try {
                 // contextVehicles is already calculated above
 
@@ -181,14 +187,17 @@ export class WhatsappService implements OnModuleInit {
 
             for (const car of contextVehicles) {
                 if (car.images && car.images.length > 0) {
-                    try {
-                        const imageUrl = car.images[0];
-                        if (imageUrl && (imageUrl.startsWith('http') || imageUrl.startsWith('https'))) {
-                            const media = await MessageMedia.fromUrl(imageUrl);
-                            await client.sendMessage(message.from, media, { caption: `📸 ${car.brand} ${car.name}` });
+                    // Send up to 4 images per vehicle
+                    const imagesToSend = car.images.slice(0, 4);
+                    for (const imageUrl of imagesToSend) {
+                        try {
+                            if (imageUrl && (imageUrl.startsWith('http') || imageUrl.startsWith('https'))) {
+                                const media = await MessageMedia.fromUrl(imageUrl);
+                                await client.sendMessage(message.from, media, { caption: `📸 ${car.brand} ${car.name}` });
+                            }
+                        } catch (e) {
+                            console.error(`Failed to send image for ${car.name}:`, e);
                         }
-                    } catch (e) {
-                        console.error(`Failed to send image for ${car.name}:`, e);
                     }
                 }
             }
