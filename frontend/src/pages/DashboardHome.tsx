@@ -1,18 +1,52 @@
 
 import { Car, MessageSquare, Users, MousePointerClick, Plus, ArrowRight, TrendingUp, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { API_URL } from '../config';
 
-const stats = [
-    { label: 'Veículos Ativos', value: '12', icon: Car, color: 'text-blue-600', bg: 'bg-blue-50', trend: '+2 essa semana' },
-    { label: 'Mensagens', value: '1,234', icon: MessageSquare, color: 'text-green-600', bg: 'bg-green-50', trend: '+12% vs mês anterior' },
-    { label: 'Leads Totais', value: '89', icon: Users, color: 'text-purple-600', bg: 'bg-purple-50', trend: '5 novos hoje' },
-    { label: 'Cliques no Bot', value: '432', icon: MousePointerClick, color: 'text-orange-600', bg: 'bg-orange-50', trend: '+8%' },
-];
+interface DashboardStats {
+    activeVehicles: number;
+    leads: number;
+    interactions: number;
+    recentLeads: any[];
+}
 
 export function DashboardHome() {
+    const [statsData, setStatsData] = useState<DashboardStats>({
+        activeVehicles: 0,
+        leads: 0,
+        interactions: 0,
+        recentLeads: []
+    });
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_URL}/dashboard/stats`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setStatsData(data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch dashboard stats", error);
+            }
+        };
+        fetchStats();
+    }, []);
+
+    const stats = [
+        { label: 'Veículos Ativos', value: statsData.activeVehicles, icon: Car, color: 'text-blue-600', bg: 'bg-blue-50', trend: 'Atualizado agora' },
+        { label: 'Interações', value: statsData.interactions, icon: MessageSquare, color: 'text-green-600', bg: 'bg-green-50', trend: 'Total estimado' },
+        { label: 'Leads Totais', value: statsData.leads, icon: Users, color: 'text-purple-600', bg: 'bg-purple-50', trend: 'Contatos únicos' },
+        { label: 'Cliques no Bot', value: statsData.interactions, icon: MousePointerClick, color: 'text-orange-600', bg: 'bg-orange-50', trend: '+8%' },
+    ];
+
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
-            {/* Welcome Section */}
+            {/* ... Welcome Section (Unchanged) ... */}
             <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-8 text-white shadow-lg overflow-hidden relative">
                 <div className="relative z-10">
                     <h1 className="text-3xl font-bold mb-2">Bem-vindo de volta! 👋</h1>
@@ -67,20 +101,28 @@ export function DashboardHome() {
                     </div>
 
                     <div className="space-y-4">
-                        {[1, 2, 3].map((i) => (
-                            <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer group">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-bold shrink-0">
-                                        L{i}
+                        {statsData.recentLeads.length === 0 ? (
+                            <p className="text-gray-500 text-center py-8">Nenhum lead recente.</p>
+                        ) : (
+                            statsData.recentLeads.map((lead: any) => (
+                                <div key={lead.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer group">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-bold shrink-0">
+                                            {(lead.name || lead.phone || 'L').charAt(0).toUpperCase()}
+                                        </div>
+                                        <div className="overflow-hidden">
+                                            <p className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate w-48">
+                                                {lead.name || lead.phone}
+                                            </p>
+                                            <p className="text-sm text-gray-500 truncate w-64">{lead.lastMessage}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">Novo Lead Interessado</p>
-                                        <p className="text-sm text-gray-500">Olá, gostaria de saber mais sobre...</p>
-                                    </div>
+                                    <span className="text-xs text-gray-400 whitespace-nowrap">
+                                        {new Date(lead.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
                                 </div>
-                                <span className="text-xs text-gray-400">Há 2 horas</span>
-                            </div>
-                        ))}
+                            ))
+                        )}
                     </div>
                 </div>
 
@@ -102,10 +144,10 @@ export function DashboardHome() {
                         <div>
                             <div className="flex justify-between text-sm mb-2">
                                 <span className="text-gray-500">Limite de Veículos</span>
-                                <span className="text-gray-900 font-medium">0 / 50</span>
+                                <span className="text-gray-900 font-medium">{statsData.activeVehicles} / 50</span>
                             </div>
                             <div className="w-full bg-gray-100 rounded-full h-2">
-                                <div className="bg-blue-500 h-2 rounded-full" style={{ width: '10%' }}></div>
+                                <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${Math.min((statsData.activeVehicles / 50) * 100, 100)}%` }}></div>
                             </div>
                         </div>
 
