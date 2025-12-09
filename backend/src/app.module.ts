@@ -15,6 +15,7 @@ import { AsaasModule } from './integrations/asaas/asaas.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { FaqModule } from './faq/faq.module';
 import { LeadsModule } from './leads/leads.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { LeadsModule } from './leads/leads.module';
     SubscriptionsModule,
     FaqModule,
     LeadsModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

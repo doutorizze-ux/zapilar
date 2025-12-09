@@ -5,8 +5,10 @@ import { WhatsappController } from './whatsapp.controller';
 import { UsersModule } from '../users/users.module';
 import { FaqModule } from '../faq/faq.module';
 
+import { LeadsModule } from '../leads/leads.module';
+
 @Module({
-    imports: [VehiclesModule, UsersModule, FaqModule],
+    imports: [VehiclesModule, UsersModule, FaqModule, LeadsModule],
     providers: [WhatsappService],
     exports: [WhatsappService],
     controllers: [WhatsappController],

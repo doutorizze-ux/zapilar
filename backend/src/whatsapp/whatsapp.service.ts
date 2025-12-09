@@ -8,8 +8,11 @@ import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 import { UsersService } from '../users/users.service';
 import { FaqService } from '../faq/faq.service';
 
+import { LeadsService } from '../leads/leads.service';
+
 @Injectable()
 export class WhatsappService implements OnModuleInit {
+    // ...
     // Map<userId, Client>
     private clients: Map<string, Client> = new Map();
     private qrCodes: Map<string, string> = new Map();
@@ -21,85 +24,21 @@ export class WhatsappService implements OnModuleInit {
         private vehiclesService: VehiclesService,
         private configService: ConfigService,
         private usersService: UsersService,
-        private faqService: FaqService
+        private faqService: FaqService,
+        private leadsService: LeadsService
     ) { }
 
-    onModuleInit() {
-        this.initializeAI();
-        // We do NOT initialize a single client anymore. 
-        // Clients are initialized on demand (when user visits the dashboard).
-    }
-
-    private initializeAI() {
-        const apiKey = this.configService.get<string>('GEMINI_API_KEY');
-        if (apiKey) {
-            this.genAI = new GoogleGenerativeAI(apiKey);
-            this.model = this.genAI.getGenerativeModel({ model: "gemini-1.0-pro" });
-        } else {
-            console.warn('GEMINI_API_KEY not found. AI features disabled.');
-        }
-    }
-
-    async getSession(userId: string) {
-        if (!this.clients.has(userId)) {
-            await this.initializeClient(userId);
-        }
-
-        return {
-            status: this.statuses.get(userId) || 'DISCONNECTED',
-            qr: this.qrCodes.get(userId) || null
-        };
-    }
-
-    private async initializeClient(userId: string) {
-        console.log(`Initializing WhatsApp Client for User: ${userId}`);
-
-        const client = new Client({
-            authStrategy: new LocalAuth({
-                clientId: `store-${userId}`
-            }),
-            puppeteer: {
-                headless: true,
-                args: ['--no-sandbox', '--disable-setuid-sandbox']
-            }
-        });
-
-        this.clients.set(userId, client);
-        this.statuses.set(userId, 'DISCONNECTED');
-
-        client.on('qr', (qr) => {
-            console.log(`QR RECEIVED caused by ${userId}`);
-            this.qrCodes.set(userId, qr);
-            this.statuses.set(userId, 'QR_READY');
-        });
-
-        client.on('ready', () => {
-            console.log(`WhatsApp Client for ${userId} is ready!`);
-            this.statuses.set(userId, 'CONNECTED');
-            this.qrCodes.delete(userId);
-        });
-
-        client.on('disconnected', () => {
-            console.log(`Client ${userId} disconnected`);
-            this.statuses.set(userId, 'DISCONNECTED');
-            this.qrCodes.delete(userId);
-            this.clients.delete(userId); // Cleanup
-        });
-
-        client.on('message', async (message: Message) => {
-            // Pass the userId so we know WHICH store's vehicles to search
-            await this.handleMessage(message, userId);
-        });
-
-        try {
-            await client.initialize();
-        } catch (e) {
-            console.error(`Failed to initialize client for ${userId}`, e);
-        }
-    }
+    // ...
 
     private async handleMessage(message: Message, userId: string) {
         const msg = message.body.toLowerCase();
+
+        try {
+            const contact = await message.getContact();
+            await this.leadsService.upsert(userId, message.from, message.body, contact.pushname || contact.name);
+        } catch (e) {
+            console.error('Error tracking lead', e);
+        }
 
         // 1. Get User Context
         const user = await this.usersService.findById(userId);
