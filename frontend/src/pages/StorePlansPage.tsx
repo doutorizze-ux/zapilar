@@ -90,10 +90,9 @@ export function StorePlansPage() {
             <div className="flex flex-wrap justify-center gap-8">
                 {plans.map(plan => {
                     const isCurrent = currentSubscription?.planId === plan.id;
-                    const isPending = isCurrent &&
-                        currentSubscription?.status !== 'ACTIVE' &&
-                        currentSubscription?.latestPaymentStatus !== 'RECEIVED' &&
-                        currentSubscription?.latestPaymentStatus !== 'CONFIRMED';
+                    const isPaid = currentSubscription?.latestPaymentStatus === 'RECEIVED' || currentSubscription?.latestPaymentStatus === 'CONFIRMED';
+                    // Show pending if current plan but payment is not settled
+                    const isPending = isCurrent && !isPaid;
 
                     return (
                         <div key={plan.id} className={`w-full max-w-sm bg-white rounded-2xl p-8 border ${isCurrent ? (isPending ? 'border-yellow-500 ring-2 ring-yellow-100' : 'border-green-500 ring-2 ring-green-100') : 'border-gray-200'} shadow-sm flex flex-col relative`}>

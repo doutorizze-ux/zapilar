@@ -42,8 +42,11 @@ export function DashboardLayout() {
                                 subData = await subRes.json();
                                 status = subData.status;
 
-                                // Override status if payment is confirmed but subscription status lags
-                                if (subData.latestPaymentStatus === 'RECEIVED' || subData.latestPaymentStatus === 'CONFIRMED') {
+                                // Stricter check: If payment is not confirmed, treat as PENDING even if subscription is ACTIVE
+                                const isPaid = subData.latestPaymentStatus === 'RECEIVED' || subData.latestPaymentStatus === 'CONFIRMED';
+                                if (!isPaid) {
+                                    status = 'PENDING';
+                                } else {
                                     status = 'ACTIVE';
                                 }
                             } catch (e) {
