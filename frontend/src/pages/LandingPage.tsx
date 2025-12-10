@@ -14,7 +14,7 @@ export function LandingPage() {
                     <img src="/logo-dark.png" alt="Zapicar" className="h-10 w-auto brightness-0 invert" />
                     <div className="flex items-center gap-6">
                         <button onClick={() => navigate('/login')} className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
-                            Entrar
+                            Acessar Painel
                         </button>
                         <button
                             onClick={() => navigate('/register')}
