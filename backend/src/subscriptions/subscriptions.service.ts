@@ -170,4 +170,11 @@ export class SubscriptionsService {
             return { active: false, error: 'Could not fetch subscription' };
         }
     }
+    async handleWebhook(body: any) {
+        const { event, payment, subscription } = body;
+        console.log(`[Subscriptions] Processing webhook event: ${event}`);
+        // We can implement logic here later to auto-activate users or update payment status in database if we were caching it.
+        // Currently we fetch real-time from Asaas on dashboard load, so passive listening is enough for now or extending logs.
+        return true;
+    }
 }
