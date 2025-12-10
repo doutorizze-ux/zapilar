@@ -17,6 +17,7 @@ import { StorePlansPage } from './pages/StorePlansPage';
 import { TrainingPage } from './pages/TrainingPage';
 import { LiveChatPage } from './pages/LiveChatPage';
 import { SimulatorPage } from './pages/SimulatorPage';
+import { LeadsPage } from './pages/LeadsPage';
 
 import { useEffect } from 'react';
 import { API_URL } from './config';
@@ -49,6 +50,7 @@ function App() {
             <Route index element={<DashboardHome />} />
             <Route path="vehicles" element={<VehiclesPage />} />
             <Route path="chat" element={<LiveChatPage />} />
+            <Route path="leads" element={<LeadsPage />} />
             <Route path="whatsapp" element={<WhatsappPage />} />
             <Route path="training" element={<TrainingPage />} />
             <Route path="plans" element={<StorePlansPage />} />

@@ -43,4 +43,11 @@ export class LeadsService {
             recentLeads
         };
     }
+
+    async findAll(storeId: string): Promise<Lead[]> {
+        return this.leadsRepository.find({
+            where: { storeId },
+            order: { updatedAt: 'DESC' }
+        });
+    }
 }

@@ -59,7 +59,7 @@ export function StorePlansPage() {
                 const data = await response.json();
                 setCurrentSubscription(data);
 
-                if (data.status === 'ACTIVE' || data.latestPaymentStatus === 'RECEIVED' || data.latestPaymentStatus === 'CONFIRMED') {
+                if (data.status === 'ACTIVE' || data.latestPaymentStatus === 'RECEIVED' || data.latestPaymentStatus === 'CONFIRMED' || data.latestPaymentStatus === 'COMPLETED') {
                     if (window.location.hash.includes('checkout')) {
                         window.location.href = '/dashboard';
                     }
@@ -126,7 +126,7 @@ function PlanCardGroup({ variants, currentSubscription, onSubscribe }: { variant
 
     // Check if THIS specific variant is the user's current plan
     const isCurrent = currentSubscription?.planId === activePlan.id;
-    const isPaid = currentSubscription?.latestPaymentStatus === 'RECEIVED' || currentSubscription?.latestPaymentStatus === 'CONFIRMED';
+    const isPaid = currentSubscription?.latestPaymentStatus === 'RECEIVED' || currentSubscription?.latestPaymentStatus === 'CONFIRMED' || currentSubscription?.latestPaymentStatus === 'COMPLETED';
     const isPending = isCurrent && !isPaid;
 
     const intervalLabels: Record<string, string> = {
