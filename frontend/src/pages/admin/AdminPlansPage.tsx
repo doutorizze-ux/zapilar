@@ -8,6 +8,7 @@ interface Plan {
     name: string;
     price: number;
     interval: string;
+    vehicleLimit?: number;
     features: string[];
     isActive: boolean;
 }
@@ -48,6 +49,7 @@ export function AdminPlansPage() {
         const payload = {
             ...editingPlan,
             price: Number(editingPlan.price),
+            vehicleLimit: editingPlan.vehicleLimit ? Number(editingPlan.vehicleLimit) : 50,
             features: Array.isArray(editingPlan.features) ? editingPlan.features : String(editingPlan.features).split(',').map(s => s.trim())
         };
 
@@ -117,6 +119,10 @@ export function AdminPlansPage() {
                             R$ {plan.price} <span className="text-sm text-gray-500 font-normal">/{plan.interval}</span>
                         </div>
 
+                        <div className="mt-2 text-sm text-gray-500 bg-gray-50 p-2 rounded">
+                            Limite: <strong>{plan.vehicleLimit || '∞'}</strong> carros
+                        </div>
+
                         <div className="mt-6 space-y-3">
                             {(plan.features || []).map((feature, i) => (
                                 <div key={i} className="flex items-center gap-2 text-sm text-gray-600">
@@ -156,24 +162,36 @@ export function AdminPlansPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Intervalo</label>
-                                    <select
-                                        value={editingPlan.interval || 'MONTHLY'}
-                                        onChange={e => setEditingPlan({ ...editingPlan, interval: e.target.value })}
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Qtd. Veículos</label>
+                                    <input
+                                        type="number"
+                                        value={editingPlan.vehicleLimit || ''}
+                                        onChange={e => setEditingPlan({ ...editingPlan, vehicleLimit: Number(e.target.value) })}
                                         className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                                    >
-                                        <option value="MONTHLY">Mensal</option>
-                                        <option value="QUARTERLY">Trimestral</option>
-                                        <option value="SEMIANNUALLY">Semestral</option>
-                                        <option value="YEARLY">Anual</option>
-                                    </select>
+                                        placeholder="50"
+                                    />
                                 </div>
                             </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Intervalo</label>
+                                <select
+                                    value={editingPlan.interval || 'MONTHLY'}
+                                    onChange={e => setEditingPlan({ ...editingPlan, interval: e.target.value })}
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                                >
+                                    <option value="MONTHLY">Mensal</option>
+                                    <option value="QUARTERLY">Trimestral</option>
+                                    <option value="SEMIANNUALLY">Semestral</option>
+                                    <option value="YEARLY">Anual</option>
+                                </select>
+                            </div>
+
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Funcionalidades (separadas por vírgula)</label>
                                 <textarea
                                     value={Array.isArray(editingPlan.features) ? editingPlan.features.join(', ') : editingPlan.features || ''}
-                                    onChange={e => setEditingPlan({ ...editingPlan, features: e.target.value.split(',') })} // Simplified for UI
+                                    onChange={e => setEditingPlan({ ...editingPlan, features: e.target.value.split(',') })}
                                     className="w-full border border-gray-300 rounded-lg px-3 py-2 h-24"
                                 />
                             </div>

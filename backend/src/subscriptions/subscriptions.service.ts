@@ -163,10 +163,13 @@ export class SubscriptionsService {
                 const latestPayment = payments.data && payments.data.length > 0 ? payments.data[0] : null;
 
                 // If the latest payment is confirmed/received, we can consider the user "active" even if subscription status lags
+                const planDetails = user.planId ? await this.plansService.findOne(user.planId) : null;
+
                 return {
                     ...sub,
                     planId: user.planId,
-                    planName: user.planId ? (await this.plansService.findOne(user.planId))?.name : 'Plano Desconhecido',
+                    planName: planDetails?.name || 'Plano Desconhecido',
+                    maxVehicles: planDetails?.vehicleLimit || 50, // Default fallback
                     latestPaymentStatus: latestPayment ? latestPayment.status : 'UNKNOWN',
                     latestPaymentId: latestPayment ? latestPayment.id : null
                 };
