@@ -9,18 +9,30 @@ interface User {
     storeName: string;
     role: string;
     createdAt: string;
+    planId?: string;
+    subscriptionId?: string;
+}
+
+interface Plan {
+    id: string;
+    name: string;
+    price: number;
 }
 
 export function AdminUsersPage() {
     const { token } = useAuth();
     const [users, setUsers] = useState<User[]>([]);
+    const [plans, setPlans] = useState<Plan[]>([]);
     const [loading, setLoading] = useState(true);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<Partial<User>>({});
 
     useEffect(() => {
-        fetchUsers();
+        const loadData = async () => {
+            await Promise.all([fetchUsers(), fetchPlans()]);
+        };
+        loadData();
     }, []);
 
     const fetchUsers = async () => {
@@ -39,16 +51,37 @@ export function AdminUsersPage() {
         }
     };
 
+    const fetchPlans = async () => {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/plans`);
+            if (response.ok) {
+                const data = await response.json();
+                setPlans(Array.isArray(data) ? data : []);
+            }
+        } catch (error) {
+            console.error('Error fetching plans:', error);
+        }
+    };
+
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            // If a plan is selected and it's different or new, we might want to ensure subscriptionId is set to MANUAL
+            const payload = {
+                ...editingUser,
+                // Ensure subscriptionId is MANUAL if we are assigning a plan manually via admin
+                // This logic might need refinement if we want to allow Assigning Plan but KEEPING Asaas (unlikely for admin edit)
+                // For now, if admin sets a plan, we assume it's a manual/grant action.
+                subscriptionId: editingUser.planId ? 'MANUAL' : editingUser.subscriptionId
+            };
+
             const response = await fetch(`${import.meta.env.VITE_API_URL}/users/${editingUser.id}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`
                 },
-                body: JSON.stringify(editingUser)
+                body: JSON.stringify(payload)
             });
 
             if (response.ok) {
@@ -61,6 +94,7 @@ export function AdminUsersPage() {
             alert('Erro na requisição');
         }
     };
+
 
     if (loading) return <div>Carregando...</div>;
 
@@ -78,6 +112,7 @@ export function AdminUsersPage() {
                                 <th className="px-6 py-4">Usuário / Loja</th>
                                 <th className="px-6 py-4">Email</th>
                                 <th className="px-6 py-4">Função</th>
+                                <th className="px-6 py-4">Plano</th>
                                 <th className="px-6 py-4">Data Cadastro</th>
                                 <th className="px-6 py-4">Ações</th>
                             </tr>
@@ -100,6 +135,14 @@ export function AdminUsersPage() {
                                             {user.role === 'admin' ? <Shield className="w-3 h-3" /> : <UserIcon className="w-3 h-3" />}
                                             {user.role}
                                         </span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className="text-sm text-gray-600">
+                                            {plans.find(p => p.id === user.planId)?.name || (user.planId ? 'Manual/Outro' : 'Sem Plano')}
+                                        </span>
+                                        {user.subscriptionId === 'MANUAL' && (
+                                            <span className="ml-2 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Grátis</span>
+                                        )}
                                     </td>
                                     <td className="px-6 py-4 text-gray-500">
                                         {new Date(user.createdAt).toLocaleDateString()}
@@ -159,6 +202,22 @@ export function AdminUsersPage() {
                                     <option value="store_user">Vendedor</option>
                                     <option value="admin">Administrador</option>
                                 </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Plano (Atribuir Gratuitamente)</label>
+                                <select
+                                    value={editingUser.planId || ''}
+                                    onChange={e => setEditingUser({ ...editingUser, planId: e.target.value })}
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                                >
+                                    <option value="">Sem Plano</option>
+                                    {plans.map(plan => (
+                                        <option key={plan.id} value={plan.id}>
+                                            {plan.name} - R$ {plan.price}
+                                        </option>
+                                    ))}
+                                </select>
+                                <p className="text-xs text-gray-500 mt-1">Ao selecionar um plano aqui, ele será ativado como "Gratuito" (SubscriptionId = MANUAL).</p>
                             </div>
 
                             <div className="flex justify-end gap-3 pt-4">

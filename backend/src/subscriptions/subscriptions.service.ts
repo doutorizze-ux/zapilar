@@ -156,6 +156,23 @@ export class SubscriptionsService {
         const user = await this.usersService.findById(userId);
         if (!user?.subscriptionId) return { active: false };
 
+        // Handle manual override (Free Plan given by Admin)
+        if (user.subscriptionId === 'MANUAL') {
+            const planDetails = user.planId ? await this.plansService.findOne(user.planId) : null;
+            return {
+                active: true,
+                status: 'ACTIVE',
+                planId: user.planId,
+                planName: planDetails?.name || 'Plano Manual',
+                maxVehicles: planDetails?.vehicleLimit || 50,
+                cycle: 'MANUAL',
+                nextDueDate: null, // Perpetual
+                value: planDetails?.price || 0,
+                billingType: 'FREE',
+                latestPaymentStatus: 'COMPLETED'
+            };
+        }
+
         try {
             const sub = await this.asaasService.getSubscription(user.subscriptionId);
             try {
