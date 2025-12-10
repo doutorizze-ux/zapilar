@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { MessageCircle, CheckCircle, TrendingUp, Smartphone, Shield, ArrowRight, Play, Globe, Users, MessageSquare } from 'lucide-react';
+import { MessageCircle, CheckCircle, TrendingUp, Smartphone, Shield, ArrowRight, Play } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export function LandingPage() {
@@ -39,15 +39,15 @@ export function LandingPage() {
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
                             </span>
-                            Novidade: Ganhe sua Vitrine Virtual Grátis 🎁
+                            Novo: Integração Total com seu Estoque
                         </div>
 
                         <h1 className="text-5xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.1]">
-                            O Sistema Completo para sua <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-green-600">Garagem Vender Mais</span>
+                            Aumente suas vendas e fidelize clientes no <span className="text-[#25D366]">WhatsApp</span>
                         </h1>
 
                         <p className="text-xl text-gray-400 leading-relaxed font-light">
-                            Mais que um bot. O ZapCar cria seu site automaticamente, atende seus clientes com IA e organiza suas vendas em um CRM fácil de usar.
+                            O Zapicar transforma o WhatsApp em um grande aliado para o crescimento da sua loja de veículos. Atendimento 24h com IA.
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-4 pt-4">
@@ -56,176 +56,169 @@ export function LandingPage() {
                                 className="px-8 py-4 bg-[#25D366] text-white rounded-full font-bold text-lg hover:bg-green-500 transition-all shadow-xl shadow-green-500/20 flex items-center justify-center gap-3 transform hover:scale-105"
                             >
                                 <MessageCircle className="w-6 h-6" />
-                                Testar Grátis Agora
+                                Experimente Agora
                             </button>
                         </div>
 
                         <div className="flex items-center gap-6 text-sm font-medium text-gray-500 pt-4">
                             <div className="flex items-center gap-2 text-gray-400">
                                 <CheckCircle className="w-5 h-5 text-green-500" />
-                                Site incluso
+                                Sem cartão de crédito
                             </div>
                             <div className="flex items-center gap-2 text-gray-400">
                                 <CheckCircle className="w-5 h-5 text-green-500" />
-                                CRM de Leads
-                            </div>
-                            <div className="flex items-center gap-2 text-gray-400">
-                                <CheckCircle className="w-5 h-5 text-green-500" />
-                                Chat Inteligente
+                                Instalação em 2 min
                             </div>
                         </div>
                     </div>
 
-                    {/* WhatsApp Mockup Animation - Mantido o mesmo, pois é icônico */}
+                    {/* WhatsApp Mockup Animation */}
                     <div className="relative mx-auto lg:mr-0 z-10 perspective-1000">
-                        {/* (Código do mockup do iPhone mantido igual para não quebrar a animação) */}
-                        <div className="relative mx-auto lg:mr-0 z-10 perspective-1000">
-                            {/* Floating Container */}
+                        {/* Floating Container */}
+                        <motion.div
+                            initial={{ opacity: 0, rotateY: -15, y: 50 }}
+                            animate={{ opacity: 1, rotateY: -5, y: 0 }}
+                            transition={{ duration: 1 }}
+                            className="relative w-[300px] sm:w-[320px] mx-auto"
+                        >
+                            {/* Floating Stats Badge Left */}
                             <motion.div
-                                initial={{ opacity: 0, rotateY: -15, y: 50 }}
-                                animate={{ opacity: 1, rotateY: -5, y: 0 }}
-                                transition={{ duration: 1 }}
-                                className="relative w-[300px] sm:w-[320px] mx-auto"
+                                animate={{ y: [0, 10, 0] }}
+                                transition={{ duration: 4, repeat: Infinity, delay: 0.5 }}
+                                className="absolute -left-20 top-20 bg-gray-900/90 backdrop-blur-xl p-3 rounded-2xl border border-white/10 shadow-2xl z-50 flex items-center gap-3 w-48 hover:scale-105 transition-transform"
+                                style={{ transformStyle: 'preserve-3d', transform: 'translateZ(50px)' }}
                             >
-                                {/* Floating Stats Badge Left */}
-                                <motion.div
-                                    animate={{ y: [0, 10, 0] }}
-                                    transition={{ duration: 4, repeat: Infinity, delay: 0.5 }}
-                                    className="absolute -left-20 top-20 bg-gray-900/90 backdrop-blur-xl p-3 rounded-2xl border border-white/10 shadow-2xl z-50 flex items-center gap-3 w-48 hover:scale-105 transition-transform"
-                                    style={{ transformStyle: 'preserve-3d', transform: 'translateZ(50px)' }}
-                                >
-                                    <div className="bg-green-500/20 p-2 rounded-lg">
-                                        <TrendingUp className="w-5 h-5 text-green-400" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-gray-400 font-medium">Site Gerado</p>
-                                        <p className="text-white font-bold text-sm">zapicar.com.br/sua-loja</p>
-                                    </div>
-                                </motion.div>
-
-                                {/* Floating Stats Badge Right */}
-                                <motion.div
-                                    animate={{ y: [0, -10, 0] }}
-                                    transition={{ duration: 5, repeat: Infinity, delay: 0 }}
-                                    className="absolute -right-16 bottom-32 bg-gray-900/90 backdrop-blur-xl p-3 rounded-2xl border border-white/10 shadow-2xl z-50 flex items-center gap-3 hover:scale-105 transition-transform"
-                                    style={{ transformStyle: 'preserve-3d', transform: 'translateZ(50px)' }}
-                                >
-                                    <div className="bg-blue-500/20 p-2 rounded-lg">
-                                        <MessageCircle className="w-5 h-5 text-blue-400" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-gray-400 font-medium">CRM Ativo</p>
-                                        <p className="text-white font-bold text-lg">15 Leads/dia</p>
-                                    </div>
-                                </motion.div>
-
-                                {/* Realistic iPhone Case */}
-                                <div className="relative rounded-[3rem] bg-[#1a1a1a] shadow-[0_0_0_10px_#1a1a1a,0_0_0_12px_#333,0_0_50px_rgba(0,0,0,0.5)] overflow-hidden h-[650px] transform transition-transform duration-500 hover:scale-[1.02]">
-                                    {/* Glass Reflection Overlay */}
-                                    <div className="absolute inset-0 z-50 pointer-events-none rounded-[3rem] shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] bg-gradient-to-tr from-white/5 via-transparent to-transparent"></div>
-
-                                    {/* Side Buttons */}
-                                    <div className="absolute top-24 -left-3.5 w-1 h-7 bg-[#2a2a2a] rounded-l-md border-l border-gray-600"></div>
-                                    <div className="absolute top-36 -left-3.5 w-1 h-12 bg-[#2a2a2a] rounded-l-md border-l border-gray-600"></div>
-                                    <div className="absolute top-52 -left-3.5 w-1 h-12 bg-[#2a2a2a] rounded-l-md border-l border-gray-600"></div>
-                                    <div className="absolute top-40 -right-3.5 w-1 h-16 bg-[#2a2a2a] rounded-r-md border-r border-gray-600"></div>
-
-                                    {/* Dynamic Island / Notch */}
-                                    <div className="absolute top-4 inset-x-0 h-7 w-28 mx-auto bg-black rounded-full z-50 flex items-center justify-center gap-2 px-2">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-[#1a1a1a] ring-1 ring-gray-800"></div>
-                                    </div>
-
-                                    {/* Screen Content */}
-                                    <div className="w-full h-full bg-[#E5DDD5] flex flex-col relative overflow-hidden rounded-[2.5rem]">
-                                        {/* Mobile Status Bar */}
-                                        <div className="h-12 w-full flex justify-between items-center px-6 pt-3 text-black z-40 bg-[#075E54]/5 backdrop-blur-sm">
-                                            <span className="text-xs font-bold">10:42</span>
-                                            <div className="flex gap-1.5">
-                                                <div className="w-4 h-3 bg-black rounded-sm border border-black opacity-40"></div>
-                                                <div className="w-3 h-3 bg-black rounded-full opacity-40"></div>
-                                            </div>
-                                        </div>
-
-                                        {/* Chat Header (WhatsApp iOS Style) */}
-                                        <div className="h-20 bg-[#f4f4f4]/80 backdrop-blur-xl border-b border-gray-200 p-4 pt-2 flex items-center gap-3 z-30 shadow-sm relative">
-                                            <div className="flex items-center gap-1 text-blue-500 -ml-1">
-                                                <ArrowRight className="w-5 h-5 rotate-180" />
-                                                <span className="text-sm">Voltar</span>
-                                            </div>
-                                            <div className="w-10 h-10 bg-gray-200 rounded-full overflow-hidden flex-shrink-0 border border-gray-300">
-                                                <div className="w-full h-full bg-green-100 flex items-center justify-center text-xs font-bold text-green-700">Z</div>
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="font-bold text-black text-sm truncate">Zapicar</p>
-                                                <p className="text-[10px] text-gray-500">Conta comercial</p>
-                                            </div>
-                                        </div>
-
-                                        {/* Wallpaper Pattern */}
-                                        <div className="absolute inset-0 opacity-40 bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')]"></div>
-
-                                        {/* Messages Area */}
-                                        <div className="flex-1 p-4 space-y-4 overflow-y-auto pb-20 relative z-10 font-sans">
-
-                                            {/* Date Divider */}
-                                            <div className="flex justify-center my-4">
-                                                <span className="bg-[#e1f3fb] text-gray-600 text-[10px] px-2 py-1 rounded-lg shadow-sm border border-black/5 uppercase font-medium">Hoje</span>
-                                            </div>
-
-                                            {/* Message 1: User */}
-                                            <motion.div
-                                                initial={{ opacity: 0, y: 10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: 1.2 }}
-                                                className="self-end bg-[#DCF8C6] ml-auto p-2.5 px-3 rounded-lg rounded-tr-none shadow-sm max-w-[85%] relative border border-[#c4eab0]"
-                                            >
-                                                <p className="text-sm text-gray-800 leading-snug">Olá! Vi a Hilux no site. Ainda está disponível?</p>
-                                                <span className="text-[10px] text-gray-500 block text-right mt-1 flex items-center justify-end gap-1">
-                                                    10:42 <span className="text-blue-500">✓✓</span>
-                                                </span>
-                                            </motion.div>
-
-                                            {/* Message 2: Bot */}
-                                            <motion.div
-                                                initial={{ opacity: 0, y: 10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: 2.5 }}
-                                                className="self-start bg-white mr-auto p-2.5 px-3 rounded-lg rounded-tl-none shadow-sm max-w-[85%] relative border border-gray-100"
-                                            >
-                                                <p className="text-sm text-gray-800 leading-snug">Olá! 👋 Sou o assistente virtual da Loja. <br /> Sim! A <b>Toyota Hilux SRX 2024</b> está disponível.</p>
-
-                                                <div className="mt-2 bg-gray-50 rounded-lg p-1 border border-gray-100">
-                                                    <div className="relative h-32 rounded bg-gray-200 overflow-hidden">
-                                                        <img src="/hilux-mockup.jpg" className="w-full h-full object-cover" alt="Carro" />
-                                                        <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded backdrop-blur-sm">4 fotos</div>
-                                                    </div>
-                                                    <div className="p-2">
-                                                        <p className="font-bold text-xs text-gray-800">Toyota Hilux SRX</p>
-                                                        <p className="text-[10px] text-gray-500">2024 • Diesel • 4x4</p>
-                                                        <p className="text-sm font-bold text-green-600 mt-1">R$ 289.900</p>
-                                                    </div>
-                                                </div>
-
-                                                <span className="text-[10px] text-gray-500 block text-right mt-1">10:42</span>
-                                            </motion.div>
-
-                                            {/* Typing Indicator */}
-                                            <motion.div
-                                                initial={{ opacity: 0 }}
-                                                animate={{ opacity: [0, 1, 0, 0] }}
-                                                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3, delay: 4 }}
-                                                className="bg-white w-12 h-8 rounded-full rounded-tl-none shadow-sm p-2 flex items-center justify-center gap-1 ml-0"
-                                            >
-                                                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
-                                                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce delay-75"></div>
-                                                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce delay-150"></div>
-                                            </motion.div>
-
-                                        </div>
-                                    </div>
+                                <div className="bg-green-500/20 p-2 rounded-lg">
+                                    <TrendingUp className="w-5 h-5 text-green-400" />
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 font-medium">Vendas Hoje</p>
+                                    <p className="text-white font-bold text-lg">R$ 145.000</p>
                                 </div>
                             </motion.div>
-                        </div>
+
+                            {/* Floating Stats Badge Right */}
+                            <motion.div
+                                animate={{ y: [0, -10, 0] }}
+                                transition={{ duration: 5, repeat: Infinity, delay: 0 }}
+                                className="absolute -right-16 bottom-32 bg-gray-900/90 backdrop-blur-xl p-3 rounded-2xl border border-white/10 shadow-2xl z-50 flex items-center gap-3 hover:scale-105 transition-transform"
+                                style={{ transformStyle: 'preserve-3d', transform: 'translateZ(50px)' }}
+                            >
+                                <div className="bg-blue-500/20 p-2 rounded-lg">
+                                    <MessageCircle className="w-5 h-5 text-blue-400" />
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 font-medium">Novos Leads</p>
+                                    <p className="text-white font-bold text-lg">+12</p>
+                                </div>
+                            </motion.div>
+
+                            {/* Realistic iPhone Case */}
+                            <div className="relative rounded-[3rem] bg-[#1a1a1a] shadow-[0_0_0_10px_#1a1a1a,0_0_0_12px_#333,0_0_50px_rgba(0,0,0,0.5)] overflow-hidden h-[650px] transform transition-transform duration-500 hover:scale-[1.02]">
+                                {/* Glass Reflection Overlay */}
+                                <div className="absolute inset-0 z-50 pointer-events-none rounded-[3rem] shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] bg-gradient-to-tr from-white/5 via-transparent to-transparent"></div>
+
+                                {/* Side Buttons */}
+                                <div className="absolute top-24 -left-3.5 w-1 h-7 bg-[#2a2a2a] rounded-l-md border-l border-gray-600"></div>
+                                <div className="absolute top-36 -left-3.5 w-1 h-12 bg-[#2a2a2a] rounded-l-md border-l border-gray-600"></div>
+                                <div className="absolute top-52 -left-3.5 w-1 h-12 bg-[#2a2a2a] rounded-l-md border-l border-gray-600"></div>
+                                <div className="absolute top-40 -right-3.5 w-1 h-16 bg-[#2a2a2a] rounded-r-md border-r border-gray-600"></div>
+
+                                {/* Dynamic Island / Notch */}
+                                <div className="absolute top-4 inset-x-0 h-7 w-28 mx-auto bg-black rounded-full z-50 flex items-center justify-center gap-2 px-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-[#1a1a1a] ring-1 ring-gray-800"></div>
+                                </div>
+
+                                {/* Screen Content */}
+                                <div className="w-full h-full bg-[#E5DDD5] flex flex-col relative overflow-hidden rounded-[2.5rem]">
+                                    {/* Mobile Status Bar */}
+                                    <div className="h-12 w-full flex justify-between items-center px-6 pt-3 text-black z-40 bg-[#075E54]/5 backdrop-blur-sm">
+                                        <span className="text-xs font-bold">10:42</span>
+                                        <div className="flex gap-1.5">
+                                            <div className="w-4 h-3 bg-black rounded-sm border border-black opacity-40"></div>
+                                            <div className="w-3 h-3 bg-black rounded-full opacity-40"></div>
+                                        </div>
+                                    </div>
+
+                                    {/* Chat Header (WhatsApp iOS Style) */}
+                                    <div className="h-20 bg-[#f4f4f4]/80 backdrop-blur-xl border-b border-gray-200 p-4 pt-2 flex items-center gap-3 z-30 shadow-sm relative">
+                                        <div className="flex items-center gap-1 text-blue-500 -ml-1">
+                                            <ArrowRight className="w-5 h-5 rotate-180" />
+                                            <span className="text-sm">Voltar</span>
+                                        </div>
+                                        <div className="w-10 h-10 bg-gray-200 rounded-full overflow-hidden flex-shrink-0 border border-gray-300">
+                                            <div className="w-full h-full bg-green-100 flex items-center justify-center text-xs font-bold text-green-700">Z</div>
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-bold text-black text-sm truncate">Zapicar</p>
+                                            <p className="text-[10px] text-gray-500">Conta comercial</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Wallpaper Pattern */}
+                                    <div className="absolute inset-0 opacity-40 bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')]"></div>
+
+                                    {/* Messages Area */}
+                                    <div className="flex-1 p-4 space-y-4 overflow-y-auto pb-20 relative z-10 font-sans">
+
+                                        {/* Date Divider */}
+                                        <div className="flex justify-center my-4">
+                                            <span className="bg-[#e1f3fb] text-gray-600 text-[10px] px-2 py-1 rounded-lg shadow-sm border border-black/5 uppercase font-medium">Hoje</span>
+                                        </div>
+
+                                        {/* Message 1: User */}
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: 1.2 }}
+                                            className="self-end bg-[#DCF8C6] ml-auto p-2.5 px-3 rounded-lg rounded-tr-none shadow-sm max-w-[85%] relative border border-[#c4eab0]"
+                                        >
+                                            <p className="text-sm text-gray-800 leading-snug">Olá! Vi a Hilux no site. Ainda está disponível?</p>
+                                            <span className="text-[10px] text-gray-500 block text-right mt-1 flex items-center justify-end gap-1">
+                                                10:42 <span className="text-blue-500">✓✓</span>
+                                            </span>
+                                        </motion.div>
+
+                                        {/* Message 2: Bot */}
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: 2.5 }}
+                                            className="self-start bg-white mr-auto p-2.5 px-3 rounded-lg rounded-tl-none shadow-sm max-w-[85%] relative border border-gray-100"
+                                        >
+                                            <p className="text-sm text-gray-800 leading-snug">Olá! 👋 Sou o assistente virtual da Loja. <br /> Sim! A <b>Toyota Hilux SRX 2024</b> está disponível no pátio.</p>
+
+                                            <div className="mt-2 bg-gray-50 rounded-lg p-1 border border-gray-100">
+                                                <div className="relative h-32 rounded bg-gray-200 overflow-hidden">
+                                                    <img src="/hilux-mockup.jpg" className="w-full h-full object-cover" alt="Carro" />
+                                                    <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded backdrop-blur-sm">4 fotos</div>
+                                                </div>
+                                                <div className="p-2">
+                                                    <p className="font-bold text-xs text-gray-800">Toyota Hilux SRX</p>
+                                                    <p className="text-[10px] text-gray-500">2024 • Diesel • 4x4</p>
+                                                    <p className="text-sm font-bold text-green-600 mt-1">R$ 289.900</p>
+                                                </div>
+                                            </div>
+
+                                            <span className="text-[10px] text-gray-500 block text-right mt-1">10:42</span>
+                                        </motion.div>
+
+                                        {/* Typing Indicator */}
+                                        <motion.div
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: [0, 1, 0, 0] }}
+                                            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3, delay: 4 }}
+                                            className="bg-white w-12 h-8 rounded-full rounded-tl-none shadow-sm p-2 flex items-center justify-center gap-1 ml-0"
+                                        >
+                                            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
+                                            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce delay-75"></div>
+                                            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce delay-150"></div>
+                                        </motion.div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
                     </div>
                 </div>
             </section>
@@ -235,7 +228,7 @@ export function LandingPage() {
                 <div className="max-w-5xl mx-auto px-6 text-center">
                     <h2 className="text-2xl font-bold text-white mb-8 flex items-center justify-center gap-3">
                         <Play className="w-6 h-6 text-[#25D366] fill-current" />
-                        Veja como é fácil vender com ZapCar
+                        Veja como funciona na prática
                     </h2>
 
                     <div className="relative aspect-video bg-black rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
@@ -254,41 +247,22 @@ export function LandingPage() {
             {/* Features Cards */}
             <section className="py-24 relative">
                 <div className="max-w-7xl mx-auto px-6">
-                    <div className="text-center mb-16">
-                        <h2 className="text-3xl lg:text-5xl font-bold text-white mb-4">Tudo o que uma Garagem Moderna Precisa</h2>
-                        <p className="text-gray-400 text-lg">Substitua planilhas e sites caros por uma única plataforma.</p>
-                    </div>
                     <div className="grid md:grid-cols-3 gap-8">
                         {[
                             {
-                                icon: Globe,
-                                title: "Vitrine Virtual Grátis",
-                                desc: "Não pague por site. O ZapCar gera um site lindo com seu estoque automaticamente. O cliente clica e cai direto no seu Zap."
-                            },
-                            {
-                                icon: Users,
-                                title: "CRM de Leads Integrado",
-                                desc: "Nunca mais perca um contato. Todos que chamam no Zap viram leads organizados num funil de vendas (Novo, Negociando, Vendido)."
-                            },
-                            {
-                                icon: MessageSquare,
-                                title: "Atendimento Híbrido",
-                                desc: "A IA atende 24h, tira dúvidas e mostra carros. Quando o cliente esquenta, você assume a conversa pelo painel com um clique."
-                            },
-                            {
                                 icon: Smartphone,
-                                title: "Instagram & Facebook",
-                                desc: "Use o link da sua Vitrine na bio e nos anúncios. Converta seguidores em compradores reais."
+                                title: "Atendimento Automático",
+                                desc: "Responda clientes instantaneamente 24/7 sem intervenção humana."
                             },
                             {
                                 icon: TrendingUp,
-                                title: "Estoque Inteligente",
-                                desc: "Cadastre fotos, preços e opcionais. A IA lê esses dados para responder perguntas técnicas dos clientes na hora."
+                                title: "Gestão de Estoque",
+                                desc: "Seus carros sincronizados. O robô sabe o que vender e por quanto."
                             },
                             {
                                 icon: Shield,
-                                title: "Segurança Total",
-                                desc: "Seus dados e conversas protegidos com tecnologia de ponta. Backup automático de tudo."
+                                title: "Segurança de Dados",
+                                desc: "Tecnologia criptografada para proteger seus leads e conversas."
                             }
                         ].map((feature, i) => (
                             <div key={i} className="bg-white/5 backdrop-blur-sm p-8 rounded-3xl border border-white/10 hover:border-[#25D366]/50 transition-all hover:-translate-y-2 group">

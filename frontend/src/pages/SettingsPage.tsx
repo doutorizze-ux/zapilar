@@ -1,4 +1,4 @@
-import { Store, CreditCard, LogOut, MessageCircle, Upload, Save, Pencil, Globe } from 'lucide-react';
+import { Store, CreditCard, LogOut, MessageCircle, Upload, Save, Pencil } from 'lucide-react';
 import { API_URL } from '../config';
 import { useNavigate } from 'react-router-dom';
 
@@ -9,15 +9,12 @@ export function SettingsPage() {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [user, setUser] = useState({
-        name: "",
-        email: "",
+        name: "Carregando...",
+        email: "...",
         phone: "",
-        plan: "",
+        plan: "Plano Gratuito",
         logoUrl: ""
     });
-    const [isLoadingProfile, setIsLoadingProfile] = useState(true);
-
-    const storeSlug = user.name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
 
     const [isEditing, setIsEditing] = useState(false);
     const [editForm, setEditForm] = useState({ name: "", phone: "" });
@@ -52,8 +49,6 @@ export function SettingsPage() {
             }
         } catch (error) {
             console.error('Failed to fetch profile', error);
-        } finally {
-            setIsLoadingProfile(false);
         }
     };
 
@@ -189,43 +184,6 @@ export function SettingsPage() {
                         </div>
                     </div>
                 </div>
-                {/* Store Link Card - NEW */}
-                {!isLoadingProfile && (
-                    <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden mb-8">
-                        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-                        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-                            <div>
-                                <div className="flex items-center gap-2 mb-2">
-                                    <div className="bg-white/20 p-1.5 rounded-lg backdrop-blur-sm">
-                                        <Globe className="w-5 h-5 text-white" />
-                                    </div>
-                                    <span className="font-bold text-blue-100 uppercase tracking-wider text-xs">Novidade</span>
-                                </div>
-                                <h2 className="text-2xl font-bold mb-2">Sua Vitrine Virtual está no ar! 🚀</h2>
-                                <p className="text-blue-100 max-w-xl">
-                                    Agora você tem um site profissional com todo seu estoque atualizado automaticamente.
-                                    Compartilhe o link abaixo nas suas redes sociais!
-                                </p>
-                            </div>
-                            <div className="flex flex-col gap-3 w-full md:w-auto">
-                                <div className="bg-white/10 p-3 rounded-xl border border-white/20 flex items-center gap-3 backdrop-blur-sm">
-                                    <code className="text-sm font-mono text-blue-50">
-                                        zapicar.com.br/loja/{storeSlug}
-                                    </code>
-                                </div>
-                                <a
-                                    href={`/loja/${storeSlug}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="bg-white text-blue-600 px-6 py-3 rounded-xl font-bold hover:bg-blue-50 transition-colors text-center shadow-lg"
-                                >
-                                    Acessar Meu Site
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
                 <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Nome da Loja</label>

@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Lead } from './entities/lead.entity';
-import { UpdateLeadDto } from './dto/update-lead.dto';
 
 @Injectable()
 export class LeadsService {
@@ -27,22 +26,6 @@ export class LeadsService {
         }
 
         return this.leadsRepository.save(lead);
-    }
-
-    async findAll(storeId: string) {
-        return this.leadsRepository.find({
-            where: { storeId },
-            order: { updatedAt: 'DESC' }
-        });
-    }
-
-    async update(id: string, updateLeadDto: UpdateLeadDto, storeId: string) {
-        const lead = await this.leadsRepository.findOne({ where: { id, storeId } });
-        if (!lead) {
-            throw new Error('Lead not found');
-        }
-        await this.leadsRepository.update(id, updateLeadDto);
-        return this.leadsRepository.findOne({ where: { id } });
     }
 
     async getStats(storeId: string) {

@@ -1,46 +1,57 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { StoresModule } from './stores/stores.module';
 import { VehiclesModule } from './vehicles/vehicles.module';
-import { WhatsappModule } from './whatsapp/whatsapp.module';
 import { PlansModule } from './plans/plans.module';
+import { WhatsappModule } from './whatsapp/whatsapp.module';
+import { AuthModule } from './auth/auth.module';
+import { AsaasModule } from './integrations/asaas/asaas.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { FaqModule } from './faq/faq.module';
 import { LeadsModule } from './leads/leads.module';
-import { DashboardController } from './dashboard/dashboard.controller';
-import { PublicSiteController } from './stores/public-site.controller';
-import { User } from './users/entities/user.entity';
-import { Vehicle } from './vehicles/entities/vehicle.entity';
-import { Plan } from './plans/entities/plan.entity';
-import { Lead } from './leads/entities/lead.entity';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: process.env.DB_HOST || 'localhost',
-      port: 3306,
-      username: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || 'root',
-      database: process.env.DB_NAME || 'zapcar_db',
-      entities: [User, Vehicle, Plan, Lead],
-      synchronize: true, // Auto-create tables (dev only)
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
     }),
-    AuthModule,
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        type: 'sqlite',
+        database: process.env.DATABASE_PATH || 'zapcar_v3.db',
+        autoLoadEntities: true,
+        synchronize: true, // Use carefully in production
+      }),
+      inject: [ConfigService],
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'),
+      serveRoot: '/uploads',
+    }),
+
     UsersModule,
+    StoresModule,
     VehiclesModule,
-    WhatsappModule,
     PlansModule,
+    WhatsappModule,
+    AuthModule,
+    AsaasModule,
+    AsaasModule,
     SubscriptionsModule,
     FaqModule,
-    LeadsModule
+    LeadsModule,
+    DashboardModule,
   ],
-  controllers: [AppController, DashboardController, PublicSiteController],
+  controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule { }

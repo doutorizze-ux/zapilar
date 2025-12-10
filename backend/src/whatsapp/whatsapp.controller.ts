@@ -25,10 +25,4 @@ export class WhatsappController {
         const isPaused = this.whatsappService.isBotPaused(req.user.userId);
         return { paused: isPaused };
     }
-
-    @UseGuards(JwtAuthGuard)
-    @Post('send')
-    async sendMessage(@Request() req, @Body() body: { to: string; message: string }) {
-        return this.whatsappService.sendMessage(req.user.userId, body.to, body.message);
-    }
 }

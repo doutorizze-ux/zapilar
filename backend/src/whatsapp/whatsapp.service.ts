@@ -320,37 +320,4 @@ _Gostou deste? Digite_ *"Quero o ${car.name} ${car.year}"*`;
             }
         }
     }
-
-    async sendMessage(userId: string, to: string, body: string) {
-        const client = this.clients.get(userId);
-        if (!client) {
-            throw new Error('WhatsApp client not connected');
-        }
-
-        // Ensure number format
-        let chatId = to;
-        if (!chatId.includes('@')) {
-            chatId = `${chatId}@c.us`;
-        }
-
-        await client.sendMessage(chatId, body);
-
-        // Emit own message to chat
-        this.chatGateway.emitMessageToRoom(userId, {
-            id: 'manual-' + Date.now(),
-            from: 'me',
-            body: body,
-            timestamp: Date.now() / 1000,
-            senderName: 'Você',
-            isBot: true
-        });
-
-        // Track as lead interaction
-        try {
-            const rawPhone = chatId.replace('@c.us', '');
-            await this.leadsService.upsert(userId, rawPhone, body, undefined);
-        } catch (e) { console.error('Error tracking manual msg', e) }
-
-        return { success: true };
-    }
 }

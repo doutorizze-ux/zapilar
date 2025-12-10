@@ -78,18 +78,4 @@ export class UsersService implements OnModuleInit {
 
         return result;
     }
-
-    async findBySlugPublic(slug: string): Promise<User | null> {
-        // Simple slug match for storeName (this assumes storeName is unique enough or we handle collisions later)
-        // For V1, we match exact storeName or a slugified version if we had a slug column.
-        // Let's rely on exact match or ILIKE if possible, but standard findOne is case sensitive usually.
-        // Let's try to match by storeName directly.
-
-        // This is a basic implementation. Ideally we should have a 'slug' column.
-        const users = await this.usersRepository.find();
-        return users.find(u => {
-            const s = u.storeName?.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
-            return s === slug;
-        }) || null;
-    }
 }

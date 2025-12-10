@@ -16,8 +16,6 @@ import { AdminFinancialPage } from './pages/admin/AdminFinancialPage';
 import { StorePlansPage } from './pages/StorePlansPage';
 import { TrainingPage } from './pages/TrainingPage';
 import { LiveChatPage } from './pages/LiveChatPage';
-import { LeadsPage } from './pages/LeadsPage';
-import { PublicStorePage } from './pages/PublicStorePage';
 
 import { useEffect } from 'react';
 import { API_URL } from './config';
@@ -36,7 +34,6 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
 
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/loja/:slug" element={<PublicStorePage />} />
 
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminLayout />}>
@@ -49,7 +46,6 @@ function App() {
           {/* Dashboard Routes */}
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<DashboardHome />} />
-            <Route path="leads" element={<LeadsPage />} />
             <Route path="vehicles" element={<VehiclesPage />} />
             <Route path="chat" element={<LiveChatPage />} />
             <Route path="whatsapp" element={<WhatsappPage />} />
