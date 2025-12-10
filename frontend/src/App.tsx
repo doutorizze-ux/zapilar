@@ -16,6 +16,7 @@ import { AdminFinancialPage } from './pages/admin/AdminFinancialPage';
 import { StorePlansPage } from './pages/StorePlansPage';
 import { TrainingPage } from './pages/TrainingPage';
 import { LiveChatPage } from './pages/LiveChatPage';
+import { SimulatorPage } from './pages/SimulatorPage';
 
 import { useEffect } from 'react';
 import { API_URL } from './config';
@@ -51,6 +52,7 @@ function App() {
             <Route path="whatsapp" element={<WhatsappPage />} />
             <Route path="training" element={<TrainingPage />} />
             <Route path="plans" element={<StorePlansPage />} />
+            <Route path="simulator" element={<SimulatorPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
         </Routes>
