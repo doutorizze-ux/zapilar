@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CreditCard, QrCode, Lock, X, Check } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -33,6 +33,31 @@ export function SubscribeModal({ plan, onClose, onSuccess }: SubscribeModalProps
         addressNumber: '',
         phone: user?.phone || ''
     });
+
+    useEffect(() => {
+        let interval: any;
+        if (step === 3 && billingType === 'PIX') {
+            interval = setInterval(async () => {
+                try {
+                    const timestamp = new Date().getTime();
+                    const response = await fetch(`${import.meta.env.VITE_API_URL}/subscriptions/my-subscription?t=${timestamp}`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.status === 'ACTIVE' || data.latestPaymentStatus === 'RECEIVED' || data.latestPaymentStatus === 'CONFIRMED') {
+                            // alert('Pagamento Confirmado!'); // Optional: removed alert for smoother UX
+                            onSuccess();
+                            onClose();
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error checking payment status', error);
+                }
+            }, 3000);
+        }
+        return () => clearInterval(interval);
+    }, [step, billingType, token, onSuccess, onClose]);
 
     const handleSubscribe = async () => {
         setLoading(true);
