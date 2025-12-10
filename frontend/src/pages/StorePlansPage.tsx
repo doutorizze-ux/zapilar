@@ -80,8 +80,9 @@ export function StorePlansPage() {
 
     // Group plans by name
     const groupedPlans = plans.reduce((acc, plan) => {
-        if (!acc[plan.name]) acc[plan.name] = [];
-        acc[plan.name].push(plan);
+        const key = plan.name.trim();
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(plan);
         return acc;
     }, {} as Record<string, Plan[]>);
 
@@ -110,6 +111,15 @@ export function StorePlansPage() {
                     onSuccess={onSubscribeSuccess}
                 />
             )}
+
+            <div className="mt-8 p-4 bg-gray-100 rounded text-xs border border-gray-300">
+                <p className="font-bold mb-2">DEBUG INFO (Lista de Planos Bruta)</p>
+                {plans.map(p => (
+                    <div key={p.id} className="font-mono">
+                        ID: {p.id.slice(0, 5)}... | Nome: "{p.name}" | Intervalo: {p.interval} | Preço: {p.price}
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }
