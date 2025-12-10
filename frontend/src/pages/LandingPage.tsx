@@ -297,10 +297,10 @@ export function LandingPage() {
                     <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[#092520] to-transparent z-10 pointer-events-none"></div>
                     <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#092520] to-transparent z-10 pointer-events-none"></div>
 
-                    <div className="flex gap-6 animate-scroll-slow w-[200%]">
+                    <div className="flex animate-scroll-slow w-max">
                         {/* Original Items + Duplicated Items for Loop */}
-                        {[...Array(2)].map((_, i) => (
-                            <div key={i} className="flex gap-6 flex-shrink-0">
+                        {[...Array(6)].map((_, i) => (
+                            <div key={i} className="flex gap-6 flex-shrink-0 pr-6">
                                 <div className="min-w-[300px] bg-[#0B2B26] border border-white/10 rounded-2xl overflow-hidden shadow-lg group hover:border-[#25D366]/50 transition-colors">
                                     <div className="h-48 bg-gray-800 relative">
                                         <img src="/car-hilux.jpg" alt="Car" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />

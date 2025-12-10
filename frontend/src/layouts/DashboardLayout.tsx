@@ -17,7 +17,7 @@ const sidebarItems = [
 export function DashboardLayout() {
     const location = useLocation();
     const navigate = useNavigate();
-    const [storeInfo, setStoreInfo] = useState<{ name: string; logoUrl: string; subscriptionId?: string; subscriptionStatus?: string } | null>(null);
+    const [storeInfo, setStoreInfo] = useState<{ name: string; logoUrl: string; subscriptionId?: string; subscriptionStatus?: string; planName?: string } | null>(null);
     const [loading, setLoading] = useState(true);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -33,12 +33,13 @@ export function DashboardLayout() {
                         const data = await response.json();
                         let status = null;
 
+                        let subData = null;
                         if (data.subscriptionId) {
                             try {
                                 const subRes = await fetch(`${import.meta.env.VITE_API_URL}/subscriptions/my-subscription`, {
                                     headers: { 'Authorization': `Bearer ${token}` }
                                 });
-                                const subData = await subRes.json();
+                                subData = await subRes.json();
                                 status = subData.status;
 
                                 // Override status if payment is confirmed but subscription status lags
@@ -54,7 +55,8 @@ export function DashboardLayout() {
                             name: data.storeName || 'Zapicar',
                             logoUrl: data.logoUrl || '',
                             subscriptionId: data.subscriptionId,
-                            subscriptionStatus: status
+                            subscriptionStatus: status,
+                            planName: subData?.planName
                         });
                     }
                 } catch (error) {
@@ -197,7 +199,7 @@ export function DashboardLayout() {
                                 {storeInfo?.subscriptionStatus === 'ACTIVE' ? 'Ativo' : 'Pendente'}
                             </span>
                         </div>
-                        <p className="text-white font-bold text-sm relative z-10">Premium Store</p>
+                        <p className="text-white font-bold text-sm relative z-10">{storeInfo?.planName || 'Plano Desconhecido'}</p>
                         <p className="text-gray-500 text-xs mt-0.5 relative z-10">Renova em {new Date().toLocaleDateString('pt-BR', { month: 'long', day: 'numeric' })}</p>
 
                         {/* Progress bar decoration */}

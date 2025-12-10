@@ -44,6 +44,10 @@ export class User {
     @Column({ nullable: true })
     subscriptionId: string;
 
+    @Column({ nullable: true })
+    planId: string;
+
+
     // @ManyToOne(() => Store, { nullable: true })
     // store: Store;
 

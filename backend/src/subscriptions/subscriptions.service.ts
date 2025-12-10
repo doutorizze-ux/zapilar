@@ -78,7 +78,7 @@ export class SubscriptionsService {
                 creditCardHolderInfo
             });
 
-            await this.usersService.updateById(user.id, { subscriptionId: subscription.id });
+            await this.usersService.updateById(user.id, { subscriptionId: subscription.id, planId: planId });
 
             let pixQrCode = null;
             let paymentUrl = null;
@@ -119,6 +119,8 @@ export class SubscriptionsService {
                 // If the latest payment is confirmed/received, we can consider the user "active" even if subscription status lags
                 return {
                     ...sub,
+                    planId: user.planId,
+                    planName: user.planId ? (await this.plansService.findOne(user.planId))?.name : 'Plano Desconhecido',
                     latestPaymentStatus: latestPayment ? latestPayment.status : 'UNKNOWN',
                     latestPaymentId: latestPayment ? latestPayment.id : null
                 };

@@ -57,7 +57,7 @@ export function DashboardHome() {
                         <Link to="/dashboard/vehicles" className="bg-white text-gray-900 px-4 py-2 rounded-lg font-bold hover:bg-gray-100 transition flex items-center gap-2">
                             <Plus className="w-4 h-4" /> Novo Veículo
                         </Link>
-                        <Link to="/dashboard/whatsapp" className="bg-white/10 text-white px-4 py-2 rounded-lg font-bold hover:bg-white/20 transition backdrop-blur-sm">
+                        <Link to="/dashboard/chat" className="bg-white/10 text-white px-4 py-2 rounded-lg font-bold hover:bg-white/20 transition backdrop-blur-sm">
                             Ver Mensagens
                         </Link>
                     </div>

@@ -88,7 +88,7 @@ export function StorePlansPage() {
                     <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
                         <div>
                             <p className="font-bold text-blue-900">
-                                Assinatura: {currentSubscription.status || (currentSubscription.active === false ? 'Inativa' : 'Desconhecida')}
+                                Assinatura: {currentSubscription.planName || (currentSubscription.status === 'ACTIVE' ? 'Ativa' : currentSubscription.status)}
                             </p>
                             <p className="text-sm text-blue-900 font-medium">
                                 Pagamento: {currentSubscription.latestPaymentStatus || (currentSubscription.active === false ? '-' : '...')}
@@ -109,7 +109,7 @@ export function StorePlansPage() {
 
             <div className="flex flex-wrap justify-center gap-8">
                 {plans.map(plan => {
-                    const isCurrent = false;
+                    const isCurrent = currentSubscription?.planId === plan.id;
                     return (
                         <div key={plan.id} className={`w-full max-w-sm bg-white rounded-2xl p-8 border ${isCurrent ? 'border-green-500 ring-2 ring-green-100' : 'border-gray-200'} shadow-sm flex flex-col relative`}>
                             {isCurrent && (
