@@ -113,6 +113,33 @@ export function LiveChatPage() {
     }, [isConnected, socket]);
 
     // Fetch Pause Status
+    // Fetch Contacts
+    const fetchContacts = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        try {
+            const response = await fetch(`${API_URL}/leads`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const leads = await response.json();
+                setContacts(() => {
+                    const newContacts = leads.map((l: any) => ({
+                        id: l.phone,
+                        name: l.name || l.phone,
+                        lastMessage: l.lastMessage,
+                        lastTime: new Date(l.updatedAt).getTime() / 1000,
+                        unread: 0
+                    }));
+                    return newContacts.sort((a: any, b: any) => b.lastTime - a.lastTime);
+                });
+            }
+        } catch (error) {
+            console.error("Failed to load contacts from leads", error);
+        }
+    };
+
+    // Fetch Pause Status and Contacts
     useEffect(() => {
         const fetchPauseStatus = async () => {
             const token = localStorage.getItem('token');
@@ -128,37 +155,8 @@ export function LiveChatPage() {
             } catch (e) { }
         };
 
-        const fetchContactsFromLeads = async () => {
-            const token = localStorage.getItem('token');
-            if (!token) return;
-            try {
-                const response = await fetch(`${API_URL}/leads`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const leads = await response.json();
-                    // Map leads to contacts
-                    setContacts(() => {
-                        const newContacts = leads.map((l: any) => ({
-                            id: l.phone, // Assuming phone is the ID used for chat
-                            name: l.name || l.phone,
-                            lastMessage: l.lastMessage,
-                            lastTime: new Date(l.updatedAt).getTime() / 1000,
-                            unread: 0
-                        }));
-
-                        // Merge with existing real-time contacts if any
-                        // For simplicity just use leads as base since real-time will update them
-                        return newContacts;
-                    });
-                }
-            } catch (error) {
-                console.error("Failed to load contacts from leads", error);
-            }
-        }
-
         fetchPauseStatus();
-        fetchContactsFromLeads();
+        fetchContacts();
     }, []);
 
     const handleSendMessage = async () => {
@@ -367,15 +365,31 @@ export function LiveChatPage() {
 
                     <div className="flex items-center gap-2">
                         <button
-                            onClick={() => {
+                            onClick={async () => {
                                 const simText = prompt("Digite uma mensagem para simular o cliente:");
                                 if (simText) {
                                     const token = localStorage.getItem('token');
-                                    fetch(`${API_URL}/whatsapp/simulate`, {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                                        body: JSON.stringify({ text: simText, from: activeContactId || '5511999999999' })
-                                    });
+                                    // Use a fixed ID for simulation so we can select it easily
+                                    const simId = activeContactId || '5511999999999';
+
+                                    try {
+                                        await fetch(`${API_URL}/whatsapp/simulate`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                                            body: JSON.stringify({ text: simText, from: simId })
+                                        });
+
+                                        // Refresh contacts to show the new simulation
+                                        setTimeout(() => {
+                                            fetchContacts();
+                                            if (!activeContactId) setActiveContactId(simId);
+                                        }, 1000);
+
+                                        alert("Simulação enviada! Aguarde a resposta do Robô.");
+                                    } catch (e) {
+                                        console.error(e);
+                                        alert("Erro ao simular.");
+                                    }
                                 }
                             }}
                             className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
