@@ -145,19 +145,18 @@ export class WhatsappService implements OnModuleInit {
 
     async sendManualMessage(userId: string, to: string, message: string) {
         const client = this.clients.get(userId);
+        if (!client) {
+            throw new Error('WhatsApp client not connected');
+        }
 
+        // Ensure number formatting (remove non-digits, add suffixes if needed)
+        // whatsapp-web.js usually expects '556299999999@c.us'
         let chatId = to;
         if (!chatId.includes('@c.us')) {
             chatId = `${chatId.replace(/\D/g, '')}@c.us`;
         }
 
-        // Check if Simulation or Real
-        if (client) {
-            await client.sendMessage(chatId, message);
-        } else {
-            console.warn(`[WARN] Client not connected for ${userId}. Treating as SIMULATION/OFFLINE message to ${to}`);
-            // We proceed to log and emit, acting as if it was sent successfully for the UI/DB.
-        }
+        await client.sendMessage(chatId, message);
 
         // Log manual message
         this.logMessage(userId, to, 'me', message, 'Atendente', true);
@@ -171,48 +170,6 @@ export class WhatsappService implements OnModuleInit {
             senderName: 'Atendente',
             isBot: true // or create a new flag isAgent? For now re-use isBot or check sender
         });
-    }
-
-    async simulateIncomingMessage(userId: string, body: string, fromNum: string = '5511999999999') {
-        const from = fromNum.includes('@c.us') ? fromNum : `${fromNum}@c.us`;
-
-        // Mock Message Object
-        const mockMessage: any = {
-            id: { id: 'sim-' + Date.now() },
-            from: from,
-            body: body,
-            timestamp: Date.now() / 1000,
-            getContact: async () => ({ name: 'Cliente Simulado', pushname: 'Visitante' }),
-            reply: async (text: string) => {
-                console.log('[SIMULAÇÃO] Bot respondeu:', text);
-                return {} as any; // Mock return
-            }
-        };
-
-        // Inject Mock Client just for this call if real one is missing
-        const originalClient = this.clients.get(userId);
-        if (!originalClient) {
-            const mockClient: any = {
-                sendMessage: async (to: string, content: any) => {
-                    console.log('[SIMULAÇÃO] Enviando mensagem/media para', to, content);
-                }
-            };
-            this.clients.set(userId, mockClient);
-        }
-
-        try {
-            console.log(`[SIMULAÇÃO] Iniciando processamento para ${userId} - Msg: ${body}`);
-            await this.handleMessage(mockMessage, userId);
-            console.log('[SIMULAÇÃO] Processamento concluído com sucesso.');
-        } catch (error) {
-            console.error('[SIMULAÇÃO] Erro critico ao processar mensagem simulada:', error);
-            throw error; // Re-throw to let controller know
-        } finally {
-            // Restore state if we mocked the client
-            if (!originalClient) {
-                this.clients.delete(userId);
-            }
-        }
     }
 
     private async handleMessage(message: Message, userId: string) {
@@ -340,24 +297,25 @@ export class WhatsappService implements OnModuleInit {
                 ** Regras de Resposta **
                 1. Mantenha um tom profissional, amigável e direto. Use emojis moderadamente.
                 2. LEITURA DE INTENÇÃO:
-                   - SAUDAÇÃO (Oi, Olá, Tudo bem?): Responda cordialmente e pergunte como pode ajudar.
-                   - BUSCA ESPECÍFICA: Se o cliente pediu um carro (ex: "tem hilux?", "busco civic"), procure na lista acima.
-                     - DEU MATCH: Responda "Tenho sim! Tenho estas opções de [Nome do Carro]:".
-                     - NÃO DEU MATCH: Responda "Poxa, esse modelo exato eu não tenho agora. 😕 Mas tenho outras opções incríveis! Que tal dar uma olhada no nosso estoque?".
-                   - DÚVIDA GERAL (Endereço, Financiamento): Responda sucintamente.
-                   - ESTOQUE GERAL ("quero ver carros", "catalogo"): Diga que vai mostrar os destaques.
+                   ** REGRAS DE COMPORTAMENTO **
+                   - SAUDAÇÃO (Oi, Olá, Tudo bem?): Responda apenas com cordialidade e pergunte qual modelo a pessoa procura. JAMAIS mostre lista de carros na saudação. Use a flag [NO_CARS].
+                   - BUSCA ESPECÍFICA: Se o cliente pediu explicitamente um carro (ex: "tem hilux?", "busco civic"), procure na lista acima.
+                     - DEU MATCH: Responda "Tenho sim! Aqui estão os detalhes:" e use a flag [SHOW_CARS].
+                     - NÃO DEU MATCH: Responda "Poxa, esse modelo exato eu não tenho agora. 😕 Mas tenho outras opções incríveis! Quer dar uma olhada no estoque?" e use a flag [NO_CARS] (só mostre se ele disser sim depois).
+                   - CURIOSIDADE ("Quero ver o estoque", "O que você tem?"): Responda "Claro! Separei uns destaques:" e use a flag [SHOW_CARS].
+                   
+                ** CONTROLE DE FLUXO (CRÍTICO) **
+                - Se for só "Oi" ou "Olá": Use [NO_CARS]
+                - Se perguntou preço de um carro da lista: Use [SHOW_CARS]
+                - Se o cliente não pediu carro nenhum: Use [NO_CARS]
 
-                ** FLAGS DE CONTROLE (Obrigatório no final da mensagem) **
-                - Adicione [SHOW_CARS] se encontrou o carro pedido OU se o cliente pediu para ver o estoque/catálogo.
-                - Adicione [NO_CARS] caso contrário.
-                
-                ** IMPORTANTE **
-                Não invente carros. Só ofereça o que está na lista acima.
+                ** Retorne apenas a resposta do bot seguida da flag. **
                 `;
 
                 const result = await this.model.generateContent(prompt);
                 const aiResponse = result.response.text();
 
+                // Explicitly check for SHOW_CARS, default to false logic essentially
                 if (aiResponse.includes('[SHOW_CARS]')) {
                     shouldShowCars = true;
                 } else {

@@ -26,12 +26,7 @@ export class WhatsappController {
         return this.whatsappService.getChatHistory(req.user.userId, contactId);
     }
 
-    @UseGuards(JwtAuthGuard)
-    @Post('simulate')
-    async simulateMessage(@Request() req, @Body() body: { text: string; from?: string }) {
-        await this.whatsappService.simulateIncomingMessage(req.user.userId, body.text, body.from);
-        return { status: 'Simulated' };
-    }
+
 
     @UseGuards(JwtAuthGuard)
     @Post('send')
