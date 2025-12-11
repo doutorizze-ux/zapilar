@@ -72,6 +72,21 @@ export class WhatsappService implements OnModuleInit {
         });
     }
 
+    async getRecentChats(storeId: string) {
+        // Fetch distinct contacts from message history
+        // Since we can't easily do DISTINCT ON in generic SQL via TypeORM simple find, we use query builder
+        return this.chatRepository
+            .createQueryBuilder("msg")
+            .select("msg.contactId", "id")
+            .addSelect("MAX(msg.senderName)", "name") // basic guess for name
+            .addSelect("MAX(msg.createdAt)", "lastTime") // most recent time
+            .addSelect("SUBSTRING(MAX(CONCAT(msg.createdAt, '|||', msg.body)), 25)", "lastMessage") // trick to get last message content
+            .where("msg.storeId = :storeId", { storeId })
+            .groupBy("msg.contactId")
+            .orderBy("lastTime", "DESC") // Cannot use alias in older SQL sometimes, but usually fine
+            .getRawMany();
+    }
+
     onModuleInit() {
         this.initializeAI();
         this.cleanSimulationData();

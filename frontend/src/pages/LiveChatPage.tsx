@@ -138,24 +138,48 @@ export function LiveChatPage() {
         const token = localStorage.getItem('token');
         if (!token) return;
         try {
-            const response = await fetch(`${API_URL}/leads`, {
+            // First try to fetch from actual chat history (more reliable)
+            const response = await fetch(`${API_URL}/whatsapp/chats`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+
             if (response.ok) {
-                const leads = await response.json();
-                setContacts(() => {
-                    const newContacts = leads.map((l: any) => ({
-                        id: l.phone,
-                        name: l.name || l.phone,
-                        lastMessage: l.lastMessage,
-                        lastTime: new Date(l.updatedAt).getTime() / 1000,
+                const chats = await response.json();
+
+                // If we have chats, use them
+                if (Array.isArray(chats) && chats.length > 0) {
+                    const formattedContacts = chats.map((c: any) => ({
+                        id: c.id,
+                        name: c.name || c.id,
+                        lastMessage: c.lastMessage || 'Nova mensagem',
+                        lastTime: new Date(c.lastTime).getTime() / 1000,
                         unread: 0
                     }));
-                    return newContacts.sort((a: any, b: any) => b.lastTime - a.lastTime);
-                });
+
+                    setContacts(formattedContacts);
+                    return; // Done
+                }
+            }
+
+            // Fallback to leads if chat history is empty or failed
+            console.log("No history found, trying leads...");
+            const leadsResponse = await fetch(`${API_URL}/leads`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (leadsResponse.ok) {
+                const leads = await leadsResponse.json();
+                const newContacts = leads.map((l: any) => ({
+                    id: l.phone,
+                    name: l.name || l.phone,
+                    lastMessage: l.lastMessage,
+                    lastTime: new Date(l.updatedAt).getTime() / 1000,
+                    unread: 0
+                }));
+                setContacts(newContacts.sort((a: any, b: any) => b.lastTime - a.lastTime));
             }
         } catch (error) {
-            console.error("Failed to load contacts from leads", error);
+            console.error("Failed to load contacts", error);
         }
     };
 

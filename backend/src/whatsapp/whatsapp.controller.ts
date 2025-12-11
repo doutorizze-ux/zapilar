@@ -26,6 +26,12 @@ export class WhatsappController {
         return this.whatsappService.getChatHistory(req.user.userId, contactId);
     }
 
+    @UseGuards(JwtAuthGuard)
+    @Get('chats')
+    async getChats(@Request() req) {
+        return this.whatsappService.getRecentChats(req.user.userId);
+    }
+
 
 
     @UseGuards(JwtAuthGuard)
