@@ -20,6 +20,13 @@ export class WhatsappController {
     }
 
     @UseGuards(JwtAuthGuard)
+    @Get('history')
+    async getHistory(@Request() req, @Query('contactId') contactId: string) {
+        if (!contactId) return [];
+        return this.whatsappService.getChatHistory(req.user.userId, contactId);
+    }
+
+    @UseGuards(JwtAuthGuard)
     @Post('send')
     async sendMessage(@Request() req, @Body() body: { to: string; message: string }) {
         await this.whatsappService.sendManualMessage(req.user.userId, body.to, body.message);

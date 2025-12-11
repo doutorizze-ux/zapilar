@@ -9,8 +9,14 @@ import { LeadsModule } from '../leads/leads.module';
 
 import { ChatGateway } from './chat.gateway';
 
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ChatMessage } from './entities/chat-message.entity';
+
 @Module({
-    imports: [VehiclesModule, UsersModule, FaqModule, LeadsModule],
+    imports: [
+        TypeOrmModule.forFeature([ChatMessage]),
+        VehiclesModule, UsersModule, FaqModule, LeadsModule
+    ],
     providers: [WhatsappService, ChatGateway],
     exports: [WhatsappService, ChatGateway],
     controllers: [WhatsappController],
