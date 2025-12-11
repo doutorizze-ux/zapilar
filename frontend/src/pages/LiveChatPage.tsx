@@ -293,8 +293,8 @@ export function LiveChatPage() {
             return m.from === activeContactId ||
                 (m.from === 'me' /* && how to check to? */) ||
                 (m.isBot /* && how to check to? */);
-        });
-
+        })
+        : [];
     // Better Deduplication View
     const uniqueActiveMessages = activeMessages.filter((msg, index, self) =>
         index === self.findIndex((t) => (
@@ -395,7 +395,7 @@ export function LiveChatPage() {
                             <p>Selecione um contato para monitorar ou intervir.</p>
                         </div>
                     ) : (
-                        activeMessages.map((msg, index) => (
+                        uniqueActiveMessages.map((msg, index) => (
                             <div key={index} className={`flex ${msg.isBot ? 'justify-end' : 'justify-start'} relative z-10`}>
                                 <div className={`max-w-[70%] rounded-lg p-3 shadow-sm text-sm ${msg.isBot
                                     ? 'bg-[#d9fdd3] text-gray-800 rounded-tr-none'
