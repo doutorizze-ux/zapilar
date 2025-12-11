@@ -28,6 +28,12 @@ export function LiveChatPage() {
     const [isConnected, setIsConnected] = useState(false);
     const [botPaused, setBotPaused] = useState(false);
     const [inputText, setInputText] = useState('');
+
+    // Ref for socket to access current state
+    const activeContactIdRef = useRef(activeContactId);
+    useEffect(() => {
+        activeContactIdRef.current = activeContactId;
+    }, [activeContactId]);
     const [sending, setSending] = useState(false);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -42,11 +48,6 @@ export function LiveChatPage() {
         newSocket.on('connect', () => {
             console.log('Socket connected');
             setIsConnected(true);
-            const token = localStorage.getItem('token');
-            if (token) {
-                // Re-fetch profile to join room logic if needed, 
-                // but assuming socket join logic is handled or we rely on events
-            }
         });
 
         newSocket.on('disconnect', () => {
@@ -54,30 +55,31 @@ export function LiveChatPage() {
             setIsConnected(false);
         });
 
-        newSocket.on('new_message', (msg: ChatMessage) => {
-            console.log('Msg:', msg);
+        newSocket.on('new_message', (rawMsg: ChatMessage) => {
+
+            // Normalize ID: Remove WhatsApp suffixes for consistent matching
+            const cleanFrom = rawMsg.from.replace(/@c\.us|@g\.us/g, '');
+            const msg = { ...rawMsg, from: cleanFrom };
+            console.log('Msg Received (Normalized):', msg);
+
             setMessages(prev => [...prev, msg]);
 
             // Update Contact List
             setContacts(prev => {
-                // Actually, for outbound (me), msg.from is 'me' or 'bot'. For inbound, it's the user phone.
-
-                // Identify conversation partner
-                let partnerId = msg.from;
                 if (msg.isBot || msg.from === 'me') {
-                    // This is tricky without knowing "to" in the event. 
-                    // For now, if we are active on a chat, assume it's for that chat?
-                    // Or backend needs to send 'to'.
-                    // Simplification: We only support organizing INBOUND messages correctly for now.
-                    // Outbound will just appear in the log.
-                    // Ideally, backend event should have { conversationId: '...' }
                     return prev;
                 }
 
+                const partnerId = cleanFrom;
                 const existing = prev.find(c => c.id === partnerId);
+
                 if (existing) {
-                    return prev.map(c => c.id === partnerId ? { ...c, lastMessage: msg.body, lastTime: msg.timestamp, unread: (activeContactId === partnerId ? 0 : (c.unread || 0) + 1) } : c)
-                        .sort((a, b) => (b.lastTime || 0) - (a.lastTime || 0));
+                    return prev.map(c => c.id === partnerId ? {
+                        ...c,
+                        lastMessage: msg.body,
+                        lastTime: msg.timestamp,
+                        unread: (activeContactIdRef.current === partnerId ? 0 : (c.unread || 0) + 1)
+                    } : c).sort((a, b) => (b.lastTime || 0) - (a.lastTime || 0));
                 } else {
                     return [{
                         id: partnerId,
@@ -92,7 +94,7 @@ export function LiveChatPage() {
 
         setSocket(newSocket);
         return () => { newSocket.disconnect(); };
-    }, [activeContactId]);
+    }, []);
 
     // Room Join Logic separate
     useEffect(() => {
