@@ -138,16 +138,16 @@ export class WhatsappService implements OnModuleInit {
             const files = fs.readdirSync(authPath);
             for (const file of files) {
                 if (file.startsWith('session-store-')) {
-                    // Folder name: session-store-{clientId}
-                    // clientId: store-{userId}
-                    // So Folder: session-store-store-{userId}
-                    const userId = file.replace('session-store-store-', '');
+                    // Folder name: session-store-{userId} (because clientId is store-{userId})
+                    // But we used clientId: store-{userId} which wwebjs turns into session-store-{userId}
+                    const userId = file.replace('session-store-', '');
 
-                    if (userId && !this.clients.has(userId)) {
-                        console.log(`Found session for ${userId}, restoring...`);
+                    // Validation: Ensure we stripped it correctly and didn't match something weird
+                    if (userId && !userId.startsWith('session-') && !this.clients.has(userId)) {
+                        console.log(`[Restore] Found session for user ${userId}, restoring...`);
                         this.initializeClient(userId);
                         // Add a small delay to prevent CPU spike if many sessions
-                        await new Promise(r => setTimeout(r, 2000));
+                        await new Promise(r => setTimeout(r, 1000));
                     }
                 }
             }
