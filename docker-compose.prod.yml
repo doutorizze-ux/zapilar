@@ -24,7 +24,7 @@ services:
       - zapcar_network
 
   evolution:
-    image: attrium/evolution-api:v2.1.1
+    image: attri/evolution-api:v2.1.1
     restart: always
     ports:
       - "8081:8080"
