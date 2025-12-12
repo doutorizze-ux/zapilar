@@ -1,3 +1,4 @@
+
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Client, LocalAuth, Message, MessageMedia } from 'whatsapp-web.js';
@@ -72,11 +73,15 @@ export class WhatsappService implements OnModuleInit {
     }
 
     async getRecentChats(storeId: string) {
+        // Fetch distinct contacts from message history
         const rawChats = await this.chatRepository
             .createQueryBuilder("msg")
             .select("msg.contactId", "id")
+            // Logic to find the Customer's Name (ignore 'me' or 'bot' senderNames)
             .addSelect("MAX(CASE WHEN msg.isBot = 0 AND msg.from != 'me' THEN msg.senderName ELSE NULL END)", "customerName")
             .addSelect("MAX(msg.createdAt)", "lastTime")
+            // Get last message content via concatenation trick (Lexicographical MAX of ISO Date + Body works for "Last Message")
+            // We retrieve the full string and parse in JS to avoid SQL substing index guessing
             .addSelect("MAX(CONCAT(msg.createdAt, '|||', msg.body))", "rawLastMessage")
             .where("msg.storeId = :storeId", { storeId })
             .groupBy("msg.contactId")
@@ -84,10 +89,12 @@ export class WhatsappService implements OnModuleInit {
             .getRawMany();
 
         return rawChats.map(chat => {
+            // Split "2025-12-11T...|||Hello World"
             let body = '';
             if (chat.rawLastMessage) {
                 const parts = chat.rawLastMessage.split('|||');
                 if (parts.length >= 2) {
+                    // Re-join just in case body contained '|||'
                     body = parts.slice(1).join('|||');
                 } else {
                     body = chat.rawLastMessage;
@@ -96,7 +103,7 @@ export class WhatsappService implements OnModuleInit {
 
             return {
                 id: chat.id,
-                name: chat.customerName || chat.id,
+                name: chat.customerName || chat.id, // Fallback to number if no customer name found
                 lastTime: chat.lastTime,
                 lastMessage: body
             };
@@ -131,10 +138,15 @@ export class WhatsappService implements OnModuleInit {
             const files = fs.readdirSync(authPath);
             for (const file of files) {
                 if (file.startsWith('session-store-')) {
+                    // Folder name: session-store-{userId} (because clientId is store-{userId})
+                    // But we used clientId: store-{userId} which wwebjs turns into session-store-{userId}
                     const userId = file.replace('session-store-', '');
+
+                    // Validation: Ensure we stripped it correctly and didn't match something weird
                     if (userId && !userId.startsWith('session-') && !this.clients.has(userId)) {
                         console.log(`[Restore] Found session for user ${userId}, restoring...`);
                         this.initializeClient(userId);
+                        // Add a small delay to prevent CPU spike if many sessions
                         await new Promise(r => setTimeout(r, 1000));
                     }
                 }
@@ -197,7 +209,7 @@ export class WhatsappService implements OnModuleInit {
             console.log(`Client ${userId} disconnected`);
             this.statuses.set(userId, 'DISCONNECTED');
             this.qrCodes.delete(userId);
-            this.clients.delete(userId);
+            this.clients.delete(userId); // Cleanup
         });
 
         client.on('message', async (message: Message) => {
@@ -220,8 +232,15 @@ export class WhatsappService implements OnModuleInit {
             if (!client) {
                 throw new Error('WhatsApp client could not be initialized');
             }
+            // Wait a bit for it to be ready? 
+            // Truly, we should wait for 'ready' event, but that's complex here. 
+            // For now, assuming if it initializes it might be usable or queueing.
+            // Actually, whatsapp-web.js throws if not ready.
+            // Let's just try-catch the send or hope it connects fast if session exists.
         }
 
+        // Ensure number formatting (remove non-digits, add suffixes if needed)
+        // whatsapp-web.js usually expects '556299999999@c.us'
         let chatId = to;
         if (!chatId.includes('@c.us')) {
             chatId = `${chatId.replace(/\D/g, '')}@c.us`;
@@ -234,25 +253,22 @@ export class WhatsappService implements OnModuleInit {
             throw new Error('Client not ready. Please wait a moment and try again.');
         }
 
+        // Log manual message
         this.logMessage(userId, to, 'me', message, 'Atendente', true);
 
+        // Emit to frontend so it appears in the chat UI immediately as 'me'
         this.chatGateway.emitMessageToRoom(userId, {
             id: 'manual-' + Date.now(),
             from: 'me',
             body: message,
             timestamp: Date.now() / 1000,
             senderName: 'Atendente',
-            isBot: true
+            isBot: true // or create a new flag isAgent? For now re-use isBot or check sender
         });
     }
 
-    // Normalize helper - removes accents and lowercases
-    private normalize = (str: string) => {
-        if (!str) return '';
-        return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    }
-
     private async handleMessage(message: Message, userId: string) {
+        // Clean ID (remove suffix) for consistency with Manual Messages
         const cleanFrom = message.from.replace(/@c\.us|@g\.us/g, '');
 
         // 0. Emit Incoming Message to Live Chat
@@ -260,141 +276,158 @@ export class WhatsappService implements OnModuleInit {
             const contact = await message.getContact();
             const contactName = contact.pushname || contact.name || cleanFrom;
 
+            // Log incoming
+            // Use cleanFrom so DB matches the 'to' format of manual messages
             this.logMessage(userId, cleanFrom, cleanFrom, message.body, contactName, false);
 
             this.chatGateway.emitMessageToRoom(userId, {
                 id: message.id.id,
-                from: cleanFrom,
+                from: cleanFrom, // Send clean ID found in DB
                 body: message.body,
                 timestamp: message.timestamp,
                 senderName: contactName,
-                isBot: false
+                isBot: false // Sent by customer
             });
         } catch (e) { console.error('Error emitting socket msg', e); }
 
-        const rawMsg = (message.body || '').toString();
-        const msg = this.normalize(rawMsg);
+        const msg = message.body.toLowerCase();
 
         try {
             const contact = await message.getContact();
+            // Use cleanFrom for leads too
             await this.leadsService.upsert(userId, cleanFrom, message.body, contact.pushname || contact.name);
         } catch (e) {
             console.error('Error tracking lead', e);
         }
 
+        // Check if Bot is Paused for this user
         if (this.isBotPaused(userId)) {
             console.log(`Bot paused for ${userId}, skipping auto-reply.`);
             return;
         }
 
+        // 1. Get User Context
         const user = await this.usersService.findById(userId);
-        const storeName = user?.storeName || 'ZapCar';
+        const storeName = user?.storeName || "ZapCar";
 
-        // Fetch vehicles once and normalize their searchable fields
-        const allVehiclesRaw = await this.vehiclesService.findAll(userId) || [];
-        const allVehicles = allVehiclesRaw.map(v => ({ ...v,
-            _search: [v.name, v.brand, v.model, v.year?.toString()].map(s => this.normalize(s || ''))
-        }));
+        // 2. Prepare Context
+        const allVehicles = await this.vehiclesService.findAll(userId);
 
-        // Pre-check for fixed responses (fast path) - local cache of common intents
-        const fixedResponses: Record<string, string> = {
-            'oi': `Olá! 👋 Bem-vindo à *${storeName}*.
-
-Sou seu assistente virtual. Digite o nome do carro que procura (ex: *Hilux*, *Civic*) ou digite *estoque* para ver tudo.`,
-            'ola': `Olá! 👋 Bem-vindo à *${storeName}*.
-
-Sou seu assistente virtual. Digite o nome do carro que procura (ex: *Hilux*, *Civic*) ou digite *estoque* para ver tudo.`,
-            'tudo bem': `Tudo bem por aqui! Como posso ajudar você hoje?`,
-            'estoque': `Claro! Aqui estão alguns destaques do nosso estoque atual:`
-        };
-
-        if (fixedResponses[msg]) {
-            await message.reply(fixedResponses[msg]);
-            this.logMessage(userId, message.from, 'bot', fixedResponses[msg], storeName + ' (Bot)', true);
-            this.chatGateway.emitMessageToRoom(userId, {
-                id: 'bot-' + Date.now(),
-                from: 'bot',
-                body: fixedResponses[msg],
-                timestamp: Date.now() / 1000,
-                senderName: storeName + ' (Bot)',
-                isBot: true
-            });
-            return;
-        }
-
-        // 1. Try FAQ Match (existing behavior)
-        const faqMatch = await this.faqService.findMatch(userId, msg);
-        if (faqMatch) {
-            await message.reply(faqMatch);
-            this.logMessage(userId, message.from, 'bot', faqMatch, storeName + ' (Bot)', true);
-            this.chatGateway.emitMessageToRoom(userId, {
-                id: 'bot-' + Date.now(),
-                from: 'bot',
-                body: faqMatch,
-                timestamp: Date.now() / 1000,
-                senderName: storeName + ' (Bot)',
-                isBot: true
-            });
-            return;
-        }
-
-        // 2. Strict local search before calling AI - more deterministic
+        // Strict Search for Fallback (classic logic)
         const strictMatchVehicles = allVehicles.filter(v => {
-            return v._search.some(term => term && term.length > 2 && msg.includes(term));
-        }).map(v => ({ ...v }));
+            const searchTerms = [v.name, v.brand, v.model, v.year?.toString()].map(t => t?.toLowerCase() || '');
+            return searchTerms.some(term => term && term.length > 2 && msg.includes(term));
+        });
 
+        // This variable is used by Fallback and Display logic
         let contextVehicles = strictMatchVehicles;
-        let shouldShowCars = false;
-        let responseText = '';
+
+        // Context for AI (Broad - up to 50 items to allow fuzzy matching)
+        let aiContextVehicles = allVehicles;
+        if (aiContextVehicles.length > 50) {
+            aiContextVehicles = aiContextVehicles.slice(0, 50);
+        }
+
+        const ignoreTerms = ['bom', 'boa', 'tarde', 'noite', 'dia', 'ola', 'olá', 'tudo', 'bem', 'sim', 'não', 'quero'];
+        const isGeneric = ignoreTerms.includes(msg) || msg.length <= 3;
 
         const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-        const fallbackResponse = async () => {
+        let shouldShowCars = false;
+        let responseText = '';
+
+        // 3. Fallback Logic Helper
+        const fallbackResponse = async (): Promise<string> => {
+            const greetings = ['oi', 'ola', 'olá', 'bom dia', 'boa tarde', 'boa noite', 'tudo bem', 'epa', 'opa'];
+
+            // Greeting handling
+            if (greetings.some(g => msg === g || (msg.includes(g) && msg.length < 10))) {
+                shouldShowCars = false;
+                return `Olá! 👋 Bem-vindo à *${storeName}*.\n\nSou seu assistente virtual. Digite o nome do carro que procura (ex: *Hilux*, *Civic*) ou digite *Estoque* para ver tudo.`;
+            }
+
+            if (msg.includes('endereço') || msg.includes('local') || msg.includes('onde fica')) {
+                shouldShowCars = false;
+                return `📍 Estamos localizados em: [Endereço da Loja].\nVenha nos visitar!`;
+            }
+
+            // Use Strict Matches (so we don't spam random cars if simple keyword match fails)
             if (strictMatchVehicles.length > 0) {
+                // If we have strict matches, use them
                 contextVehicles = strictMatchVehicles;
                 shouldShowCars = true;
                 return `Encontrei ${strictMatchVehicles.length} opção(ões) que podem te interessar! 🚘\n\nVou te mandar as fotos e detalhes agora:`;
             }
 
-            if (msg.includes('estoque') || msg.includes('catalogo') || msg.includes('catalogo')) {
+            if (msg.includes('estoque') || msg.includes('catalogo') || msg.includes('catálogo')) {
+                // Show top 5 recent
                 contextVehicles = allVehicles.slice(0, 5);
                 shouldShowCars = true;
                 return `Claro! Aqui estão alguns destaques do nosso estoque atual:`;
             }
 
             shouldShowCars = false;
-            return `Poxa, procurei aqui e não encontrei nenhum carro com nome "${rawMsg}" no momento. 😕\n\nMas temos muitas outras opções! Digite *Estoque* para ver o que chegou.`;
+            // Improved "Not Found" message
+            return `Poxa, procurei aqui e não encontrei nenhum carro com nome *"${message.body}"* no momento. 😕\n\nMas temos muitas outras opções! Digite *Estoque* para ver o que chegou.`;
         };
 
-        // 3. AI path (only if we didn't already find strict match) - make AI deterministic and constrained
-        if (this.model) {
+        // 4. Try FAQ Match First
+        const faqMatch = await this.faqService.findMatch(userId, msg);
+
+
+
+        if (faqMatch) {
+            responseText = faqMatch;
+            shouldShowCars = false;
+        } else if (this.model) {
             try {
-                const aiContextVehicles = allVehicles.slice(0, 50);
-                const params = aiContextVehicles.map(v => `- ${v.brand || ''} ${v.name || ''} ${v.model || ''} (${v.year || ''})`).join('\n');
+                // AI uses the BROAD list
+                const params = aiContextVehicles.map(v =>
+                    `- ${v.brand} ${v.name} ${v.model} (${v.year})`
+                ).join('\n');
 
-                const systemPrompt = `Você é um assistente de vendas chamado ZappyBot para a loja ${storeName}.\nResponda APENAS com base no estoque fornecido abaixo.\nNão invente carros, preços ou imagens.\nResponda de forma concisa e objetiva.\nUse as flags [SHOW_CARS] ou [NO_CARS] ao final da mensagem para controlar exibição de veículos.`;
+                const prompt = `
+                Você é um consultor de vendas especialista da loja "${storeName}".
+                
+                ** Contexto **
+                Mensagem do Cliente: "${message.body}"
+                
+                ** Estoque Atual (Lista Completa) **
+                ${params}
+                (Se a lista estiver vazia, não temos carros no momento).
 
-                const userPrompt = `Mensagem do cliente: "${rawMsg}"\n\nEstoque:\n${params || 'Nenhum carro no estoque.'}\n\nRegras:\n1) Se for saudação -> responda saudação e termine com [NO_CARS].\n2) Se pedir modelo existente -> responda "Tenho sim! ..." e termine com [SHOW_CARS].\n3) Se pedir catálogo/estoque -> responda com resumo e termine com [SHOW_CARS].\n4) Se não houver correspondência -> responda que não encontrou e termine com [NO_CARS].\nRetorne apenas a resposta seguida da flag.`;
+                ** Missão **
+                Identificar se o cliente está buscando um carro específico que temos no estoque, mesmo que ele tenha digitado errado (ex: "corola" -> Corolla, "hylux" -> Hilux).
+                
+                ** Regras de Resposta **
+                1. Mantenha um tom profissional, amigável e direto. Use emojis moderadamente.
+                2. LEITURA DE INTENÇÃO:
+                   ** REGRAS DE COMPORTAMENTO **
+                   - SAUDAÇÃO (Oi, Olá, Tudo bem?): Responda apenas com cordialidade e pergunte qual modelo a pessoa procura. JAMAIS mostre lista de carros na saudação. Use a flag [NO_CARS].
+                   - BUSCA ESPECÍFICA: Se o cliente pediu explicitamente um carro (ex: "tem hilux?", "busco civic"), procure na lista acima.
+                     - DEU MATCH: Responda "Tenho sim! Aqui estão os detalhes:" e use a flag [SHOW_CARS].
+                     - NÃO DEU MATCH: Responda "Poxa, esse modelo exato eu não tenho agora. 😕 Mas tenho outras opções incríveis! Quer dar uma olhada no estoque?" e use a flag [NO_CARS] (só mostre se ele disser sim depois).
+                   - CURIOSIDADE ("Quero ver o estoque", "O que você tem?"): Responda "Claro! Separei uns destaques:" e use a flag [SHOW_CARS].
+                   
+                ** CONTROLE DE FLUXO (CRÍTICO) **
+                - Se for só "Oi" ou "Olá": Use [NO_CARS]
+                - Se perguntou preço de um carro da lista: Use [SHOW_CARS]
+                - Se o cliente não pediu carro nenhum: Use [NO_CARS]
 
-                const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
+                ** Retorne apenas a resposta do bot seguida da flag. **
+                `;
 
-                // generateContent options: pass low temperature for determinism if supported
-                const result = await this.model.generateContent(fullPrompt, { temperature: 0.2, maxOutputTokens: 512 }).catch(e => { throw e; });
+                const result = await this.model.generateContent(prompt);
+                const aiResponse = result.response.text();
 
-                const aiResponse = (result?.response?.text && typeof result.response.text === 'function') ? result.response.text() : (result?.response || '').toString();
-
-                // Robust flag detection (remove whitespace, uppercase)
-                const normalizedAI = aiResponse.replace(/\s/g, '').toUpperCase();
-                shouldShowCars = normalizedAI.includes('[SHOW_CARS]');
-                responseText = aiResponse.replace(/\[SHOW_CARS\]|\[NO_CARS\]/gi, '').trim();
-
-                // If AI says SHOW_CARS but we have no strict context, attempt fuzzy local filter
-                if (shouldShowCars && contextVehicles.length === 0) {
-                    // try to find approximate matches by token
-                    const tokens = msg.split(/\s+/).filter(t => t.length > 2);
-                    const fuzzy = allVehicles.filter(v => v._search.some(term => tokens.some(tok => term.includes(tok))));
-                    if (fuzzy.length > 0) contextVehicles = fuzzy.slice(0, 5);
+                // Explicitly check for SHOW_CARS, default to false logic essentially
+                if (aiResponse.includes('[SHOW_CARS]')) {
+                    shouldShowCars = true;
+                } else {
+                    shouldShowCars = false;
                 }
+
+                responseText = aiResponse.replace(/\[SHOW_CARS\]|\[NO_CARS\]/g, '').trim();
 
             } catch (error) {
                 console.error('AI Failed, using fallback strategy', error);
@@ -404,14 +437,13 @@ Sou seu assistente virtual. Digite o nome do carro que procura (ex: *Hilux*, *Ci
             responseText = await fallbackResponse();
         }
 
-        // 4. Reply with Text
-        try {
-            await message.reply(responseText);
-        } catch (e) {
-            console.error('Failed to send reply text', e);
-        }
+        // 5. Reply with Text
+        await message.reply(responseText);
 
+        // Log Bot Reply
         this.logMessage(userId, message.from, 'bot', responseText, storeName + ' (Bot)', true);
+
+        // 5.5 Emit Bot Response to Live Chat
         this.chatGateway.emitMessageToRoom(userId, {
             id: 'bot-' + Date.now(),
             from: 'bot',
@@ -421,12 +453,12 @@ Sou seu assistente virtual. Digite o nome do carro que procura (ex: *Hilux*, *Ci
             isBot: true
         });
 
-        // 5. Send Cars (Card + Images) Only if decided
+        // 6. Send Cars (Card + Images) Only if decided
         const client = this.clients.get(userId);
-        if (!client || !shouldShowCars) return; // IMPORTANT: Only send images if AI explicitly requested
+        if (!client || !shouldShowCars) return;
 
         let vehiclesToShow = contextVehicles;
-        if (vehiclesToShow.length === 0 && shouldShowCars) {
+        if (vehiclesToShow.length === 0) {
             vehiclesToShow = allVehicles.slice(0, 3);
         }
 
@@ -441,52 +473,56 @@ Sou seu assistente virtual. Digite o nome do carro que procura (ex: *Hilux*, *Ci
 
                 const featuresText = features.length > 0 ? `✨ Opcionais: ${features.join(', ')}\n` : '';
 
-                const specs = `🔹 *${car.brand || ''} ${car.name || ''}* ${car.model || ''}\n📅 Ano: ${car.year || 'N/A'} | 🚦 Km: ${car.km || 'N/A'}\n⛽ Combustível: ${car.fuel || 'N/A'} | ⚙️ Câmbio: ${car.transmission || 'N/A'}\n🎨 Cor: ${car.color || 'N/A'}\n${featuresText}💰 *R$ ${Number(car.price || 0).toLocaleString('pt-BR')}*\n\n_Gostou deste? Digite_ *"Quero o ${car.name} ${car.year}"*`;
+                const specs = `🔹 *${car.brand} ${car.name}* ${car.model || ''}
+📅 Ano: ${car.year} | 🚦 Km: ${car.km || 'N/A'}
+⛽ Combustível: ${car.fuel} | ⚙️ Câmbio: ${car.transmission}
+🎨 Cor: ${car.color}
+${featuresText}💰 *R$ ${Number(car.price).toLocaleString('pt-BR')}*
 
-                try {
-                    await client.sendMessage(message.from, specs);
+_Gostou deste? Digite_ *"Quero o ${car.name} ${car.year}"*`;
 
-                    this.chatGateway.emitMessageToRoom(userId, {
-                        id: 'bot-car-' + car.id,
-                        from: 'bot',
-                        body: specs,
-                        timestamp: Date.now() / 1000,
-                        senderName: storeName + ' (Bot)',
-                        isBot: true
-                    });
+                await client.sendMessage(message.from, specs);
 
-                    this.logMessage(userId, message.from, 'bot', specs, storeName + ' (Bot)', true);
+                // Emit Car Specs to Chat
+                // Emit Car Specs to Chat
+                this.chatGateway.emitMessageToRoom(userId, {
+                    id: 'bot-car-' + car.id,
+                    from: 'bot',
+                    body: specs,
+                    timestamp: Date.now() / 1000,
+                    senderName: storeName + ' (Bot)',
+                    isBot: true
+                });
 
-                    await delay(800);
+                // Log Car Specs Sent
+                this.logMessage(userId, message.from, 'bot', specs, storeName + ' (Bot)', true);
 
-                    if (car.images && car.images.length > 0) {
-                        const imagesToSend = car.images.slice(0, 4);
-                        for (const imageUrl of imagesToSend) {
-                            try {
-                                if (!imageUrl) continue;
-                                let finalUrl = imageUrl;
-                                if (imageUrl.startsWith('/')) {
-                                    const base = this.configService.get('APP_URL') || `http://localhost:${process.env.PORT || 3000}`;
-                                    finalUrl = `${base.replace(/\/$/, '')}${imageUrl}`;
-                                }
-                                if (finalUrl.startsWith('http')) {
-                                    const media = await MessageMedia.fromUrl(finalUrl);
-                                    await client.sendMessage(message.from, media);
-                                    await delay(1000);
-                                }
-                            } catch (e) {
-                                console.error(`Failed to send image for ${car.name}:`, e);
+                await delay(800);
+
+                if (car.images && car.images.length > 0) {
+                    const imagesToSend = car.images.slice(0, 4);
+                    for (const imageUrl of imagesToSend) {
+                        try {
+                            if (!imageUrl) continue;
+                            let finalUrl = imageUrl;
+                            if (imageUrl.startsWith('/')) {
+                                const port = process.env.PORT || 3000;
+                                finalUrl = `http://localhost:${port}${imageUrl}`;
                             }
+                            if (finalUrl.startsWith('http')) {
+                                const media = await MessageMedia.fromUrl(finalUrl);
+                                await client.sendMessage(message.from, media);
+                                await delay(1000);
+                            }
+                        } catch (e) {
+                            console.error(`Failed to send image for ${car.name}:`, e);
                         }
                     }
-
-                    await delay(1500);
-                    await client.sendMessage(message.from, '--------------------------------');
-                    await delay(500);
-
-                } catch (e) {
-                    console.error('Failed to send car spec or images', e);
                 }
+
+                await delay(1500);
+                await client.sendMessage(message.from, '--------------------------------');
+                await delay(500);
             }
         }
     }
