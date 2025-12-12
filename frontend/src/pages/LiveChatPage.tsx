@@ -149,15 +149,17 @@ export function LiveChatPage() {
             });
 
             // 3.2. If this message belongs to the OPEN chat, append it
-            // Logic: If I am receiving a msg FROM current contact, OR I sent a msg (me/bot) while looking at current contact
             if (activeContactIdRef.current) {
-                const isRelevant =
-                    (msg.from === activeContactIdRef.current) ||
-                    ((msg.from === 'me' || msg.isBot) && true /* Assume it matches if we are here, strict check hard */);
+                // Customer message: from matches the open contact
+                const isCustomerMessage = msg.from === activeContactIdRef.current && !msg.isBot;
 
-                if (isRelevant) {
+                // Bot/Agent message: it's a bot message and we have a chat open
+                // (we assume bot messages in real-time are for the active conversation)
+                const isBotMessage = (msg.from === 'me' || msg.from === 'bot' || msg.isBot);
+
+                if (isCustomerMessage || isBotMessage) {
                     setMessages(prev => {
-                        // Avoid duplicates just in case
+                        // Avoid duplicates
                         if (prev.find(m => m.id === msg.id)) return prev;
                         return [...prev, msg];
                     });
