@@ -4,8 +4,8 @@ services:
   backend:
     build: ./backend
     restart: always
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     environment:
       - PORT=3000
       - DATABASE_PATH=/app/data/zapcar.db
@@ -15,6 +15,7 @@ services:
       - ASAAS_API_URL=${ASAAS_API_URL}
       - EVOLUTION_API_URL=http://evolution-api:8080
       - EVOLUTION_API_KEY=429683C4C977415CAAFCCE10F7D57E11
+      - WEBHOOK_URL=http://backend:3000/whatsapp/webhook
     depends_on:
       - evolution-api
     volumes:
@@ -24,16 +25,16 @@ services:
   frontend:
     build: ./frontend
     restart: always
-    ports:
-      - "80:80"
+    expose:
+      - "80"
     depends_on:
       - backend
 
   evolution-api:
     image: atendai/evolution-api:v2.2.0
     restart: always
-    ports:
-      - "8081:8080"
+    expose:
+      - "8080"
     environment:
       - SERVER_PORT=8080
       - SERVER_URL=http://evolution-api:8080
