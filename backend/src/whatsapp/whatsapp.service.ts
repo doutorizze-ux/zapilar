@@ -234,6 +234,8 @@ export class WhatsappService implements OnModuleInit {
 
         // 1. Get User Context
         const user = await this.usersService.findById(userId);
+        const storeName = user?.storeName || "ZapCar";
+
         // 2. Prepare Context
         const allVehicles = await this.vehiclesService.findAll(userId);
 
