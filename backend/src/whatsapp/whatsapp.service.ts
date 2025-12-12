@@ -269,15 +269,23 @@ export class WhatsappService implements OnModuleInit {
     // --- Webhook Payload Handler ---
 
     async handleWebhook(payload: any) {
+        this.logger.log(`[Webhook Receipt] Payload: ${JSON.stringify(payload)}`);
+
         // Evolution API payload
-        const instanceName = payload.instance;
-        if (!instanceName || !instanceName.startsWith('store-')) return;
+        // v1.8.2 structure often has instance in root or data
+        const instanceName = payload.instance || payload.sender?.instanceId;
+
+        if (!instanceName || !instanceName.startsWith('store-')) {
+            return;
+        }
 
         const userId = instanceName.replace('store-', '');
         const data = payload.data;
-        const msgType = payload.type;
+        const msgType = payload.type || payload.event; // v1 uses 'event', v2 uses 'type'
 
-        if (msgType !== 'MESSAGES_UPSERT') return;
+        // Check for message event (v1: messages.upsert, v2: MESSAGES_UPSERT)
+        if (msgType !== 'MESSAGES_UPSERT' && msgType !== 'messages.upsert') return;
+
         if (!data || !data.key || data.key.fromMe) return;
 
         const remoteJid = data.key.remoteJid;
@@ -289,14 +297,21 @@ export class WhatsappService implements OnModuleInit {
             body = data.message.conversation;
         } else if (data.message?.extendedTextMessage?.text) {
             body = data.message.extendedTextMessage.text;
-        } else {
-            return;
+        } else if (data.message?.imageMessage?.caption) {
+            body = data.message.imageMessage.caption;
+        } else if (typeof data.message === 'string') {
+            // Sometimes v1 sends simpler structure
+            body = data.message;
         }
+
+        if (!body) return;
 
         const pushName = data.pushName || cleanFrom;
 
         await this.processIncomingMessage(userId, cleanFrom, pushName, body);
     }
+
+
 
     // --- Logic from handleMessage ---
     private async processIncomingMessage(userId: string, from: string, senderName: string, text: string) {
@@ -473,8 +488,12 @@ _Gostou deste? Digite_ *"Quero o ${car.name} ${car.year}"*`;
                         if (!imageUrl) continue;
                         let finalUrl = imageUrl;
                         if (imageUrl.startsWith('/')) {
-                            const port = process.env.PORT || 3000;
-                            finalUrl = `http://localhost:${port}${imageUrl}`;
+                            // In Docker/Production, we need a URL accessible by Evolution API container
+                            const baseUrl = this.configService.get('WEBHOOK_URL')
+                                ? this.configService.get('WEBHOOK_URL').replace('/whatsapp/webhook', '') // http://backend:3000
+                                : `http://localhost:${process.env.PORT || 3000}`;
+
+                            finalUrl = `${baseUrl}${imageUrl}`;
                         }
                         await this.sendImage(userId, from, finalUrl, car.name);
                         await delay(1000);
