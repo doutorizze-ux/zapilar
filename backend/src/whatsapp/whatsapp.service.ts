@@ -188,9 +188,15 @@ export class WhatsappService implements OnModuleInit {
                     creds: state.creds,
                     keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' }) as any),
                 },
-                browser: ['ZapCar', 'Chrome', '1.0.0'],
+                // Using a generic Linux/Chrome signature often helps with headless server stability
+                browser: ['ZapCar System', 'Ubuntu', '22.04'],
                 syncFullHistory: false,
                 generateHighQualityLinkPreview: true,
+                // Increase timeout for initial connection
+                connectTimeoutMs: 60000,
+                keepAliveIntervalMs: 30000,
+                emitOwnEvents: false,
+                fireInitQueries: false
             });
 
             this.clients.set(userId, sock);
