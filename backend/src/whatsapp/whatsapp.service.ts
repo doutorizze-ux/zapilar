@@ -171,32 +171,17 @@ export class WhatsappService implements OnModuleInit {
             const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
             // const { version } = await fetchLatestBaileysVersion(); // Can be flaky
 
-            // Safe version fetch
-            let version = [2, 3000, 1015901307];
-            try {
-                const v = await fetchLatestBaileysVersion();
-                version = v.version;
-            } catch (e) {
-                this.logger.warn('Failed to fetch latest Baileys version, using default.');
-            }
-
             const sock = makeWASocket({
-                version: version as any,
                 logger: pino({ level: 'silent' }) as any,
                 printQRInTerminal: false,
                 auth: {
                     creds: state.creds,
                     keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' }) as any),
                 },
-                // Using a generic Linux/Chrome signature often helps with headless server stability
-                browser: ['ZapCar System', 'Ubuntu', '22.04'],
                 syncFullHistory: false,
                 generateHighQualityLinkPreview: true,
-                // Increase timeout for initial connection
                 connectTimeoutMs: 60000,
                 keepAliveIntervalMs: 30000,
-                emitOwnEvents: false,
-                fireInitQueries: false
             });
 
             this.clients.set(userId, sock);
