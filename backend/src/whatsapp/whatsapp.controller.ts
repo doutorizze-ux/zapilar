@@ -48,6 +48,13 @@ export class WhatsappController {
         return { paused: isPaused };
     }
 
+    @UseGuards(JwtAuthGuard)
+    @Post('reset')
+    async resetConnection(@Request() req) {
+        await this.whatsappService.deleteInstance(req.user.userId);
+        return { success: true, message: 'Instance deleted. Reconnect now.' };
+    }
+
     @Post('webhook')
     async handleWebhook(@Body() payload: any) {
         await this.whatsappService.handleWebhook(payload);

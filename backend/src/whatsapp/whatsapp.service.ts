@@ -203,6 +203,18 @@ export class WhatsappService implements OnModuleInit {
         }
     }
 
+    async deleteInstance(userId: string) {
+        const instanceName = this.getInstanceName(userId);
+        try {
+            this.logger.log(`Deleting instance for ${userId}`);
+            await axios.delete(`${this.evolutionUrl}/instance/delete/${instanceName}`, { headers: this.getHeaders() });
+            this.statuses.delete(userId);
+            this.qrCodes.delete(userId);
+        } catch (e) {
+            this.logger.error(`Failed to delete instance for ${userId}`, e.response?.data || e.message);
+        }
+    }
+
     // Send text message via Evolution
     async sendMessage(userId: string, to: string, text: string) {
         const instanceName = this.getInstanceName(userId);
