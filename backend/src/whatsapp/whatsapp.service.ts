@@ -55,7 +55,86 @@ export class WhatsappService implements OnModuleInit {
         this.evolutionUrl = this.configService.get<string>('EVOLUTION_API_URL') || 'http://localhost:8081';
         this.evolutionApiKey = this.configService.get<string>('EVOLUTION_API_KEY') || '';
         this.initializeAI();
-        // Optional: specific init logic like checking instances could go here
+
+        // Start Polling for Messages (Brute Force Mode)
+        this.logger.log('Starting Brute Force Polling...');
+        setInterval(() => this.pollAllInstances(), 5000);
+    }
+
+    // --- Polling Logic ---
+    private async pollAllInstances() {
+        for (const [userId, status] of this.statuses.entries()) {
+            if (status === 'CONNECTED') {
+                await this.checkNewMessages(userId);
+            }
+        }
+    }
+
+    private processedMessageIds: Set<string> = new Set();
+
+    private async checkNewMessages(userId: string) {
+        const instanceName = this.getInstanceName(userId);
+        try {
+            const res = await axios.get(`${this.evolutionUrl}/chat/findChats/${instanceName}`, {
+                headers: this.getHeaders()
+            });
+            const chats = res.data || [];
+
+            for (const chat of chats.slice(0, 5)) {
+                // Check simply if it is recent activity
+                if (chat.unreadCount > 0 || (Date.now() - (chat.messageTimestamp || 0) * 1000 < 20000)) {
+
+                    const remoteJid = chat.id;
+                    const msgsRes = await axios.post(`${this.evolutionUrl}/chat/findMessages/${instanceName}`, {
+                        where: { key: { remoteJid: remoteJid } },
+                        options: { limit: 5 }
+                    }, { headers: this.getHeaders() });
+
+                    const messages = (msgsRes.data || []).reverse(); // Oldest first
+
+                    for (const msg of messages) {
+                        const msgId = msg.key?.id;
+                        if (!msgId || this.processedMessageIds.has(msgId)) continue;
+
+                        // Check Database to be sure (persistent dedup)
+                        // Ideally we'd have a msgId column, but let's trust the memory cache + short window for now
+                        // or check database by content/time if we really wanted.
+
+                        this.processedMessageIds.add(msgId);
+
+                        // Simulate Webhook
+                        this.logger.log(`[Polling] New message found: ${msgId}`);
+                        const payload = {
+                            instance: instanceName,
+                            type: 'MESSAGES_UPSERT',
+                            data: msg
+                        };
+
+                        await this.handleWebhook(payload);
+
+                        // Mark as read in Evolution to avoid fetching again as 'unread'
+                        if (chat.unreadCount > 0) {
+                            await axios.post(`${this.evolutionUrl}/chat/markMessageAsRead/${instanceName}`, {
+                                read: true,
+                                range: {
+                                    "remoteJid": remoteJid,
+                                    "fromMe": false,
+                                    "id": msgId
+                                }
+                            }, { headers: this.getHeaders() });
+                        }
+                    }
+                }
+            }
+
+            // Cleanup cache periodically
+            if (this.processedMessageIds.size > 2000) {
+                this.processedMessageIds.clear();
+            }
+
+        } catch (e) {
+            // e.g. timeouts or 404
+        }
     }
 
     private initializeAI() {
