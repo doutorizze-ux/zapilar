@@ -80,60 +80,67 @@ export class WhatsappService implements OnModuleInit {
             });
             const chats = res.data || [];
 
-            for (const chat of chats.slice(0, 5)) {
-                // Check simply if it is recent activity
-                if (chat.unreadCount > 0 || (Date.now() - (chat.messageTimestamp || 0) * 1000 < 20000)) {
+            // AGGRESSIVE POLLING: Check top 3 chats regardless of status
+            for (const chat of chats.slice(0, 3)) {
+                const remoteJid = chat.id;
 
-                    const remoteJid = chat.id;
+                try {
                     const msgsRes = await axios.post(`${this.evolutionUrl}/chat/findMessages/${instanceName}`, {
                         where: { key: { remoteJid: remoteJid } },
-                        options: { limit: 5 }
+                        options: { limit: 5 } // Fetch last 5 to be safe
                     }, { headers: this.getHeaders() });
 
-                    const messages = (msgsRes.data || []).reverse(); // Oldest first
+                    const messages = (msgsRes.data || []).reverse();
 
                     for (const msg of messages) {
                         const msgId = msg.key?.id;
-                        if (!msgId || this.processedMessageIds.has(msgId)) continue;
+                        if (!msgId) continue;
 
-                        // Check Database to be sure (persistent dedup)
-                        // Ideally we'd have a msgId column, but let's trust the memory cache + short window for now
-                        // or check database by content/time if we really wanted.
+                        // Deduplicate: Check Memory AND Database
+                        if (this.processedMessageIds.has(msgId)) continue;
+
+                        // Quick DB check to prevent restart-dupes
+                        const exists = await this.chatRepository.findOne({
+                            where: { body: msg.message?.conversation || msg.message?.extendedTextMessage?.text }
+                            // Ideally check by some ID if possible, but Body + Time is fallback
+                        });
+                        if (exists && (Date.now() - exists.createdAt.getTime() < 60000)) {
+                            this.processedMessageIds.add(msgId);
+                            continue;
+                        }
 
                         this.processedMessageIds.add(msgId);
 
-                        // Simulate Webhook
-                        this.logger.log(`[Polling] New message found: ${msgId}`);
+                        console.log(`[Polling] Processing message: ${msgId} from ${remoteJid}`);
+
                         const payload = {
                             instance: instanceName,
-                            type: 'MESSAGES_UPSERT',
+                            type: 'MESSAGES_UPSERT', // Simulate webhook event
                             data: msg
                         };
 
+                        // Process
                         await this.handleWebhook(payload);
 
-                        // Mark as read in Evolution to avoid fetching again as 'unread'
+                        // Mark as read to be clean (optional)
+                        /*
                         if (chat.unreadCount > 0) {
                             await axios.post(`${this.evolutionUrl}/chat/markMessageAsRead/${instanceName}`, {
                                 read: true,
-                                range: {
-                                    "remoteJid": remoteJid,
-                                    "fromMe": false,
-                                    "id": msgId
-                                }
+                                range: { "remoteJid": remoteJid, "fromMe": false, "id": msgId }
                             }, { headers: this.getHeaders() });
                         }
+                        */
                     }
+                } catch (innerErr) {
+                    console.error(`[Polling] Error fetching msgs for ${remoteJid}:`, innerErr.message);
                 }
             }
 
-            // Cleanup cache periodically
-            if (this.processedMessageIds.size > 2000) {
-                this.processedMessageIds.clear();
-            }
+            if (this.processedMessageIds.size > 2000) this.processedMessageIds.clear();
 
         } catch (e) {
-            // e.g. timeouts or 404
+            console.error(`[Polling] Failed to find chats for ${instanceName}:`, e.message);
         }
     }
 
