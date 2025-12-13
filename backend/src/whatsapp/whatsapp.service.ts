@@ -64,6 +64,7 @@ export class WhatsappService implements OnModuleInit {
     // --- Polling Logic ---
     private async pollAllInstances() {
         for (const [userId, status] of this.statuses.entries()) {
+            // STRICT CHECK: Only poll if explicit connected status
             if (status === 'CONNECTED') {
                 await this.checkNewMessages(userId);
             }
@@ -73,8 +74,26 @@ export class WhatsappService implements OnModuleInit {
     private processedMessageIds: Set<string> = new Set();
 
     private async checkNewMessages(userId: string) {
+        // Double check status before heavy call
+        if (this.statuses.get(userId) !== 'CONNECTED') return;
+
         const instanceName = this.getInstanceName(userId);
         try {
+            // Check connection state via API to be sure (Sanity Check)
+            // If API says disconnected, update our status and STOP.
+            const connectionState = await axios.get(`${this.evolutionUrl}/instance/connectionState/${instanceName}`, {
+                headers: this.getHeaders()
+            });
+
+            if (connectionState.data?.instance?.state !== 'open') {
+                // If not open, mark as disconnected locally to stop future polling
+                // keeping it safe.
+                if (connectionState.data?.instance?.state === 'close') {
+                    this.statuses.set(userId, 'DISCONNECTED');
+                }
+                return;
+            }
+
             const res = await axios.get(`${this.evolutionUrl}/chat/findChats/${instanceName}`, {
                 headers: this.getHeaders()
             });
