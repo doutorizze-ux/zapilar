@@ -228,8 +228,8 @@ export class WhatsappService implements OnModuleInit {
             // v1 endpoint: /webhook/set/:instance
             await axios.post(`${this.evolutionUrl}/webhook/set/${instanceName}`, {
                 webhookUrl: webhookUrl,
-                webhookByEvents: false, // Global events
-                events: ['MESSAGES_UPSERT', 'MESSAGES_UPDATE', 'CONNECTION_UPDATE'],
+                webhookByEvents: true, // Enforce specific events
+                events: ['MESSAGES_UPSERT', 'MESSAGES_UPDATE', 'CONNECTION_UPDATE', 'messages.upsert'],
                 enabled: true
             }, { headers: this.getHeaders() });
 
