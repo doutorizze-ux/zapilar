@@ -61,4 +61,30 @@ export class WhatsappController {
         await this.whatsappService.handleWebhook(payload);
         return { status: 'ok' };
     }
+
+    @Get('debug-info')
+    async getDebugInfo() {
+        const dns = require('dns').promises;
+        let backendIp = 'unknown';
+        let evoIp = 'unknown';
+
+        try {
+            const res = await dns.lookup('backend');
+            backendIp = res.address;
+        } catch (e) { backendIp = e.message; }
+
+        try {
+            const res = await dns.lookup('evolution-api');
+            evoIp = res.address;
+        } catch (e) { evoIp = e.message; }
+
+        return {
+            env_webhook: process.env.WEBHOOK_URL,
+            env_evolution: process.env.EVOLUTION_API_URL,
+            resolved_backend: backendIp,
+            resolved_evolution: evoIp,
+            smart_fix_active: process.env.EVOLUTION_API_URL?.includes('evolution-api'),
+            smart_target: 'http://backend:3000/whatsapp/webhook'
+        };
+    }
 }
