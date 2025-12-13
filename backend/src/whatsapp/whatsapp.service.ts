@@ -223,28 +223,33 @@ export class WhatsappService implements OnModuleInit {
         if (!webhookUrl) return;
 
         try {
-            // Check if webhook is already set (optional optimization, but v1 is fast)
-            // Just force set it
-            // v1 endpoint: /webhook/set/:instance
+            // Force Global Webhook (safest for v1.8.2)
             await axios.post(`${this.evolutionUrl}/webhook/set/${instanceName}`, {
                 webhookUrl: webhookUrl,
-                webhookByEvents: true, // Enforce specific events
-                events: [
-                    'MESSAGES_UPSERT',
-                    'MESSAGES_UPDATE',
-                    'CONNECTION_UPDATE',
-                    'messages.upsert',
-                    'messages.update',
-                    'connection.update',
-                    'SEND_MESSAGE'
-                ],
+                webhookByEvents: false, // Send ALL events
                 enabled: true
             }, { headers: this.getHeaders() });
 
-            // this.logger.log(`Webhook enforced for ${userId}`);
+            // Also configure instance settings to ensure nothing is ignored
+            await this.configureSettings(instanceName);
+
+            this.logger.log(`Webhook & Settings configured for ${userId}`);
         } catch (e) {
-            // Ignore error or log debug, it might fail if instance not ready yet
             this.logger.debug(`Failed to ensure webhook for ${userId}: ${e.message}`);
+        }
+    }
+
+    private async configureSettings(instanceName: string) {
+        try {
+            await axios.post(`${this.evolutionUrl}/settings/set/${instanceName}`, {
+                reject_call: false,
+                groups_ignore: false, // Don't ignore groups
+                always_online: true,
+                read_messages: false,
+                read_status: false
+            }, { headers: this.getHeaders() });
+        } catch (e) {
+            this.logger.warn(`Failed to configure settings for ${instanceName}`, e.message);
         }
     }
 
