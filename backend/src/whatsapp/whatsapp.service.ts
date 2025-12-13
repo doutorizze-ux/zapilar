@@ -185,20 +185,44 @@ export class WhatsappService implements OnModuleInit {
         }
     }
 
+    private getEffectiveWebhookUrl(): string | undefined {
+        let webhookUrl = this.configService.get('WEBHOOK_URL');
+
+        // Smart Fix for Docker Network:
+        // Use internal backend address if Evolution is internal
+        if (this.evolutionUrl.includes('evolution-api')) {
+            const internalWebhook = 'http://backend:3000/whatsapp/webhook';
+            // Only log once to avoid noise
+            // this.logger.debug(`[Smart Fix] Using internal webhook: ${internalWebhook}`);
+            return internalWebhook;
+        }
+        return webhookUrl;
+    }
+
     private async createInstance(userId: string) {
         const instanceName = this.getInstanceName(userId);
         try {
             this.logger.log(`Creating instance for ${userId}`);
+
+            const webhookUrl = this.getEffectiveWebhookUrl();
 
             // v1.8.2 Payload Structure (Stable)
             const payload = {
                 instanceName: instanceName,
                 token: instanceName,
                 qrcode: true,
-                webhook: this.configService.get('WEBHOOK_URL') || undefined
+                webhook: webhookUrl, // Use correct URL from start
+                // Explicitly send v1 fields too
+                webhookUrl: webhookUrl,
             };
 
             await axios.post(`${this.evolutionUrl}/instance/create`, payload, { headers: this.getHeaders() });
+
+            // Also force settings immediately
+            if (webhookUrl) {
+                // Short delay to let creation settle
+                setTimeout(() => this.ensureWebhook(userId), 2000);
+            }
 
         } catch (e) {
             this.logger.error(`Failed to create instance for ${userId}`, e.response?.data || e.message);
@@ -219,18 +243,7 @@ export class WhatsappService implements OnModuleInit {
 
     private async ensureWebhook(userId: string) {
         const instanceName = this.getInstanceName(userId);
-        let webhookUrl = this.configService.get('WEBHOOK_URL');
-
-        // Smart Fix for Docker Network:
-        // If Evolution is configured with an internal hostname (evolution-api), 
-        // we should prefer the internal backend address to avoid DNS/NAT Loopback issues 
-        // with the public URL (api.zapicar.com.br).
-        if (this.evolutionUrl.includes('evolution-api')) {
-            const internalWebhook = 'http://backend:3000/whatsapp/webhook';
-            this.logger.log(`[Docker Smart Fix] Overriding Webhook URL from "${webhookUrl}" to internal "${internalWebhook}" for reliability.`);
-            webhookUrl = internalWebhook;
-        }
-
+        const webhookUrl = this.getEffectiveWebhookUrl();
         if (!webhookUrl) return;
 
         try {
@@ -245,7 +258,7 @@ export class WhatsappService implements OnModuleInit {
 
             await this.configureSettings(instanceName);
 
-            this.logger.log(`Webhook & Settings configured for ${userId}`);
+            // this.logger.log(`Webhook & Settings configured for ${userId}`);
         } catch (e) {
             this.logger.debug(`Failed to ensure webhook for ${userId}: ${e.message}`);
         }
