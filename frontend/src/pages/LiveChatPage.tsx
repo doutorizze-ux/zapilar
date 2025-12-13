@@ -96,7 +96,7 @@ export function LiveChatPage() {
         } catch (e) { }
     };
 
-    // Load history
+    // Load history with fallback polling
     useEffect(() => {
         if (!activeContactId) {
             setMessages([]);
@@ -111,18 +111,27 @@ export function LiveChatPage() {
                 });
                 if (res.ok) {
                     const history = await res.json();
-                    setMessages(history.map((h: any) => ({
-                        id: h.id,
-                        from: h.from,
-                        body: h.body,
-                        timestamp: new Date(h.createdAt).getTime() / 1000,
-                        senderName: h.senderName,
-                        isBot: h.isBot
-                    })));
+
+                    // Only update if length changed to avoid flicker
+                    setMessages(prev => {
+                        if (prev.length === history.length) return prev;
+                        return history.map((h: any) => ({
+                            id: h.id,
+                            from: h.from,
+                            body: h.body,
+                            timestamp: new Date(h.createdAt).getTime() / 1000,
+                            senderName: h.senderName,
+                            isBot: h.isBot
+                        }));
+                    });
                 }
             } catch (e) { console.error(e); }
         };
+
         fetchHistory();
+        // Fallback polling for UI updates
+        const interval = setInterval(fetchHistory, 3000);
+        return () => clearInterval(interval);
     }, [activeContactId]);
 
     // Socket Connection
