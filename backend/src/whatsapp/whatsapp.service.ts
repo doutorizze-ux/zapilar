@@ -223,14 +223,15 @@ export class WhatsappService implements OnModuleInit {
         if (!webhookUrl) return;
 
         try {
-            // Force Global Webhook (safest for v1.8.2)
+            // Send redundant keys to ensure Evolution picks it up regardless of version quirks
             await axios.post(`${this.evolutionUrl}/webhook/set/${instanceName}`, {
+                url: webhookUrl,
+                webhook: webhookUrl,
                 webhookUrl: webhookUrl,
-                webhookByEvents: false, // Send ALL events
+                webhookByEvents: false,
                 enabled: true
             }, { headers: this.getHeaders() });
 
-            // Also configure instance settings to ensure nothing is ignored
             await this.configureSettings(instanceName);
 
             this.logger.log(`Webhook & Settings configured for ${userId}`);
@@ -243,9 +244,9 @@ export class WhatsappService implements OnModuleInit {
         try {
             await axios.post(`${this.evolutionUrl}/settings/set/${instanceName}`, {
                 reject_call: false,
-                groups_ignore: false, // Don't ignore groups
+                groups_ignore: false,
                 always_online: true,
-                read_messages: false,
+                read_messages: true, // Try auto-read to see if it helps trigger upserts
                 read_status: false
             }, { headers: this.getHeaders() });
         } catch (e) {
