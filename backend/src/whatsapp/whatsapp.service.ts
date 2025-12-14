@@ -299,13 +299,17 @@ export class WhatsappService implements OnModuleInit {
     }
 
     private getEffectiveWebhookUrl(): string | undefined {
-        let webhookUrl = this.configService.get('WEBHOOK_URL');
+        const configuredUrl = this.configService.get<string>('WEBHOOK_URL');
+        if (configuredUrl) {
+            return configuredUrl;
+        }
 
+        // Fallback for local/dev auto-detection
         if (this.evolutionUrl.includes('evolution-api')) {
             const internalWebhook = 'http://backend:3000/whatsapp/webhook';
             return internalWebhook;
         }
-        return webhookUrl;
+        return undefined;
     }
 
     private async createInstance(userId: string) {
