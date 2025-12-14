@@ -511,6 +511,21 @@ export class WhatsappService implements OnModuleInit {
 
     // --- Logic from handleMessage ---
     private async processIncomingMessage(userId: string, from: string, senderName: string, text: string, messageTimestamp?: number) {
+
+        // --- OLD MESSAGE GUARD ---
+        // Critical: Check timestamp BEFORE logging or processing.
+        // We only want to handle REAL-TIME messages.
+        if (messageTimestamp) {
+            const msgTime = new Date(messageTimestamp * 1000).getTime();
+            const now = Date.now();
+            // Tolerance: 2 minutes to allow for minor delays/clock drift, 
+            // but strict enough to ignore history dumps.
+            if (now - msgTime > 120000) {
+                this.logger.debug(`[Ignored] Message is too old (${Math.round((now - msgTime) / 1000)}s ago). Skipping.`);
+                return;
+            }
+        }
+
         this.logger.log(`[DEBUG] Processing incoming msg. User: ${userId}, From: ${from}, Text: ${text}`);
 
         // Log incoming
@@ -532,18 +547,6 @@ export class WhatsappService implements OnModuleInit {
             await this.leadsService.upsert(userId, from, text, senderName);
         } catch (e) {
             this.logger.error('Error tracking lead', e);
-        }
-
-        // --- OLD MESSAGE GUARD ---
-        // If message is older than 60 seconds, DO NOT REPLY.
-        // This prevents the bot from replying to history fetched by polling.
-        if (messageTimestamp) {
-            const msgTime = new Date(messageTimestamp * 1000).getTime();
-            const now = Date.now();
-            if (now - msgTime > 60000) { // 60 seconds tolerance
-                this.logger.log(`[Ignored] Message is too old (${Math.round((now - msgTime) / 1000)}s ago). Sinking event.`);
-                return;
-            }
         }
 
         // Check Pause
