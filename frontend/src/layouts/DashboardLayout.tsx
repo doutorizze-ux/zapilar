@@ -1,12 +1,11 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Car, Settings, LogOut, Smartphone, CreditCard, BookOpen, Menu, X, Calculator, Users, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Car, Settings, LogOut, Smartphone, CreditCard, BookOpen, Menu, X, Calculator, Users } from 'lucide-react';
 import { cn } from '../utils';
 import { useState, useEffect } from 'react';
 
 const sidebarItems = [
     { icon: LayoutDashboard, label: 'Visão Geral', path: '/dashboard' },
     { icon: CreditCard, label: 'Planos', path: '/dashboard/plans' },
-    { icon: MessageSquare, label: 'Conversas', path: '/dashboard/chat' },
     { icon: Car, label: 'Veículos', path: '/dashboard/vehicles' },
     { icon: Calculator, label: 'Simulador', path: '/dashboard/simulator' },
     { icon: Users, label: 'Leads', path: '/dashboard/leads' },

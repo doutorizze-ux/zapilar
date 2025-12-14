@@ -15,7 +15,7 @@ import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 import { AdminFinancialPage } from './pages/admin/AdminFinancialPage';
 import { StorePlansPage } from './pages/StorePlansPage';
 import { TrainingPage } from './pages/TrainingPage';
-import { LiveChatPage } from './pages/LiveChatPage';
+
 import { SimulatorPage } from './pages/SimulatorPage';
 import { LeadsPage } from './pages/LeadsPage';
 
@@ -49,7 +49,6 @@ function App() {
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<DashboardHome />} />
             <Route path="vehicles" element={<VehiclesPage />} />
-            <Route path="chat" element={<LiveChatPage />} />
             <Route path="leads" element={<LeadsPage />} />
             <Route path="whatsapp" element={<WhatsappPage />} />
             <Route path="training" element={<TrainingPage />} />

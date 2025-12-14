@@ -40,7 +40,6 @@ export class WhatsappService implements OnModuleInit {
 
     isBotPaused(userId: string): boolean {
         // If NOT in active list, it is PAUSED.
-        // This failsafe ensures that upon restart, no bot starts talking automatically.
         return !this.activeUsers.has(userId);
     }
 
@@ -84,14 +83,11 @@ export class WhatsappService implements OnModuleInit {
         const instanceName = this.getInstanceName(userId);
         try {
             // Check connection state via API to be sure (Sanity Check)
-            // If API says disconnected, update our status and STOP.
             const connectionState = await axios.get(`${this.evolutionUrl}/instance/connectionState/${instanceName}`, {
                 headers: this.getHeaders()
             });
 
             if (connectionState.data?.instance?.state !== 'open') {
-                // If not open, mark as disconnected locally to stop future polling
-                // keeping it safe.
                 if (connectionState.data?.instance?.state === 'close') {
                     this.statuses.set(userId, 'DISCONNECTED');
                 }
@@ -119,13 +115,10 @@ export class WhatsappService implements OnModuleInit {
                         const msgId = msg.key?.id;
                         if (!msgId) continue;
 
-                        // Deduplicate: Check Memory AND Database
                         if (this.processedMessageIds.has(msgId)) continue;
 
-                        // Quick DB check to prevent restart-dupes
                         const exists = await this.chatRepository.findOne({
                             where: { body: msg.message?.conversation || msg.message?.extendedTextMessage?.text }
-                            // Ideally check by some ID if possible, but Body + Time is fallback
                         });
                         if (exists && (Date.now() - exists.createdAt.getTime() < 60000)) {
                             this.processedMessageIds.add(msgId);
@@ -142,18 +135,7 @@ export class WhatsappService implements OnModuleInit {
                             data: msg
                         };
 
-                        // Process
                         await this.handleWebhook(payload);
-
-                        // Mark as read to be clean (optional)
-                        /*
-                        if (chat.unreadCount > 0) {
-                            await axios.post(`${this.evolutionUrl}/chat/markMessageAsRead/${instanceName}`, {
-                                read: true,
-                                range: { "remoteJid": remoteJid, "fromMe": false, "id": msgId }
-                            }, { headers: this.getHeaders() });
-                        }
-                        */
                     }
                 } catch (innerErr) {
                     console.error(`[Polling] Error fetching msgs for ${remoteJid}:`, innerErr.message);
@@ -177,7 +159,6 @@ export class WhatsappService implements OnModuleInit {
         }
     }
 
-    // Helper to log message
     private async logMessage(storeId: string, contactId: string, from: string, body: string, senderName: string, isBot: boolean) {
         try {
             await this.chatRepository.save({
@@ -193,7 +174,6 @@ export class WhatsappService implements OnModuleInit {
         }
     }
 
-    // Helper to fetch history
     async getChatHistory(storeId: string, contactId: string) {
         return this.chatRepository.find({
             where: { storeId, contactId },
@@ -202,7 +182,6 @@ export class WhatsappService implements OnModuleInit {
     }
 
     async getRecentChats(storeId: string) {
-        // Fetch distinct contacts from message history
         const rawChats = await this.chatRepository
             .createQueryBuilder("msg")
             .select("msg.contactId", "id")
@@ -251,14 +230,12 @@ export class WhatsappService implements OnModuleInit {
         const instanceName = this.getInstanceName(userId);
 
         try {
-            // Check connection state
             const stateRes = await axios.get(`${this.evolutionUrl}/instance/connectionState/${instanceName}`, {
                 headers: this.getHeaders(),
                 validateStatus: () => true
             });
 
             if (stateRes.status === 404) {
-                // Instance doesn't exist, create it
                 await this.createInstance(userId);
                 return { status: 'DISCONNECTED', qr: null };
             }
@@ -267,11 +244,9 @@ export class WhatsappService implements OnModuleInit {
 
             if (state === 'open') {
                 this.statuses.set(userId, 'CONNECTED');
-                // Ensure webhook is set for v1.8.2 stability
                 await this.ensureWebhook(userId);
                 return { status: 'CONNECTED', qr: null };
             } else if (state === 'connecting') {
-                // Try to fetch QR
                 const qrRes = await axios.get(`${this.evolutionUrl}/instance/connect/${instanceName}`, {
                     headers: this.getHeaders()
                 });
@@ -286,7 +261,6 @@ export class WhatsappService implements OnModuleInit {
 
         } catch (error) {
             this.logger.error(`Error checking session for ${userId}`, error);
-            // If failed, try to create instance if not exists
             if (error.response?.status === 404) {
                 await this.createInstance(userId);
             }
@@ -297,12 +271,8 @@ export class WhatsappService implements OnModuleInit {
     private getEffectiveWebhookUrl(): string | undefined {
         let webhookUrl = this.configService.get('WEBHOOK_URL');
 
-        // Smart Fix for Docker Network:
-        // Use internal backend address if Evolution is internal
         if (this.evolutionUrl.includes('evolution-api')) {
             const internalWebhook = 'http://backend:3000/whatsapp/webhook';
-            // Only log once to avoid noise
-            // this.logger.debug(`[Smart Fix] Using internal webhook: ${internalWebhook}`);
             return internalWebhook;
         }
         return webhookUrl;
@@ -315,21 +285,17 @@ export class WhatsappService implements OnModuleInit {
 
             const webhookUrl = this.getEffectiveWebhookUrl();
 
-            // v1.8.2 Payload Structure (Stable)
             const payload = {
                 instanceName: instanceName,
                 token: instanceName,
                 qrcode: true,
-                webhook: webhookUrl, // Use correct URL from start
-                // Explicitly send v1 fields too
+                webhook: webhookUrl,
                 webhookUrl: webhookUrl,
             };
 
             await axios.post(`${this.evolutionUrl}/instance/create`, payload, { headers: this.getHeaders() });
 
-            // Also force settings immediately
             if (webhookUrl) {
-                // Short delay to let creation settle
                 setTimeout(() => this.ensureWebhook(userId), 2000);
             }
 
@@ -356,7 +322,6 @@ export class WhatsappService implements OnModuleInit {
         if (!webhookUrl) return;
 
         try {
-            // Send redundant keys to ensure Evolution picks it up regardless of version quirks
             await axios.post(`${this.evolutionUrl}/webhook/set/${instanceName}`, {
                 url: webhookUrl,
                 webhook: webhookUrl,
@@ -367,7 +332,6 @@ export class WhatsappService implements OnModuleInit {
 
             await this.configureSettings(instanceName);
 
-            // this.logger.log(`Webhook & Settings configured for ${userId}`);
         } catch (e) {
             this.logger.debug(`Failed to ensure webhook for ${userId}: ${e.message}`);
         }
@@ -379,7 +343,7 @@ export class WhatsappService implements OnModuleInit {
                 reject_call: false,
                 groups_ignore: false,
                 always_online: true,
-                read_messages: true, // Try auto-read to see if it helps trigger upserts
+                read_messages: true,
                 read_status: false
             }, { headers: this.getHeaders() });
         } catch (e) {
@@ -387,7 +351,26 @@ export class WhatsappService implements OnModuleInit {
         }
     }
 
-    // Send text message via Evolution
+    // Helper to resolve Image URL for Docker/Local split
+    private resolveImageUrl(imageUrl: string): string {
+        if (!imageUrl) return '';
+        if (imageUrl.startsWith('http')) return imageUrl;
+
+        let baseUrl = this.configService.get('WEBHOOK_URL')
+            ? this.configService.get('WEBHOOK_URL').replace('/whatsapp/webhook', '')
+            : `http://localhost:${process.env.PORT || 3000}`;
+
+        if (baseUrl.includes('localhost') && this.evolutionUrl.includes('localhost')) {
+            baseUrl = baseUrl.replace('localhost', 'host.docker.internal');
+        }
+
+        if (this.evolutionUrl.includes('evolution-api') && baseUrl.includes('localhost')) {
+            baseUrl = 'http://backend:3000';
+        }
+
+        return `${baseUrl}${imageUrl}`;
+    }
+
     async sendMessage(userId: string, to: string, text: string) {
         const instanceName = this.getInstanceName(userId);
         let number = to.replace(/\D/g, '');
@@ -395,20 +378,14 @@ export class WhatsappService implements OnModuleInit {
         try {
             await axios.post(`${this.evolutionUrl}/message/sendText/${instanceName}`, {
                 number: number,
-                options: {
-                    delay: 1200,
-                    presence: 'composing'
-                },
-                textMessage: {
-                    text: text
-                }
+                options: { delay: 1200, presence: 'composing' },
+                textMessage: { text: text }
             }, { headers: this.getHeaders() });
         } catch (e) {
             this.logger.error(`Failed to send message to ${to}`, e.response?.data || e.message);
         }
     }
 
-    // Send media/image
     async sendImage(userId: string, to: string, imageUrl: string, caption?: string) {
         const instanceName = this.getInstanceName(userId);
         let number = to.replace(/\D/g, '');
@@ -416,47 +393,21 @@ export class WhatsappService implements OnModuleInit {
         try {
             await axios.post(`${this.evolutionUrl}/message/sendMedia/${instanceName}`, {
                 number: number,
-                options: {
-                    delay: 1200,
-                    presence: 'composing'
-                },
-                mediaMessage: {
-                    mediatype: 'image',
-                    caption: caption,
-                    media: imageUrl
-                }
+                options: { delay: 1200, presence: 'composing' },
+                mediaMessage: { mediatype: 'image', caption: caption, media: imageUrl }
             }, { headers: this.getHeaders() });
         } catch (e) {
             this.logger.error(`Failed to send image to ${to}`, e.response?.data || e.message);
         }
     }
 
-    // --- Handler for Manual Messages (from Controller) ---
     async sendManualMessage(userId: string, to: string, message: string) {
         await this.sendMessage(userId, to, message);
-
-        // Log manual message
         this.logMessage(userId, to, 'me', message, 'Atendente', true);
-
-        // Emit to frontend (so it appears as sent by 'me')
-        this.chatGateway.emitMessageToRoom(userId, {
-            id: 'manual-' + Date.now(),
-            from: 'me',
-            body: message,
-            timestamp: Date.now() / 1000,
-            senderName: 'Atendente',
-            isBot: true
-        });
     }
-
-
-    // --- Webhook Payload Handler ---
 
     async handleWebhook(payload: any) {
         this.logger.log(`[Webhook Receipt] Payload: ${JSON.stringify(payload)}`);
-
-        // Evolution API payload
-        // v1.8.2 structure often has instance in root or data
         const instanceName = payload.instance || payload.sender?.instanceId;
 
         if (!instanceName || !instanceName.startsWith('store-')) {
@@ -465,9 +416,8 @@ export class WhatsappService implements OnModuleInit {
 
         const userId = instanceName.replace('store-', '');
         const data = payload.data;
-        const msgType = payload.type || payload.event; // v1 uses 'event', v2 uses 'type'
+        const msgType = payload.type || payload.event;
 
-        // Check for message event (v1: messages.upsert, v2: MESSAGES_UPSERT)
         if (msgType !== 'MESSAGES_UPSERT' && msgType !== 'messages.upsert') {
             this.logger.debug(`Ignored webhook event type: ${msgType}`);
             return;
@@ -478,15 +428,10 @@ export class WhatsappService implements OnModuleInit {
             return;
         }
 
-        // If fromMe is true, it means WE sent it via phone. 
-        // We usually want to see these in the dashboard too to keep history synced!
-        // So I am REMOVING the return on fromMe, but I will flag it.
         const fromMe = data.key.fromMe;
-
         const remoteJid = data.key.remoteJid;
         const cleanFrom = remoteJid.replace(/@s\.whatsapp\.net|@g\.us/g, '');
 
-        // Extract body
         let body = '';
         if (data.message?.conversation) {
             body = data.message.conversation;
@@ -495,83 +440,57 @@ export class WhatsappService implements OnModuleInit {
         } else if (data.message?.imageMessage?.caption) {
             body = data.message.imageMessage.caption;
         } else if (typeof data.message === 'string') {
-            // Sometimes v1 sends simpler structure
             body = data.message;
         }
 
         if (!body) return;
 
         const pushName = data.pushName || cleanFrom;
-        const messageTimestamp = data.messageTimestamp; // v1 often sends unix literal
+        const messageTimestamp = data.messageTimestamp;
 
-        await this.processIncomingMessage(userId, cleanFrom, pushName, body, messageTimestamp);
+        await this.processIncomingMessage(userId, cleanFrom, pushName, body, fromMe, messageTimestamp);
     }
 
-
-
-    // --- Logic from handleMessage ---
-    private async processIncomingMessage(userId: string, from: string, senderName: string, text: string, messageTimestamp?: number) {
-
-        // --- OLD MESSAGE GUARD ---
-        // Critical: Check timestamp BEFORE logging or processing.
+    private async processIncomingMessage(userId: string, from: string, senderName: string, text: string, isFromMe: boolean, messageTimestamp?: number) {
         if (messageTimestamp) {
-            // Heuristic to detect Seconds vs Milliseconds
-            // Unix seconds ~ 1700000000 (10 digits)
-            // Unix millis  ~ 1700000000000 (13 digits)
             let msgTime = 0;
-            const ts = Number(messageTimestamp); // ensure number
-
+            const ts = Number(messageTimestamp);
             if (ts > 9999999999) {
-                msgTime = ts; // It's milliseconds
+                msgTime = ts;
             } else {
-                msgTime = ts * 1000; // It's seconds
+                msgTime = ts * 1000;
             }
 
             const now = Date.now();
             const diff = now - msgTime;
 
-            // Debug logs to help identify the issue
-            // this.logger.debug(`[TimeCheck] TS: ${ts}, MsgTime: ${msgTime}, Now: ${now}, Diff: ${diff}`);
-
-            // Tolerance: 2 minutes (120000ms)
-            // If diff is negative (future message), it's usually fine (clock skew), unless it's HUGE.
             if (diff > 120000) {
                 this.logger.debug(`[Ignored] Message is too old (${Math.round(diff / 1000)}s ago). Skipping.`);
                 return;
             }
         }
 
-        this.logger.log(`[DEBUG] Processing incoming msg. User: ${userId}, From: ${from}, Text: ${text}`);
+        this.logger.log(`[DEBUG] Processing incoming msg. User: ${userId}, From: ${from}, Text: ${text}, FromMe: ${isFromMe}`);
+        await this.logMessage(userId, from, from, text, senderName, isFromMe);
 
-        // Log incoming
-        await this.logMessage(userId, from, from, text, senderName, false);
+        // Loop Guard
+        if (isFromMe) {
+            this.logger.log(`[Loop Guard] Ignoring update from myself/bot.`);
+            return;
+        }
 
-        // Emit to Live Chat
-        this.logger.log(`[DEBUG] Emitting to Live Chat Room: ${userId}`);
-        this.chatGateway.emitMessageToRoom(userId, {
-            id: 'msg-' + Date.now(),
-            from: from,
-            body: text,
-            timestamp: messageTimestamp || Date.now() / 1000,
-            senderName: senderName,
-            isBot: false
-        });
-
-        // Leads Upsert
         try {
             await this.leadsService.upsert(userId, from, text, senderName);
         } catch (e) {
             this.logger.error('Error tracking lead', e);
         }
 
-        // Check Pause
         if (this.isBotPaused(userId)) {
             this.logger.log(`Bot paused for ${userId}, skipping auto-reply.`);
             return;
         }
 
         const msg = text.toLowerCase();
-
         const user = await this.usersService.findById(userId);
         const storeName = user?.storeName || "ZapCar";
         const allVehicles = await this.vehiclesService.findAll(userId);
@@ -583,9 +502,6 @@ export class WhatsappService implements OnModuleInit {
 
         let contextVehicles = strictMatchVehicles;
         let aiContextVehicles = allVehicles.length > 50 ? allVehicles.slice(0, 50) : allVehicles;
-
-        const ignoreTerms = ['bom', 'boa', 'tarde', 'noite', 'dia', 'ola', 'olá', 'tudo', 'bem', 'sim', 'não', 'quero'];
-        // const isGeneric = ignoreTerms.includes(msg) || msg.length <= 3;
 
         let shouldShowCars = false;
         let responseText = '';
@@ -659,26 +575,13 @@ export class WhatsappService implements OnModuleInit {
             responseText = await fallbackResponse();
         }
 
-        // Send Reply
         await this.sendMessage(userId, from, responseText);
-
-        // Log Bot Reply
         this.logMessage(userId, from, 'bot', responseText, storeName + ' (Bot)', true);
-        this.chatGateway.emitMessageToRoom(userId, {
-            id: 'bot-' + Date.now(),
-            from: 'bot',
-            body: responseText,
-            timestamp: Date.now() / 1000,
-            senderName: storeName + ' (Bot)',
-            isBot: true
-        });
 
-        // Send Cars
         if (shouldShowCars && contextVehicles.length > 0) {
             const vehiclesToShow = contextVehicles.length === 0 ? allVehicles.slice(0, 3) : contextVehicles;
 
             for (const car of vehiclesToShow.slice(0, 5)) {
-                // Construct Specs
                 const features: string[] = [];
                 if (car.trava) features.push('Trava');
                 if (car.alarme) features.push('Alarme');
@@ -696,36 +599,20 @@ ${featuresText}💰 *R$ ${Number(car.price).toLocaleString('pt-BR')}*
 _Gostou deste? Digite_ *"Quero o ${car.name} ${car.year}"*`;
 
                 await this.sendMessage(userId, from, specs);
-
-                // Log Car Specs
                 this.logMessage(userId, from, 'bot', specs, storeName + ' (Bot)', true);
-                this.chatGateway.emitMessageToRoom(userId, {
-                    id: 'bot-car-' + car.id,
-                    from: 'bot',
-                    body: specs,
-                    timestamp: Date.now() / 1000,
-                    senderName: storeName + ' (Bot)',
-                    isBot: true
-                });
 
                 const delay = (ms) => new Promise(r => setTimeout(r, ms));
                 await delay(800);
 
-                // Send Images
                 if (car.images && car.images.length > 0) {
                     for (const imageUrl of car.images.slice(0, 4)) {
                         if (!imageUrl) continue;
-                        let finalUrl = imageUrl;
-                        if (imageUrl.startsWith('/')) {
-                            // In Docker/Production, we need a URL accessible by Evolution API container
-                            const baseUrl = this.configService.get('WEBHOOK_URL')
-                                ? this.configService.get('WEBHOOK_URL').replace('/whatsapp/webhook', '') // http://backend:3000
-                                : `http://localhost:${process.env.PORT || 3000}`;
 
-                            finalUrl = `${baseUrl}${imageUrl}`;
-                        }
+                        const finalUrl = this.resolveImageUrl(imageUrl);
+                        this.logger.debug(`[Sending Image] Car: ${car.name}, URL: ${finalUrl}`);
+
                         await this.sendImage(userId, from, finalUrl, car.name);
-                        await delay(1000);
+                        await delay(1500);
                     }
                 }
 
