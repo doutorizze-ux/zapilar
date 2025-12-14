@@ -514,14 +514,29 @@ export class WhatsappService implements OnModuleInit {
 
         // --- OLD MESSAGE GUARD ---
         // Critical: Check timestamp BEFORE logging or processing.
-        // We only want to handle REAL-TIME messages.
         if (messageTimestamp) {
-            const msgTime = new Date(messageTimestamp * 1000).getTime();
+            // Heuristic to detect Seconds vs Milliseconds
+            // Unix seconds ~ 1700000000 (10 digits)
+            // Unix millis  ~ 1700000000000 (13 digits)
+            let msgTime = 0;
+            const ts = Number(messageTimestamp); // ensure number
+
+            if (ts > 9999999999) {
+                msgTime = ts; // It's milliseconds
+            } else {
+                msgTime = ts * 1000; // It's seconds
+            }
+
             const now = Date.now();
-            // Tolerance: 2 minutes to allow for minor delays/clock drift, 
-            // but strict enough to ignore history dumps.
-            if (now - msgTime > 120000) {
-                this.logger.debug(`[Ignored] Message is too old (${Math.round((now - msgTime) / 1000)}s ago). Skipping.`);
+            const diff = now - msgTime;
+
+            // Debug logs to help identify the issue
+            // this.logger.debug(`[TimeCheck] TS: ${ts}, MsgTime: ${msgTime}, Now: ${now}, Diff: ${diff}`);
+
+            // Tolerance: 2 minutes (120000ms)
+            // If diff is negative (future message), it's usually fine (clock skew), unless it's HUGE.
+            if (diff > 120000) {
+                this.logger.debug(`[Ignored] Message is too old (${Math.round(diff / 1000)}s ago). Skipping.`);
                 return;
             }
         }
