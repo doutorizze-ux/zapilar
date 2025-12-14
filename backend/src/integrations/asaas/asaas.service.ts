@@ -12,6 +12,11 @@ export class AsaasService {
         this.apiUrl = this.configService.get<string>('ASAAS_API_URL', 'https://api-sandbox.asaas.com/v3');
         let rawKey = this.configService.get<string>('ASAAS_API_KEY', '');
 
+        // Fix: Remove double $ if present (common env escaping artifact)
+        if (rawKey.startsWith('$$')) {
+            rawKey = rawKey.substring(1);
+        }
+
         // Check if key is Base64 encoded (contains no special chars like $)
         // Asaas keys start with $ usually. If it doesn't, assume Base64 and try to decode.
         if (rawKey && !rawKey.startsWith('$') && !rawKey.startsWith('\'$') && !rawKey.startsWith('"$')) {
