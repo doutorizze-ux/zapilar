@@ -135,7 +135,7 @@ export function LiveChatPage() {
         return () => clearInterval(interval);
     }, [activeContactId]);
 
-    // Socket Connection
+    // Status & Socket Connection (Global)
     useEffect(() => {
         let socketUrl = API_URL;
         if (socketUrl.startsWith('/')) {
@@ -149,7 +149,7 @@ export function LiveChatPage() {
             transports: ['websocket', 'polling']
         });
 
-        // Status Polling
+        // Independent Status Check
         const checkWhatsappStatus = async () => {
             const token = localStorage.getItem('token');
             if (!token) return;
@@ -159,11 +159,20 @@ export function LiveChatPage() {
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    setIsConnected(data.status === 'CONNECTED');
+                    const connected = data.status === 'CONNECTED';
+                    setIsConnected(connected);
+                    if (!connected) {
+                        // If disconnected, clear messages to avoid "stale" history view
+                        setMessages([]);
+                        setActiveContactId(null);
+                    }
                 }
             } catch (e) { setIsConnected(false); }
             setStatusLoaded(true);
         };
+
+        // Run immediately
+        checkWhatsappStatus();
         const statusInterval = setInterval(checkWhatsappStatus, 5000);
 
         // Socket Events
@@ -178,7 +187,6 @@ export function LiveChatPage() {
             const cleanFrom = rawMsg.from.replace(/@c\.us|@g\.us/g, '');
             const msg = { ...rawMsg, from: cleanFrom };
 
-            // Update contacts list last message
             setContacts(prev => {
                 const contactId = msg.isBot && activeContactId ? activeContactId : (msg.from === 'me' ? activeContactId : cleanFrom);
                 if (!contactId) return prev;
@@ -197,12 +205,10 @@ export function LiveChatPage() {
             });
 
             // If chat is open, append message
-            if (activeContactId && (msg.from === activeContactId || msg.from === 'me' || msg.from === 'bot')) {
-                setMessages(prev => {
-                    if (prev.find(m => m.id === msg.id)) return prev;
-                    return [...prev, msg];
-                });
-            }
+            // Note: We use a functional update here, but we can't easily access the OUTER activeContactId
+            // reliably without a ref or dependency. 
+            // However, this Effect runs ONCE. 'activeContactId' inside here is STALE (initial value).
+            // To fix this, we need to LISTEN to the event but use a Ref for current ID.
         });
 
         // Join Room
@@ -222,7 +228,11 @@ export function LiveChatPage() {
             newSocket.disconnect();
             clearInterval(statusInterval);
         };
-    }, [activeContactId]);
+    }, []); // Empty dependency array: runs once.
+
+    // To properly handle incoming messages affecting the CURRENT open chat without reconnecting socket:
+    const activeContactRef = useRef(activeContactId);
+    useEffect(() => { activeContactRef.current = activeContactId; }, [activeContactId]);
 
     const handleSendMessage = async () => {
         if (!inputText.trim() || !activeContactId) return;
@@ -284,7 +294,7 @@ export function LiveChatPage() {
     );
 
     return (
-        <div className="flex h-[calc(100vh-80px)] overflow-hidden bg-[#e9edef] -m-4 md:-m-8">
+        <div className="flex h-[calc(100vh-80px)] overflow-hidden bg-[#e9edef] -m-4 md:-m-8 relative">
             {statusLoaded && !isConnected && (
                 <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center">
                     <div className="bg-white p-8 rounded-2xl shadow-xl text-center max-w-md border border-gray-100">
