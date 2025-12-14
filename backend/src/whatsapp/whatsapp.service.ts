@@ -21,8 +21,8 @@ export class WhatsappService implements OnModuleInit {
     // Map<userId, status>
     private statuses: Map<string, 'DISCONNECTED' | 'CONNECTED' | 'QR_READY'> = new Map();
 
-    // SAFETY: Default to PAUSED. Only users in this set are allowed to auto-reply.
-    private activeUsers: Set<string> = new Set();
+    // SAFETY: Default to ACTIVE. Only users in this set are ignored.
+    private pausedUsers: Set<string> = new Set();
     private genAI: GoogleGenerativeAI;
     private model: GenerativeModel;
 
@@ -31,16 +31,16 @@ export class WhatsappService implements OnModuleInit {
 
     setBotPaused(userId: string, paused: boolean) {
         if (paused) {
-            this.activeUsers.delete(userId); // Remove from active list (Pause)
+            this.pausedUsers.add(userId); // Add to paused list
         } else {
-            this.activeUsers.add(userId); // Add to active list (Unpause/Activate)
+            this.pausedUsers.delete(userId); // Remove from paused list (Activate)
         }
         this.logger.log(`Bot for user ${userId} is now ${paused ? 'PAUSED' : 'ACTIVE'}`);
     }
 
     isBotPaused(userId: string): boolean {
-        // If NOT in active list, it is PAUSED.
-        return !this.activeUsers.has(userId);
+        // If in paused list, it is PAUSED. Otherwise active.
+        return this.pausedUsers.has(userId);
     }
 
     constructor(
