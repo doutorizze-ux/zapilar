@@ -501,6 +501,11 @@ export class WhatsappService implements OnModuleInit {
         });
 
         let contextVehicles = strictMatchVehicles;
+        // Explicitly handle "Stock" request to populate contextVehicles for the AI/Sender
+        if (msg.includes('estoque') || msg.includes('catalogo') || msg.includes('catálogo') || msg.includes('ver carros')) {
+            contextVehicles = allVehicles;
+        }
+
         let aiContextVehicles = allVehicles.length > 50 ? allVehicles.slice(0, 50) : allVehicles;
 
         let shouldShowCars = false;
@@ -550,13 +555,19 @@ export class WhatsappService implements OnModuleInit {
                 ${params}
                 
                 ** Missão **
-                Identificar se o cliente está buscando um carro específico.
+                Identificar se o cliente está buscando um carro específico ou quer ver o estoque geral.
                 
-                ** Regras **
-                - SAUDAÇÃO: Responda com cordialidade. [NO_CARS]
-                - BUSCA ESPECÍFICA: [SHOW_CARS] se houver match.
-                - CURIOSIDADE ("Quero ver o estoque"): [SHOW_CARS].
-                - Se não tiver certeza: [NO_CARS].
+                ** Regras RÍGIDAS **
+                1. Se o cliente pedir um carro específico (ex: "tem civic?"):
+                   - Verifique se ele está no **Estoque Atual** acima.
+                   - Se SIM: Responda confirmando e use a flag [SHOW_CARS].
+                   - Se NÃO: Responda apenas que não tem o modelo no momento. NUNCA ofereça outros modelos ("não temos X mas temos Y"). Use a flag [NO_CARS].
+                2. Se o cliente pedir para ver o estoque geral (ex: "quais carros tem?", "ver catálogo", "estoque"):
+                   - Responda que vai mostrar as opções. Use a flag [SHOW_CARS].
+                3. Se for apenas um cumprimento ou perguntas gerais:
+                   - Responda cordialmente. [NO_CARS].
+                4. Pergunta sobre endereço/localização:
+                    - Responda com o endereço da loja. [NO_CARS].
                 
                 Retorne apenas a resposta do bot seguida da flag [SHOW_CARS] ou [NO_CARS].
                 `;
@@ -579,7 +590,8 @@ export class WhatsappService implements OnModuleInit {
         this.logMessage(userId, from, 'bot', responseText, storeName + ' (Bot)', true);
 
         if (shouldShowCars && contextVehicles.length > 0) {
-            const vehiclesToShow = contextVehicles.length === 0 ? allVehicles.slice(0, 3) : contextVehicles;
+            // STRICT MODE: Only show context vehicles. NEVER fall back to random generic list if specific search failed.
+            const vehiclesToShow = contextVehicles;
 
             for (const car of vehiclesToShow.slice(0, 5)) {
                 const features: string[] = [];
