@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { API_URL } from '../config';
 import {
@@ -305,12 +306,12 @@ export function LiveChatPage() {
                         <p className="text-gray-500 mb-6">
                             A conexão com o WhatsApp foi perdida. Conecte-se novamente para acessar o histórico e as conversas.
                         </p>
-                        <a
-                            href="/admin/whatsapp"
+                        <Link
+                            to="/dashboard/whatsapp"
                             className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
                         >
                             Ir para Conexão
-                        </a>
+                        </Link>
                     </div>
                 </div>
             )}
