@@ -163,8 +163,9 @@ export function LiveChatPage() {
                     const connected = data.status === 'CONNECTED';
                     setIsConnected(connected);
                     if (!connected) {
-                        // If disconnected, clear messages to avoid "stale" history view
+                        // If disconnected, clear EVERYTHING to avoid "stale" history view
                         setMessages([]);
+                        setContacts([]);
                         setActiveContactId(null);
                     }
                 }
@@ -297,7 +298,7 @@ export function LiveChatPage() {
     return (
         <div className="flex h-[calc(100vh-80px)] overflow-hidden bg-[#e9edef] -m-4 md:-m-8 relative">
             {statusLoaded && !isConnected && (
-                <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center">
+                <div className="absolute inset-0 z-50 bg-gray-100 flex items-center justify-center">
                     <div className="bg-white p-8 rounded-2xl shadow-xl text-center max-w-md border border-gray-100">
                         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                             <span className="text-3xl">🚫</span>
