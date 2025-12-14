@@ -41,6 +41,7 @@ export function LiveChatPage() {
     const [inputText, setInputText] = useState('');
     const [sending, setSending] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [statusLoaded, setStatusLoaded] = useState(false);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -161,6 +162,7 @@ export function LiveChatPage() {
                     setIsConnected(data.status === 'CONNECTED');
                 }
             } catch (e) { setIsConnected(false); }
+            setStatusLoaded(true);
         };
         const statusInterval = setInterval(checkWhatsappStatus, 5000);
 
@@ -283,6 +285,26 @@ export function LiveChatPage() {
 
     return (
         <div className="flex h-[calc(100vh-80px)] overflow-hidden bg-[#e9edef] -m-4 md:-m-8">
+            {statusLoaded && !isConnected && (
+                <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center">
+                    <div className="bg-white p-8 rounded-2xl shadow-xl text-center max-w-md border border-gray-100">
+                        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span className="text-3xl">🚫</span>
+                        </div>
+                        <h2 className="text-2xl font-bold text-gray-800 mb-2">WhatsApp Desconectado</h2>
+                        <p className="text-gray-500 mb-6">
+                            A conexão com o WhatsApp foi perdida. Conecte-se novamente para acessar o histórico e as conversas.
+                        </p>
+                        <a
+                            href="/admin/whatsapp"
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+                        >
+                            Ir para Conexão
+                        </a>
+                    </div>
+                </div>
+            )}
+
             {/* Sidebar (Left Pane) */}
             <div className="w-[400px] flex flex-col bg-white border-r border-[#d1d7db]">
                 {/* User Header */}
