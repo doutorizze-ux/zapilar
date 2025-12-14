@@ -54,7 +54,7 @@ export class WhatsappService implements OnModuleInit {
         private chatGateway: ChatGateway
     ) { }
 
-    onModuleInit() {
+    async onModuleInit() {
         this.evolutionUrl = this.configService.get<string>('EVOLUTION_API_URL') || 'http://localhost:8081';
         this.evolutionApiKey = this.configService.get<string>('EVOLUTION_API_KEY') || '';
         this.initializeAI();
@@ -62,6 +62,9 @@ export class WhatsappService implements OnModuleInit {
         // Start Polling for Messages (Brute Force Mode)
         this.logger.log('Starting Brute Force Polling...');
         setInterval(() => this.pollAllInstances(), 5000);
+
+        // Sync existing sessions (recover from restart)
+        await this.syncSessions();
     }
 
     // --- Polling Logic ---
@@ -146,6 +149,33 @@ export class WhatsappService implements OnModuleInit {
 
         } catch (e) {
             console.error(`[Polling] Failed to find chats for ${instanceName}:`, e.message);
+        }
+    }
+
+    private async syncSessions() {
+        try {
+            this.logger.log('Syncing sessions with Evolution API...');
+            const res = await axios.get(`${this.evolutionUrl}/instance/fetch`, {
+                headers: this.getHeaders()
+            });
+
+            const instances = res.data || [];
+            // Evolution v1.8/v2 structure: array of objects
+            for (const item of instances) {
+                const instance = item.instance || item;
+                const name = instance.instanceName || instance.name;
+                const state = instance.state || instance.status;
+
+                if (name && name.startsWith('store-') && state === 'open') {
+                    const userId = name.replace('store-', '');
+                    this.statuses.set(userId, 'CONNECTED');
+                    this.logger.log(`Restored session for user ${userId}`);
+                    // Ensure webhook is set for this session
+                    this.ensureWebhook(userId);
+                }
+            }
+        } catch (e) {
+            this.logger.warn(`Failed to sync sessions on startup: ${e.message}`);
         }
     }
 
