@@ -20,6 +20,9 @@ export class ChatMessage {
     @Column()
     senderName: string;
 
+    @Column({ nullable: true })
+    wamid: string; // WhatsApp Message ID for deduplication
+
     @Column({ default: false })
     isBot: boolean;
 

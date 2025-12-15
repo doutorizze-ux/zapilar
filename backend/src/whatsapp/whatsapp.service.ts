@@ -61,7 +61,9 @@ export class WhatsappService implements OnModuleInit {
 
         // Start Polling for Messages (Brute Force Mode)
         this.logger.log('Starting Brute Force Polling...');
-        setInterval(() => this.pollAllInstances(), 5000);
+        // Start Polling for Messages (Backup Mode - Only if Webhook fails)
+        this.logger.log('Starting Backup Polling (45s)...');
+        setInterval(() => this.pollAllInstances(), 45000);
 
         // Sync existing sessions (recover from restart)
         await this.syncSessions();
@@ -118,23 +120,28 @@ export class WhatsappService implements OnModuleInit {
                         const msgId = msg.key?.id;
                         if (!msgId) continue;
 
+                        // STRICT GUARD: Ignore messages sent by me (API or Mobile)
+                        if (msg.key?.fromMe) continue;
+
                         if (this.processedMessageIds.has(msgId)) continue;
 
+                        // DB DEDUPLICATION: Check if WAMID exists
                         const exists = await this.chatRepository.findOne({
-                            where: { body: msg.message?.conversation || msg.message?.extendedTextMessage?.text }
+                            where: { wamid: msgId }
                         });
-                        if (exists && (Date.now() - exists.createdAt.getTime() < 60000)) {
+
+                        if (exists) {
                             this.processedMessageIds.add(msgId);
                             continue;
                         }
 
                         this.processedMessageIds.add(msgId);
 
-                        console.log(`[Polling] Processing message: ${msgId} from ${remoteJid}`);
+                        console.log(`[Polling] Processing NEW message: ${msgId} from ${remoteJid}`);
 
                         const payload = {
                             instance: instanceName,
-                            type: 'MESSAGES_UPSERT', // Simulate webhook event
+                            type: 'MESSAGES_UPSERT',
                             data: msg
                         };
 
@@ -189,7 +196,7 @@ export class WhatsappService implements OnModuleInit {
         }
     }
 
-    private async logMessage(storeId: string, contactId: string, from: string, body: string, senderName: string, isBot: boolean) {
+    private async logMessage(storeId: string, contactId: string, from: string, body: string, senderName: string, isBot: boolean, wamid?: string) {
         try {
             await this.chatRepository.save({
                 storeId,
@@ -197,7 +204,8 @@ export class WhatsappService implements OnModuleInit {
                 from,
                 body,
                 senderName,
-                isBot
+                isBot,
+                wamid
             });
         } catch (e) {
             this.logger.error('Failed to log message', e);
@@ -386,20 +394,32 @@ export class WhatsappService implements OnModuleInit {
     }
 
     // Helper to resolve Image URL for Docker/Local split
+    // Helper to resolve Image URL for Docker/Local split
     private resolveImageUrl(imageUrl: string): string {
         if (!imageUrl) return '';
         if (imageUrl.startsWith('http')) return imageUrl;
 
-        let baseUrl = this.configService.get('WEBHOOK_URL')
-            ? this.configService.get('WEBHOOK_URL').replace('/whatsapp/webhook', '')
-            : `http://localhost:${process.env.PORT || 3000}`;
+        // Try to get public URL first
+        const webhookUrl = this.configService.get('WEBHOOK_URL'); // e.g., https://api.zapcar.com.br/whatsapp/webhook
+        let baseUrl = '';
 
+        if (webhookUrl) {
+            // Remove /whatsapp/webhook to get root
+            baseUrl = webhookUrl.replace('/whatsapp/webhook', '');
+        } else {
+            baseUrl = `http://localhost:${process.env.PORT || 3000}`;
+        }
+
+        // Docker internal adjustment (only if using localhost)
         if (baseUrl.includes('localhost') && this.evolutionUrl.includes('localhost')) {
             baseUrl = baseUrl.replace('localhost', 'host.docker.internal');
         }
 
-        if (this.evolutionUrl.includes('evolution-api') && baseUrl.includes('localhost')) {
-            baseUrl = 'http://backend:3000';
+        // Ensure no double slash issues
+        if (!baseUrl.endsWith('/') && !imageUrl.startsWith('/')) {
+            return `${baseUrl}/${imageUrl}`;
+        } else if (baseUrl.endsWith('/') && imageUrl.startsWith('/')) {
+            return `${baseUrl}${imageUrl.substring(1)}`;
         }
 
         return `${baseUrl}${imageUrl}`;
@@ -481,11 +501,12 @@ export class WhatsappService implements OnModuleInit {
 
         const pushName = data.pushName || cleanFrom;
         const messageTimestamp = data.messageTimestamp;
+        const msgId = data.key?.id;
 
-        await this.processIncomingMessage(userId, cleanFrom, pushName, body, fromMe, messageTimestamp);
+        await this.processIncomingMessage(userId, cleanFrom, pushName, body, fromMe, messageTimestamp, msgId);
     }
 
-    private async processIncomingMessage(userId: string, from: string, senderName: string, text: string, isFromMe: boolean, messageTimestamp?: number) {
+    private async processIncomingMessage(userId: string, from: string, senderName: string, text: string, isFromMe: boolean, messageTimestamp?: number, wamid?: string) {
         if (messageTimestamp) {
             let msgTime = 0;
             const ts = Number(messageTimestamp);
@@ -504,8 +525,18 @@ export class WhatsappService implements OnModuleInit {
             }
         }
 
-        this.logger.log(`[DEBUG] Processing incoming msg. User: ${userId}, From: ${from}, Text: ${text}, FromMe: ${isFromMe}`);
-        await this.logMessage(userId, from, from, text, senderName, isFromMe);
+        this.logger.log(`[DEBUG] Processing incoming msg. User: ${userId}, From: ${from}, Text: ${text}, FromMe: ${isFromMe}, WAMID: ${wamid}`);
+
+        // Final Deduplication check before logic
+        if (wamid) {
+            const exists = await this.chatRepository.findOne({ where: { wamid } });
+            if (exists) {
+                this.logger.warn(`[Duplicate] Skipping already processed WAMID: ${wamid}`);
+                return;
+            }
+        }
+
+        await this.logMessage(userId, from, from, text, senderName, isFromMe, wamid);
 
         // Loop Guard
         if (isFromMe) {
@@ -540,7 +571,8 @@ export class WhatsappService implements OnModuleInit {
             contextVehicles = allVehicles;
         }
 
-        let aiContextVehicles = allVehicles.length > 50 ? allVehicles.slice(0, 50) : allVehicles;
+        // Optimizing Context: Limit to 20 vehicles to prevent AI timeouts/hallucinations
+        let aiContextVehicles = allVehicles.length > 20 ? allVehicles.slice(0, 20) : allVehicles;
 
         let shouldShowCars = false;
         let responseText = '';
