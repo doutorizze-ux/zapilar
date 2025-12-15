@@ -226,8 +226,107 @@ export function LandingPage() {
                 </div>
             </section>
 
+            {/* New Feature: Free Website Promotion */}
+            <section className="py-24 bg-gradient-to-br from-[#0B2B26] to-black relative border-y border-white/5 overflow-hidden">
+                <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-10"></div>
+                <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center relative z-10">
+                    <div className="order-2 lg:order-1 relative">
+                        {/* Browser Mockup */}
+                        <motion.div
+                            initial={{ opacity: 0, x: -50 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.8 }}
+                            className="rounded-xl overflow-hidden shadow-2xl border border-gray-700 bg-gray-900"
+                        >
+                            <div className="bg-gray-800 p-3 flex gap-2 border-b border-gray-700">
+                                <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                                <div className="ml-4 w-full bg-gray-900 rounded-md h-5 opacity-50 text-[10px] flex items-center px-2 text-gray-400 font-mono">
+                                    zapicar.com.br/zapicar
+                                </div>
+                            </div>
+                            <div className="relative aspect-video bg-gray-900 group cursor-pointer overflow-hidden">
+                                {/* Simulated Website Content */}
+                                <div className="absolute inset-0 bg-gray-100 flex flex-col">
+                                    <div className="h-1/2 bg-gradient-to-r from-gray-900 to-gray-800 flex items-center justify-center p-6 relative">
+                                        <div className="text-center">
+                                            <div className="h-4 w-32 bg-white/20 rounded mx-auto mb-2"></div>
+                                            <div className="h-8 w-64 bg-white/10 rounded mx-auto"></div>
+                                        </div>
+                                    </div>
+                                    <div className="h-1/2 p-6 grid grid-cols-3 gap-4">
+                                        {[1, 2, 3].map(i => (
+                                            <div key={i} className="bg-white rounded-lg shadow-sm p-2 flex flex-col gap-2">
+                                                <div className="w-full h-12 bg-gray-200 rounded"></div>
+                                                <div className="w-full h-2 bg-gray-200 rounded"></div>
+                                                <div className="w-2/3 h-2 bg-gray-200 rounded"></div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <span className="text-white font-bold border border-white px-4 py-2 rounded-full uppercase tracking-wider text-sm hover:bg-white hover:text-black transition-colors">Ver Exemplo</span>
+                                </div>
+                            </div>
+                        </motion.div>
+                        {/* Floating Badges */}
+                        <motion.div
+                            initial={{ y: 20, opacity: 0 }}
+                            whileInView={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 0.3 }}
+                            className="absolute -bottom-6 -right-6 bg-white text-gray-900 px-6 py-4 rounded-xl shadow-xl font-bold flex items-center gap-3 z-20"
+                        >
+                            <CheckCircle className="text-green-500 w-6 h-6" />
+                            <div>
+                                <p className="text-xs text-gray-500 uppercase">Hospedagem</p>
+                                <p className="text-lg leading-none">Inclusa no Plano</p>
+                            </div>
+                        </motion.div>
+                    </div>
+
+                    <div className="order-1 lg:order-2 space-y-6">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#25D366]/10 text-[#25D366] text-xs font-bold uppercase tracking-wider">
+                            NOVIDADE EXCLUSIVA
+                        </div>
+                        <h2 className="text-4xl md:text-5xl font-bold text-white leading-tight">
+                            Ganhe um <span className="text-[#25D366]">Site Profissional</span> para sua loja
+                        </h2>
+                        <p className="text-gray-400 text-lg leading-relaxed">
+                            Não dependa apenas de marketplaces. Com o Zapicar, você ganha automaticamente um
+                            <strong> site próprio, moderno e otimizado para vendas</strong>.
+                        </p>
+
+                        <ul className="space-y-4">
+                            {[
+                                "Domínio personalizado (zapicar.com.br/zapicar)",
+                                "Sincronização automática com seu estoque",
+                                "Design Premium que transmite confiança",
+                                "Botão de WhatsApp integrado em cada carro"
+                            ].map((item, i) => (
+                                <li key={i} className="flex items-center gap-3 text-gray-300">
+                                    <div className="w-6 h-6 rounded-full bg-[#25D366]/20 flex items-center justify-center flex-shrink-0">
+                                        <CheckCircle className="w-4 h-4 text-[#25D366]" />
+                                    </div>
+                                    {item}
+                                </li>
+                            ))}
+                        </ul>
+
+                        <button
+                            onClick={() => navigate('/register')}
+                            className="mt-4 px-8 py-4 bg-white text-gray-900 rounded-full font-bold hover:bg-gray-100 transition-colors flex items-center gap-2"
+                        >
+                            Quero meu Site Agora
+                            <ArrowRight className="w-5 h-5" />
+                        </button>
+                    </div>
+                </div>
+            </section>
+
             {/* Video Tutorial Section - Requested */}
-            <section className="py-10 bg-[#08221E] border-y border-white/5">
+            <section className="py-10 bg-[#08221E] border-b border-white/5">
                 <div className="max-w-5xl mx-auto px-6 text-center">
                     <h2 className="text-2xl font-bold text-white mb-8 flex items-center justify-center gap-3">
                         <Play className="w-6 h-6 text-[#25D366] fill-current" />
@@ -346,105 +445,6 @@ export function LandingPage() {
                                 </div>
                             </div>
                         ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* New Feature: Free Website Promotion */}
-            <section className="py-24 bg-gradient-to-br from-[#0B2B26] to-black relative border-t border-white/5 overflow-hidden">
-                <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-10"></div>
-                <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center relative z-10">
-                    <div className="order-2 lg:order-1 relative">
-                        {/* Browser Mockup */}
-                        <motion.div
-                            initial={{ opacity: 0, x: -50 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.8 }}
-                            className="rounded-xl overflow-hidden shadow-2xl border border-gray-700 bg-gray-900"
-                        >
-                            <div className="bg-gray-800 p-3 flex gap-2 border-b border-gray-700">
-                                <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                                <div className="ml-4 w-full bg-gray-900 rounded-md h-5 opacity-50 text-[10px] flex items-center px-2 text-gray-400 font-mono">
-                                    zapicar.com.br/sua-loja
-                                </div>
-                            </div>
-                            <div className="relative aspect-video bg-gray-900 group cursor-pointer overflow-hidden">
-                                {/* Simulated Website Content */}
-                                <div className="absolute inset-0 bg-gray-100 flex flex-col">
-                                    <div className="h-1/2 bg-gradient-to-r from-gray-900 to-gray-800 flex items-center justify-center p-6 relative">
-                                        <div className="text-center">
-                                            <div className="h-4 w-32 bg-white/20 rounded mx-auto mb-2"></div>
-                                            <div className="h-8 w-64 bg-white/10 rounded mx-auto"></div>
-                                        </div>
-                                    </div>
-                                    <div className="h-1/2 p-6 grid grid-cols-3 gap-4">
-                                        {[1, 2, 3].map(i => (
-                                            <div key={i} className="bg-white rounded-lg shadow-sm p-2 flex flex-col gap-2">
-                                                <div className="w-full h-12 bg-gray-200 rounded"></div>
-                                                <div className="w-full h-2 bg-gray-200 rounded"></div>
-                                                <div className="w-2/3 h-2 bg-gray-200 rounded"></div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <span className="text-white font-bold border border-white px-4 py-2 rounded-full uppercase tracking-wider text-sm hover:bg-white hover:text-black transition-colors">Ver Exemplo</span>
-                                </div>
-                            </div>
-                        </motion.div>
-                        {/* Floating Badges */}
-                        <motion.div
-                            initial={{ y: 20, opacity: 0 }}
-                            whileInView={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.3 }}
-                            className="absolute -bottom-6 -right-6 bg-white text-gray-900 px-6 py-4 rounded-xl shadow-xl font-bold flex items-center gap-3 z-20"
-                        >
-                            <CheckCircle className="text-green-500 w-6 h-6" />
-                            <div>
-                                <p className="text-xs text-gray-500 uppercase">Hospedagem</p>
-                                <p className="text-lg leading-none">Inclusa Grátis</p>
-                            </div>
-                        </motion.div>
-                    </div>
-
-                    <div className="order-1 lg:order-2 space-y-6">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#25D366]/10 text-[#25D366] text-xs font-bold uppercase tracking-wider">
-                            NOVIDADE EXCLUSIVA
-                        </div>
-                        <h2 className="text-4xl md:text-5xl font-bold text-white leading-tight">
-                            Ganhe um <span className="text-[#25D366]">Site Profissional</span> para sua loja
-                        </h2>
-                        <p className="text-gray-400 text-lg leading-relaxed">
-                            Não dependa apenas de marketplaces. Com o Zapicar, você ganha automaticamente um
-                            <strong> site próprio, moderno e otimizado para vendas</strong>.
-                        </p>
-
-                        <ul className="space-y-4">
-                            {[
-                                "Domínio personalizado (zapicar.com.br/sua-loja)",
-                                "Sincronização automática com seu estoque",
-                                "Design Premium que transmite confiança",
-                                "Botão de WhatsApp integrado em cada carro"
-                            ].map((item, i) => (
-                                <li key={i} className="flex items-center gap-3 text-gray-300">
-                                    <div className="w-6 h-6 rounded-full bg-[#25D366]/20 flex items-center justify-center flex-shrink-0">
-                                        <CheckCircle className="w-4 h-4 text-[#25D366]" />
-                                    </div>
-                                    {item}
-                                </li>
-                            ))}
-                        </ul>
-
-                        <button
-                            onClick={() => navigate('/register')}
-                            className="mt-4 px-8 py-4 bg-white text-gray-900 rounded-full font-bold hover:bg-gray-100 transition-colors flex items-center gap-2"
-                        >
-                            Quero meu Site Grátis
-                            <ArrowRight className="w-5 h-5" />
-                        </button>
                     </div>
                 </div>
             </section>
