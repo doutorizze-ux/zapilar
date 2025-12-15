@@ -22,6 +22,7 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
 
     // Form Data (Details Tab)
     const [imageFiles, setImageFiles] = useState<File[]>([]);
+    const [docFiles, setDocFiles] = useState<File[]>([]);
     const [formData, setFormData] = useState({
         brand: 'Toyota', name: '', model: '', year: new Date().getFullYear(),
         price: '', category: 'Seminovo', km: 0, fuel: 'Flex',
@@ -91,6 +92,44 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
 
     const removeFile = (index: number) => {
         setImageFiles(prev => prev.filter((_, i) => i !== index));
+    };
+
+    // --- Document Logic ---
+    const handleDocFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            setDocFiles([...docFiles, ...Array.from(e.target.files)]);
+        }
+    };
+
+    const removeDocFile = (index: number) => {
+        setDocFiles(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleUploadDocs = async () => {
+        if (!initialData || docFiles.length === 0) return;
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        try {
+            const uploadData = new FormData();
+            docFiles.forEach(file => uploadData.append('files', file));
+            const res = await fetch(`${API_URL}/vehicles/${initialData.id}/upload-doc`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: uploadData
+            });
+            if (res.ok) {
+                alert('Documentos enviados com sucesso!');
+                setDocFiles([]);
+                onSuccess(); // Refresh parent to get new docs
+            } else {
+                alert('Erro ao enviar documentos.');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Erro de conexão.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -302,17 +341,88 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
 
                     {/* --- DETAILS TAB --- */}
                     {activeTab === 'documents' && (
-                        <div className="space-y-6 text-center py-10">
-                            <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <FileText className="w-8 h-8" />
+                        <div className="space-y-6">
+                            {/* Header / Intro */}
+                            <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6 flex items-start gap-4">
+                                <div className="p-3 bg-blue-100 text-blue-600 rounded-xl">
+                                    <FileText className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-blue-900 text-lg">Central de Documentos</h3>
+                                    <p className="text-blue-700/80 text-sm mt-1">
+                                        Armazene aqui contratos, CRLV, laudos e manuais deste veículo.
+                                        Arquivos suportados: PDF e Imagens.
+                                    </p>
+                                </div>
                             </div>
-                            <h3 className="text-xl font-bold text-gray-900">Gestão de Documentos</h3>
-                            <p className="text-gray-500 max-w-md mx-auto">
-                                Em breve você poderá armazenar CRLV, Laudos e Contratos assinados digitalmente aqui.
-                            </p>
-                            <button className="px-6 py-2 bg-blue-100 text-blue-700 font-bold rounded-xl hover:bg-blue-200 transition-colors" onClick={() => alert('Funcionalidade em desenvolvimento!')}>
-                                + Upload de Documento
-                            </button>
+
+                            {/* Existing Documents List */}
+                            {initialData?.documents && initialData.documents.length > 0 && (
+                                <div>
+                                    <h4 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Arquivos Salvos</h4>
+                                    <div className="grid gap-3">
+                                        {initialData.documents.map((doc: any, i: number) => (
+                                            <div key={i} className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors group">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-gray-500">
+                                                        <FileCheck className="w-5 h-5" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-medium text-gray-900 line-clamp-1">{doc.name}</p>
+                                                        <p className="text-xs text-gray-500">{new Date(doc.date).toLocaleDateString()} • {doc.type?.split('/')[1]?.toUpperCase() || 'ARQUIVO'}</p>
+                                                    </div>
+                                                </div>
+                                                <a
+                                                    href={doc.url.startsWith('http') ? doc.url : `${API_URL}${doc.url}`}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                                                >
+                                                    Visualizar
+                                                </a>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Upload New Documents */}
+                            <div className="border-t border-gray-100 pt-6">
+                                <h4 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Adicionar Novos Documentos</h4>
+
+                                {docFiles.length > 0 && (
+                                    <div className="grid gap-2 mb-4">
+                                        {docFiles.map((file, i) => (
+                                            <div key={i} className="flex items-center justify-between p-3 bg-green-50 border border-green-100 rounded-lg">
+                                                <span className="text-sm text-green-800 font-medium truncate">{file.name}</span>
+                                                <button onClick={() => removeDocFile(i)} className="text-red-500 hover:text-red-700 p-1"><X className="w-4 h-4" /></button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <div className="flex gap-4">
+                                    <label className="flex-1 border-2 border-dashed border-gray-300 hover:border-blue-400 hover:bg-blue-50 transition-colors rounded-xl h-32 flex flex-col items-center justify-center cursor-pointer group">
+                                        <Upload className="w-8 h-8 text-gray-400 group-hover:text-blue-500 mb-2 transition-colors" />
+                                        <span className="text-gray-500 font-medium group-hover:text-blue-600">Clique para selecionar arquivos</span>
+                                        <span className="text-xs text-gray-400 mt-1">PDF, JPG, PNG (Max 10MB)</span>
+                                        <input type="file" multiple onChange={handleDocFileChange} className="hidden" accept=".pdf,image/*" />
+                                    </label>
+                                </div>
+
+                                {docFiles.length > 0 && (
+                                    <div className="mt-4 flex justify-end">
+                                        <button
+                                            onClick={handleUploadDocs}
+                                            disabled={loading}
+                                            className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20 flex items-center gap-2"
+                                        >
+                                            {loading ? 'Enviando...' : `Enviar ${docFiles.length} Arquivo(s)`}
+                                            <Upload className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
 
