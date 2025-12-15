@@ -562,6 +562,10 @@ export class WhatsappService implements OnModuleInit {
         const user = await this.usersService.findById(userId);
         const storeName = user?.storeName || "ZapCar";
 
+        let contextVehicles: any[] = [];
+        let shouldShowCars = false;
+        let responseText = '';
+
         // --- MENU LOGIC START ---
 
         // Unique key for this user's state (combination of StoreId + CustomerNumber)
@@ -572,7 +576,7 @@ export class WhatsappService implements OnModuleInit {
         const greetings = ['oi', 'ola', 'olá', 'bom dia', 'boa tarde', 'boa noite', 'menu', 'inicio', 'início', 'começar'];
         if (greetings.some(g => msg === g || (msg.includes(g) && msg.length < 10))) {
             this.userStates.set(stateKey, { mode: 'MENU' });
-            await this.sendMessage(userId, from, `👋 Olá! Bem-vindo(a) à *${storeName}*.\n\nSou seu assistente virtual. Por favor, escolha uma opção:\n\n1️⃣ *Buscar Veículo por Nome*\n2️⃣ *Buscar por Ano*\n3️⃣ *Falar com Especialista (IA)*\n\n_Responda com o número da opção._`);
+            await this.sendMessage(userId, from, `👋 Olá! Bem-vindo(a) à *${storeName}*.\n\nSou seu assistente virtual. Por favor, escolha uma opção:\n\n1️⃣ *Buscar Veículo por Nome*\n2️⃣ *Buscar por Ano*\n3️⃣ *Ver Estoque Completo*\n\n_Responda com o número da opção._`);
             return;
         }
 
@@ -586,23 +590,19 @@ export class WhatsappService implements OnModuleInit {
                 this.userStates.set(stateKey, { mode: 'WAITING_YEAR' });
                 await this.sendMessage(userId, from, '📅 Digite o *ano* mínimo que você deseja (ex: 2018):');
                 return;
-            } else if (msg === '3' || msg.includes('ia') || msg.includes('duvida') || msg.includes('falar')) {
-                this.userStates.set(stateKey, { mode: 'AI_CHAT' });
-                await this.sendMessage(userId, from, '🤖 *Modo Inteligente Ativado*\n\nPode perguntar o que quiser sobre nossos carros, financiamento ou localização!');
-                return;
+            } else if (msg === '3' || msg.includes('estoque') || msg.includes('ver') || msg.includes('todos')) {
+                // Option 3: VIEW ALL STOCK (Forces them to see cars first)
+                shouldShowCars = true;
+                contextVehicles = await this.vehiclesService.findAll(userId);
+                responseText = "Aqui está nosso estoque completo:";
+                // Pass through to the end logic where it sends the cars
             } else {
-                // Invalid option for menu, stay in menu but give hint OR if it looks like a sentence, maybe auto-switch to AI?
-                // For safety requested by user, force menu adherence.
-                await this.sendMessage(userId, from, '⚠️ Opção inválida. Digite:\n\n*1* para buscar por nome\n*2* para buscar por ano\n*3* para tirar dúvidas');
+                await this.sendMessage(userId, from, '⚠️ Opção inválida. Digite:\n\n*1* para buscar por nome\n*2* para buscar por ano\n*3* para ver todo o estoque');
                 return;
             }
         }
 
         // 3. Handle Specific States
-        let contextVehicles: any[] = [];
-        let shouldShowCars = false;
-        let responseText = '';
-
         const allVehicles = await this.vehiclesService.findAll(userId);
 
         if (currentState === 'WAITING_NAME') {
