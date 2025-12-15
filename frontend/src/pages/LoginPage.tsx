@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { Mail, Lock, ArrowRight, Car, ChevronLeft } from 'lucide-react';
 
 export function LoginPage() {
     const { login } = useAuth();
@@ -41,81 +42,135 @@ export function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-            <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-                <img src="/logo-dark.png" alt="Zapicar" className="mx-auto h-16 w-auto" />
-                <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-                    Acesso ao Painel
-                </h2>
-                <p className="mt-2 text-sm text-gray-600">
-                    Gerencie seu estoque e atendimento
-                </p>
+        <div className="min-h-screen bg-white md:grid md:grid-cols-2 lg:grid-cols-[1fr_500px]">
+
+            {/* Left Side - Branding (Hidden on Mobile) */}
+            <div className="hidden md:flex flex-col justify-between bg-[#0B2B26] p-12 relative overflow-hidden text-white">
+                <div className="absolute top-0 right-0 -mr-32 -mt-32 w-96 h-96 bg-green-500/20 rounded-full blur-3xl text-white pointer-events-none"></div>
+                <div className="absolute bottom-0 left-0 -ml-32 -mb-32 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div className="relative z-10">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center shadow-lg shadow-green-900/20">
+                            <Car className="text-white w-6 h-6" />
+                        </div>
+                        <span className="text-2xl font-bold tracking-tight">Zapicar</span>
+                    </div>
+                </div>
+
+                <div className="relative z-10 max-w-lg mb-12">
+                    <h1 className="text-5xl font-bold leading-tight mb-6">
+                        O sistema definitivo para sua loja de veículos.
+                    </h1>
+                    <p className="text-lg text-gray-300 leading-relaxed">
+                        Gerencie estoque, automatize o WhatsApp e venda mais com o poder da tecnologia. Tudo em um só lugar.
+                    </p>
+                </div>
+
+                <div className="relative z-10 text-sm text-gray-500 font-medium">
+                    © {new Date().getFullYear()} Zapicar Tecnologia.
+                </div>
             </div>
 
-            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-                    <form className="space-y-6" onSubmit={handleLogin}>
+            {/* Right Side - Form */}
+            <div className="flex flex-col justify-center px-6 py-12 lg:px-20 xl:px-24 bg-white relative">
+                <button
+                    onClick={() => navigate('/')}
+                    className="absolute top-8 left-6 md:left-20 flex items-center gap-2 text-sm text-gray-500 hover:text-green-600 transition-colors"
+                >
+                    <ChevronLeft className="w-4 h-4" />
+                    Voltar para Home
+                </button>
+
+                <div className="w-full max-w-sm mx-auto">
+                    <div className="mb-10">
+                        {/* Mobile Logo Show */}
+                        <div className="flex md:hidden items-center gap-2 mb-6">
+                            <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+                                <Car className="text-white w-5 h-5" />
+                            </div>
+                            <span className="text-xl font-bold text-gray-900">Zapicar</span>
+                        </div>
+
+                        <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Bem-vindo de volta!</h2>
+                        <p className="mt-2 text-gray-500">
+                            Digite suas credenciais para acessar o painel.
+                        </p>
+                    </div>
+
+                    <form className="space-y-5" onSubmit={handleLogin}>
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                                Email
-                            </label>
-                            <div className="mt-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <Mail className="h-5 w-5 text-gray-400" />
+                                </div>
                                 <input
-                                    id="email"
-                                    name="email"
                                     type="email"
-                                    autoComplete="email"
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                                    className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all text-sm"
+                                    placeholder="seu@email.com"
                                 />
                             </div>
                         </div>
 
                         <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                                Senha
-                            </label>
-                            <div className="mt-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1.5">Senha</label>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <Lock className="h-5 w-5 text-gray-400" />
+                                </div>
                                 <input
-                                    id="password"
-                                    name="password"
                                     type="password"
-                                    autoComplete="current-password"
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                                    className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all text-sm"
+                                    placeholder="••••••••"
                                 />
                             </div>
                         </div>
 
-                        <div>
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-                            >
-                                {loading ? 'Entrando...' : 'Entrar'}
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                                <input
+                                    id="remember-me"
+                                    name="remember-me"
+                                    type="checkbox"
+                                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                                />
+                                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-500 cursor-pointer select-none">
+                                    Lembrar de mim
+                                </label>
+                            </div>
 
-                <div className="mt-6 flex items-center justify-between text-sm">
-                    <button
-                        onClick={() => navigate('/')}
-                        className="text-gray-600 hover:text-green-600 font-medium transition-colors"
-                    >
-                        ← Voltar para Home
-                    </button>
-                    <button
-                        onClick={() => navigate('/register')}
-                        className="text-green-600 hover:text-green-500 font-medium transition-colors"
-                    >
-                        Não tem conta? Cadastre-se
-                    </button>
+                            <div className="text-sm">
+                                <a href="#" className="font-medium text-green-600 hover:text-green-500">
+                                    Esqueceu a senha?
+                                </a>
+                            </div>
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full flex items-center justify-center gap-2 py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-70 disabled:cursor-not-allowed transition-all hover:scale-[1.01] active:scale-[0.98]"
+                        >
+                            {loading ? 'Acessando...' : 'Acessar Painel'}
+                            {!loading && <ArrowRight className="w-4 h-4" />}
+                        </button>
+                    </form>
+
+                    <div className="mt-8 text-center">
+                        <p className="text-sm text-gray-500">
+                            Ainda não tem uma conta?{' '}
+                            <button onClick={() => navigate('/register')} className="font-bold text-green-600 hover:text-green-500 transition-colors">
+                                Criar conta grátis
+                            </button>
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
