@@ -286,7 +286,7 @@ export function PublicStorePage() {
                 <div className="container mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         {store.logoUrl ? (
-                            <img src={getImageUrl(store.logoUrl)} className="w-10 h-10 rounded-full object-cover" />
+                            <img src={getImageUrl(store.logoUrl)} className="h-10 w-auto object-contain" />
                         ) : (
                             <div className="w-10 h-10 bg-gray-900 rounded-full flex items-center justify-center text-white font-bold">{store.name[0]}</div>
                         )}
@@ -482,7 +482,7 @@ export function PublicStorePage() {
                 <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between gap-12">
                     <div className="max-w-xs">
                         {store.logoUrl ? (
-                            <img src={getImageUrl(store.logoUrl)} className="w-16 h-16 rounded-full object-cover mb-6 border-2 border-gray-700 bg-white" />
+                            <img src={getImageUrl(store.logoUrl)} className="h-14 w-auto object-contain mb-6 bg-white p-1 rounded-lg" />
                         ) : (
                             <div className="text-2xl font-bold mb-6">{store.name}</div>
                         )}
