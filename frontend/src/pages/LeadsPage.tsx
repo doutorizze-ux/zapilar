@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { User, MessageSquare, Phone, Calendar, Plus } from 'lucide-react';
+import { User, MessageSquare, Phone, Calendar, Plus, Trash2 } from 'lucide-react';
 import { API_URL } from '../config';
 import { CreateLeadModal } from '../components/CreateLeadModal';
 
@@ -37,6 +37,24 @@ export function LeadsPage() {
             console.error('Error fetching leads:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!confirm('Tem certeza que deseja excluir este lead?')) return;
+
+        try {
+            const response = await fetch(`${API_URL}/leads/${id}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (response.ok) {
+                fetchLeads();
+            } else {
+                alert('Erro ao excluir lead');
+            }
+        } catch (error) {
+            console.error('Failed to delete lead', error);
         }
     };
 
@@ -127,14 +145,22 @@ export function LeadsPage() {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <a
-                                            href={`https://wa.me/${lead.phone}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-green-600 hover:text-green-800 font-medium text-xs border border-green-200 bg-green-50 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-colors inline-block"
-                                        >
-                                            Conversar no WhatsApp
-                                        </a>
+                                        <div className="flex gap-2">
+                                            <a
+                                                href={`https://wa.me/${lead.phone}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-green-600 hover:text-green-800 font-medium text-xs border border-green-200 bg-green-50 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-colors inline-block"
+                                            >
+                                                Conversar no WhatsApp
+                                            </a>
+                                            <button
+                                                onClick={() => handleDelete(lead.id)}
+                                                className="text-red-600 hover:text-red-800 font-medium text-xs border border-red-200 bg-red-50 px-3 py-1.5 rounded-lg hover:bg-red-100 transition-colors"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

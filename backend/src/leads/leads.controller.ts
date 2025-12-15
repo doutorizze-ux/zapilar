@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Request, Delete, Param } from '@nestjs/common';
 import { LeadsService } from './leads.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -18,5 +18,11 @@ export class LeadsController {
     @Get()
     async findAll(@Request() req) {
         return this.leadsService.findAll(req.user.userId);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Delete(':id')
+    async remove(@Request() req, @Param('id') id: string) {
+        return this.leadsService.remove(id, req.user.userId);
     }
 }

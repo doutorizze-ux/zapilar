@@ -54,4 +54,12 @@ export class LeadsService {
             order: { updatedAt: 'DESC' }
         });
     }
+
+    async remove(id: string, storeId: string) {
+        const lead = await this.leadsRepository.findOne({ where: { id, storeId } });
+        if (lead) {
+            return this.leadsRepository.remove(lead);
+        }
+        return null;
+    }
 }
