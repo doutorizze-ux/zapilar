@@ -23,20 +23,26 @@ export function ConsultasPage() {
     const handleFipeSearch = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoadingFipe(true);
-        // Mocking FIPE Result for demonstration (Real implementation would call BrasilAPI)
+
+        // Mocking FIPE Result with realistic variation based on Year
         setTimeout(() => {
+            const basePrice = 150000;
+            const year = parseInt(fipeQuery.ano) || 2024;
+            const diff = 2025 - year;
+            const price = basePrice - (diff * 12000);
+
             setFipeResult({
-                valor: "R$ 154.500,00",
+                valor: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price),
                 marca: fipeQuery.marca || "Toyota",
                 modelo: fipeQuery.modelo || "Corolla XEi",
-                anoModelo: 2023,
-                combustivel: "Gasolina",
-                codigoFipe: "002005-0",
-                mesReferencia: "Dezembro de 2025",
-                historico: [158000, 156500, 155000, 154500]
+                anoModelo: year,
+                combustivel: "Flex",
+                codigoFipe: `00${Math.floor(Math.random() * 9000)}-${Math.floor(Math.random() * 9)}`,
+                mesReferencia: `Dezembro de 2025`,
+                historico: []
             });
             setLoadingFipe(false);
-        }, 1500);
+        }, 1000);
     };
 
     return (
@@ -61,18 +67,71 @@ export function ConsultasPage() {
                     </div>
 
                     <form onSubmit={handleFipeSearch} className="space-y-3 flex-1">
-                        <input className="w-full p-2 border border-gray-200 rounded-lg text-sm" placeholder="Marca (Ex: Toyota)" value={fipeQuery.marca} onChange={e => setFipeQuery({ ...fipeQuery, marca: e.target.value })} />
-                        <input className="w-full p-2 border border-gray-200 rounded-lg text-sm" placeholder="Modelo (Ex: Corolla)" value={fipeQuery.modelo} onChange={e => setFipeQuery({ ...fipeQuery, modelo: e.target.value })} />
-                        <button disabled={loadingFipe} type="submit" className="w-full py-2 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 transition-colors">
+                        <div>
+                            <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Marca</label>
+                            <select
+                                required
+                                className="w-full p-2 border border-gray-200 rounded-lg text-sm bg-white"
+                                value={fipeQuery.marca}
+                                onChange={e => setFipeQuery({ ...fipeQuery, marca: e.target.value })}
+                            >
+                                <option value="">Selecione...</option>
+                                <option value="Toyota">Toyota</option>
+                                <option value="Honda">Honda</option>
+                                <option value="Volkswagen">Volkswagen</option>
+                                <option value="Chevrolet">Chevrolet</option>
+                                <option value="Fiat">Fiat</option>
+                                <option value="Ford">Ford</option>
+                                <option value="Hyundai">Hyundai</option>
+                                <option value="Jeep">Jeep</option>
+                                <option value="Nissan">Nissan</option>
+                                <option value="Renault">Renault</option>
+                                <option value="BMW">BMW</option>
+                                <option value="Mercedes-Benz">Mercedes-Benz</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Modelo</label>
+                            <input
+                                required
+                                className="w-full p-2 border border-gray-200 rounded-lg text-sm"
+                                placeholder="Ex: Corolla XEi 2.0"
+                                value={fipeQuery.modelo}
+                                onChange={e => setFipeQuery({ ...fipeQuery, modelo: e.target.value })}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Ano Modelo</label>
+                            <select
+                                required
+                                className="w-full p-2 border border-gray-200 rounded-lg text-sm bg-white"
+                                value={fipeQuery.ano}
+                                onChange={e => setFipeQuery({ ...fipeQuery, ano: e.target.value })}
+                            >
+                                <option value="">Selecione...</option>
+                                {Array.from({ length: 17 }, (_, i) => new Date().getFullYear() + 1 - i).map(y => (
+                                    <option key={y} value={y}>{y}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <button disabled={loadingFipe} type="submit" className="w-full py-2 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 transition-colors mt-2">
                             {loadingFipe ? 'Consultando...' : 'Consultar Valor'}
                         </button>
                     </form>
 
                     {fipeResult && (
                         <div className="mt-4 p-3 bg-purple-50 rounded-lg border border-purple-100 animate-fade-in-up">
-                            <p className="text-xs text-purple-600 font-bold uppercase mb-1">Preço Médio</p>
+                            <p className="text-xs text-purple-600 font-bold uppercase mb-1">Preço Médio ({fipeResult.anoModelo})</p>
                             <p className="text-2xl font-bold text-gray-900">{fipeResult.valor}</p>
                             <p className="text-xs text-gray-500 mt-1">Ref: {fipeResult.mesReferencia}</p>
+
+                            <div className="mt-3 pt-3 border-t border-purple-100 flex justify-between text-xs text-gray-500">
+                                <span>Cód. Fipe: {fipeResult.codigoFipe}</span>
+                                <span>{fipeResult.combustivel}</span>
+                            </div>
                         </div>
                     )}
                 </div>
