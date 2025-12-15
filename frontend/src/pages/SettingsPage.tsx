@@ -16,13 +16,14 @@ export function SettingsPage() {
         slug: "",
         primaryColor: "#000000",
         address: "",
+        storeDescription: "",
         plan: "Plano Gratuito",
         logoUrl: "",
         coverUrl: ""
     });
 
     const [isEditing, setIsEditing] = useState(false);
-    const [editForm, setEditForm] = useState({ name: "", phone: "", slug: "", primaryColor: "#000000", address: "" });
+    const [editForm, setEditForm] = useState({ name: "", phone: "", slug: "", primaryColor: "#000000", address: "", storeDescription: "" });
     const [uploadingLogo, setUploadingLogo] = useState(false);
     const [uploadingCover, setUploadingCover] = useState(false);
 
@@ -74,6 +75,7 @@ export function SettingsPage() {
                     slug: data.slug || '',
                     primaryColor: data.primaryColor || '#000000',
                     address: data.address || '',
+                    storeDescription: data.storeDescription || '',
                     status: subStatus,
                     nextBilling: nextBilling
                 } as any);
@@ -82,7 +84,8 @@ export function SettingsPage() {
                     phone: data.phone || '',
                     slug: data.slug || '',
                     primaryColor: data.primaryColor || '#000000',
-                    address: data.address || ''
+                    address: data.address || '',
+                    storeDescription: data.storeDescription || ''
                 });
             } else {
                 if (response.status === 401) navigate('/login');
@@ -118,7 +121,8 @@ export function SettingsPage() {
                     phone: editForm.phone,
                     slug: editForm.slug,
                     primaryColor: editForm.primaryColor,
-                    address: editForm.address
+                    address: editForm.address,
+                    storeDescription: editForm.storeDescription
                 })
             });
 
@@ -130,7 +134,8 @@ export function SettingsPage() {
                     phone: updatedUser.phone,
                     slug: updatedUser.slug,
                     primaryColor: updatedUser.primaryColor,
-                    address: updatedUser.address
+                    address: updatedUser.address,
+                    storeDescription: updatedUser.storeDescription
                 }));
                 setIsEditing(false);
                 alert('Perfil atualizado com sucesso!');
@@ -300,6 +305,17 @@ export function SettingsPage() {
                             onChange={(e) => setEditForm(prev => ({ ...prev, address: e.target.value }))}
                             disabled={!isEditing}
                             placeholder="Rua Exemplo, 123 - Centro"
+                            className={`w-full px-4 py-2 border rounded-xl transition-colors ${isEditing ? 'bg-white border-green-500 ring-2 ring-green-500/20' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
+                        />
+                    </div>
+                    <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Slogan / Sobre a Loja (Aparece na capa do site)</label>
+                        <textarea
+                            value={isEditing ? editForm.storeDescription : (user as any).storeDescription}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, storeDescription: e.target.value }))}
+                            disabled={!isEditing}
+                            rows={2}
+                            placeholder="Seu próximo carro está aqui. Qualidade, confiança e procedência."
                             className={`w-full px-4 py-2 border rounded-xl transition-colors ${isEditing ? 'bg-white border-green-500 ring-2 ring-green-500/20' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
                         />
                     </div>

@@ -32,7 +32,7 @@ export class UsersController {
 
     @UseGuards(JwtAuthGuard)
     @Patch('profile')
-    async updateProfile(@Request() req, @Body() body: { storeName?: string; phone?: string; slug?: string; primaryColor?: string; address?: string }) {
+    async updateProfile(@Request() req, @Body() body: { storeName?: string; phone?: string; slug?: string; primaryColor?: string; address?: string; storeDescription?: string }) {
         console.log('--------------------------------------------------');
         console.log('[UsersController] PATCH /profile called');
         console.log('[UsersController] User:', req.user);
@@ -43,6 +43,7 @@ export class UsersController {
         if (body.slug !== undefined) updates.slug = body.slug;
         if (body.primaryColor !== undefined) updates.primaryColor = body.primaryColor;
         if (body.address !== undefined) updates.address = body.address;
+        if (body.storeDescription !== undefined) updates.storeDescription = body.storeDescription;
 
         return this.usersService.updateById(req.user.userId, updates);
     }
@@ -99,7 +100,8 @@ export class UsersController {
                 phone: user.phone,
                 primaryColor: user.primaryColor || '#000000',
                 email: user.email,
-                address: user.address
+                address: user.address,
+                description: user.storeDescription
             },
             vehicles: vehicles
         };

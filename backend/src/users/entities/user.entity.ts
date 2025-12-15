@@ -50,6 +50,9 @@ export class User {
     @Column({ nullable: true })
     address: string; // Physical address of the store
 
+    @Column('text', { nullable: true })
+    storeDescription: string; // Slogan or About Us text
+
     @Column({ nullable: true })
     asaasCustomerId: string;
 

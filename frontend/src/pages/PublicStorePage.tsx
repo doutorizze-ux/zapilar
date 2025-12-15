@@ -38,6 +38,7 @@ interface StoreData {
     primaryColor: string;
     email?: string;
     address?: string; // New: Address
+    description?: string; // New: Slogan/Description
 }
 
 // --- Components ---
@@ -288,9 +289,11 @@ export function PublicStorePage() {
                         {store.logoUrl ? (
                             <img src={getImageUrl(store.logoUrl)} className="h-10 w-auto object-contain" />
                         ) : (
-                            <div className="w-10 h-10 bg-gray-900 rounded-full flex items-center justify-center text-white font-bold">{store.name[0]}</div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-gray-900 rounded-full flex items-center justify-center text-white font-bold">{store.name[0]}</div>
+                                <span className="font-bold text-xl text-gray-900 truncate max-w-[200px]">{store.name}</span>
+                            </div>
                         )}
-                        <span className="font-bold text-xl text-gray-900 truncate max-w-[200px]">{store.name}</span>
                     </div>
 
                     {/* Desktop Menu */}
@@ -349,7 +352,7 @@ export function PublicStorePage() {
                         transition={{ delay: 0.2 }}
                         className="text-lg md:text-xl text-white/90 font-medium"
                     >
-                        Seu próximo carro está aqui. Qualidade, confiança e procedência.
+                        {store.description || "Seu próximo carro está aqui. Qualidade, confiança e procedência."}
                     </motion.p>
                 </div>
             </div>
