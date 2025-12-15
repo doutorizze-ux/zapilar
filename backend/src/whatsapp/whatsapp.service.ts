@@ -506,6 +506,9 @@ export class WhatsappService implements OnModuleInit {
         await this.processIncomingMessage(userId, cleanFrom, pushName, body, fromMe, messageTimestamp, msgId);
     }
 
+    // Simple in-memory state for demo purposes. In production use Redis/DB.
+    private userStates: Map<string, { mode: 'MENU' | 'WAITING_NAME' | 'WAITING_YEAR' | 'AI_CHAT' }> = new Map();
+
     private async processIncomingMessage(userId: string, from: string, senderName: string, text: string, isFromMe: boolean, messageTimestamp?: number, wamid?: string) {
         if (messageTimestamp) {
             let msgTime = 0;
@@ -555,105 +558,146 @@ export class WhatsappService implements OnModuleInit {
             return;
         }
 
-        const msg = text.toLowerCase();
+        const msg = text.toLowerCase().trim();
         const user = await this.usersService.findById(userId);
         const storeName = user?.storeName || "ZapCar";
-        const allVehicles = await this.vehiclesService.findAll(userId);
 
-        const strictMatchVehicles = allVehicles.filter(v => {
-            const searchTerms = [v.name, v.brand, v.model, v.year?.toString()].map(t => t?.toLowerCase() || '');
-            return searchTerms.some(term => term && term.length > 2 && msg.includes(term));
-        });
+        // --- MENU LOGIC START ---
 
-        let contextVehicles = strictMatchVehicles;
-        // Explicitly handle "Stock" request to populate contextVehicles for the AI/Sender
-        if (msg.includes('estoque') || msg.includes('catalogo') || msg.includes('catálogo') || msg.includes('ver carros')) {
-            contextVehicles = allVehicles;
+        // Unique key for this user's state (combination of StoreId + CustomerNumber)
+        const stateKey = `${userId}:${from}`;
+        const currentState = this.userStates.get(stateKey)?.mode || 'MENU';
+
+        // 1. Reset / Menu Triggers
+        const greetings = ['oi', 'ola', 'olá', 'bom dia', 'boa tarde', 'boa noite', 'menu', 'inicio', 'início', 'começar'];
+        if (greetings.some(g => msg === g || (msg.includes(g) && msg.length < 10))) {
+            this.userStates.set(stateKey, { mode: 'MENU' });
+            await this.sendMessage(userId, from, `👋 Olá! Bem-vindo(a) à *${storeName}*.\n\nSou seu assistente virtual. Por favor, escolha uma opção:\n\n1️⃣ *Buscar Veículo por Nome*\n2️⃣ *Buscar por Ano*\n3️⃣ *Falar com Especialista (IA)*\n\n_Responda com o número da opção._`);
+            return;
         }
 
-        // Optimizing Context: Limit to 20 vehicles to prevent AI timeouts/hallucinations
-        let aiContextVehicles = allVehicles.length > 20 ? allVehicles.slice(0, 20) : allVehicles;
+        // 2. Handle State Transitions
+        if (currentState === 'MENU') {
+            if (msg === '1' || msg.includes('nome')) {
+                this.userStates.set(stateKey, { mode: 'WAITING_NAME' });
+                await this.sendMessage(userId, from, '🔍 Digite o *nome* ou *modelo* do veículo que você procura (ex: Civic, Gol, Hilux):');
+                return;
+            } else if (msg === '2' || msg.includes('ano')) {
+                this.userStates.set(stateKey, { mode: 'WAITING_YEAR' });
+                await this.sendMessage(userId, from, '📅 Digite o *ano* mínimo que você deseja (ex: 2018):');
+                return;
+            } else if (msg === '3' || msg.includes('ia') || msg.includes('duvida') || msg.includes('falar')) {
+                this.userStates.set(stateKey, { mode: 'AI_CHAT' });
+                await this.sendMessage(userId, from, '🤖 *Modo Inteligente Ativado*\n\nPode perguntar o que quiser sobre nossos carros, financiamento ou localização!');
+                return;
+            } else {
+                // Invalid option for menu, stay in menu but give hint OR if it looks like a sentence, maybe auto-switch to AI?
+                // For safety requested by user, force menu adherence.
+                await this.sendMessage(userId, from, '⚠️ Opção inválida. Digite:\n\n*1* para buscar por nome\n*2* para buscar por ano\n*3* para tirar dúvidas');
+                return;
+            }
+        }
 
+        // 3. Handle Specific States
+        let contextVehicles: any[] = [];
         let shouldShowCars = false;
         let responseText = '';
 
-        const fallbackResponse = async (): Promise<string> => {
-            const greetings = ['oi', 'ola', 'olá', 'bom dia', 'boa tarde', 'boa noite', 'tudo bem', 'epa', 'opa'];
-            if (greetings.some(g => msg === g || (msg.includes(g) && msg.length < 10))) {
-                shouldShowCars = false;
-                return `Olá! 👋 Bem-vindo à *${storeName}*.\n\nSou seu assistente virtual. Digite o nome do carro que procura (ex: *Hilux*, *Civic*) ou digite *Estoque* para ver tudo.`;
-            }
+        const allVehicles = await this.vehiclesService.findAll(userId);
 
-            if (msg.includes('endereço') || msg.includes('local') || msg.includes('onde fica')) {
-                shouldShowCars = false;
-                return `📍 Estamos localizados em: [Endereço da Loja].\nVenha nos visitar!`;
-            }
+        if (currentState === 'WAITING_NAME') {
+            // Search by Name
+            contextVehicles = allVehicles.filter(v =>
+                (v.name && v.name.toLowerCase().includes(msg)) ||
+                (v.model && v.model.toLowerCase().includes(msg)) ||
+                (v.brand && v.brand.toLowerCase().includes(msg))
+            );
 
-            if (strictMatchVehicles.length > 0) {
-                contextVehicles = strictMatchVehicles;
+            if (contextVehicles.length > 0) {
+                await this.sendMessage(userId, from, `✅ Encontrei ${contextVehicles.length} veículo(s) com "${text}". Veja abaixo:`);
                 shouldShowCars = true;
-                return `Encontrei ${strictMatchVehicles.length} opção(ões) que podem te interessar! 🚘\n\nVou te mandar as fotos e detalhes agora:`;
+                // Return to menu after success? Or stay? Let's stay in 'MENU' to reset cycle.
+                this.userStates.set(stateKey, { mode: 'MENU' });
+            } else {
+                await this.sendMessage(userId, from, `❌ Poxa, não encontrei nenhum veículo com o nome "${text}".\n\nTente outro nome ou digite *Menu* para voltar.`);
+                return;
             }
 
-            if (msg.includes('estoque') || msg.includes('catalogo') || msg.includes('catálogo')) {
-                contextVehicles = allVehicles.slice(0, 5);
+        } else if (currentState === 'WAITING_YEAR') {
+            // Search by Year
+            const yearStr = msg.replace(/\D/g, ''); // extract numbers
+            if (yearStr.length === 4) {
+                const targetYear = parseInt(yearStr);
+                contextVehicles = allVehicles.filter(v => v.year >= targetYear);
+
+                if (contextVehicles.length > 0) {
+                    await this.sendMessage(userId, from, `✅ Encontrei ${contextVehicles.length} veículo(s) ano ${targetYear} ou mais novos. Veja:`);
+                    shouldShowCars = true;
+                    this.userStates.set(stateKey, { mode: 'MENU' });
+                } else {
+                    await this.sendMessage(userId, from, `❌ Nenhum veículo encontrado acima do ano ${targetYear}. Tente outro ano ou digite *Menu*.`);
+                    return;
+                }
+            } else {
+                await this.sendMessage(userId, from, '⚠️ Por favor, digite um ano válido com 4 dígitos (ex: 2020).');
+                return;
+            }
+
+        } else if (currentState === 'AI_CHAT') {
+            // --- EXISTING AI LOGIC (Moved here) ---
+
+            // Check specific stock keywords just in case they want to see all
+            if (msg.includes('estoque') || msg.includes('catalogo')) {
+                contextVehicles = allVehicles;
                 shouldShowCars = true;
-                return `Claro! Aqui estão alguns destaques do nosso estoque atual:`;
+                responseText = "Aqui está nosso estoque completo:";
+            } else {
+                // AI Processing
+                const faqMatch = await this.faqService.findMatch(userId, msg);
+                if (faqMatch) {
+                    responseText = faqMatch;
+                } else if (this.model) {
+                    try {
+                        let aiContextVehicles = allVehicles.length > 20 ? allVehicles.slice(0, 20) : allVehicles;
+                        const params = aiContextVehicles.map(v => `- ${v.brand} ${v.name} ${v.model} (${v.year})`).join('\n');
+                        const prompt = `
+                        Você é um consultor de vendas especialista da loja "${storeName}".
+                        ** Contexto **
+                        Mensagem do Cliente: "${text}"
+                        ** Estoque Atual **
+                        ${params}
+                        
+                        ** Regras **
+                        1. Responda dúvidas sobre financiamento, localização e carros.
+                        2. Se o cliente pedir carros espefícicos que estão na lista, responda com [SHOW_CARS].
+                        3. Se não tiver o carro, diga [NO_CARS] e seja educado.
+                        `;
+
+                        const result = await this.model.generateContent(prompt);
+                        const aiResponse = result.response.text();
+
+                        if (aiResponse.includes('[SHOW_CARS]')) {
+                            shouldShowCars = true;
+                            // Try to infer context from AI? Hard without function calling.
+                            // We'll fallback to simple search if AI triggers cars
+                            contextVehicles = allVehicles.filter(v =>
+                                msg.includes(v.name.toLowerCase()) || msg.includes(v.brand.toLowerCase())
+                            );
+                            if (contextVehicles.length === 0) contextVehicles = allVehicles.slice(0, 5);
+                        }
+                        responseText = aiResponse.replace(/\[SHOW_CARS\]|\[NO_CARS\]/g, '').trim();
+                    } catch (e) {
+                        responseText = "Desculpe, estou com dificuldade de conexão. Pode repetir?";
+                    }
+                } else {
+                    responseText = "Desculpe, minha inteligência está offline no momento.";
+                }
+
+                await this.sendMessage(userId, from, responseText);
+                this.logMessage(userId, from, 'bot', responseText, storeName + ' (Bot)', true);
             }
-
-            shouldShowCars = false;
-            return `Poxa, procurei aqui e não encontrei nenhum carro com nome *"${text}"* no momento. 😕\n\nMas temos muitas outras opções! Digite *Estoque* para ver o que chegou.`;
-        };
-
-        const faqMatch = await this.faqService.findMatch(userId, msg);
-
-        if (faqMatch) {
-            responseText = faqMatch;
-            shouldShowCars = false;
-        } else if (this.model) {
-            try {
-                const params = aiContextVehicles.map(v => `- ${v.brand} ${v.name} ${v.model} (${v.year})`).join('\n');
-                const prompt = `
-                Você é um consultor de vendas especialista da loja "${storeName}".
-                ** Contexto **
-                Mensagem do Cliente: "${text}"
-                ** Estoque Atual **
-                ${params}
-                
-                ** Missão **
-                Identificar se o cliente está buscando um carro específico ou quer ver o estoque geral.
-                
-                ** Regras RÍGIDAS **
-                1. Se o cliente pedir um carro específico (ex: "tem civic?"):
-                   - Verifique se ele está no **Estoque Atual** acima.
-                   - Se SIM: Responda confirmando e use a flag [SHOW_CARS].
-                   - Se NÃO: Responda apenas que não tem o modelo no momento. NUNCA ofereça outros modelos ("não temos X mas temos Y"). Use a flag [NO_CARS].
-                2. Se o cliente pedir para ver o estoque geral (ex: "quais carros tem?", "ver catálogo", "estoque"):
-                   - Responda que vai mostrar as opções. Use a flag [SHOW_CARS].
-                3. Se for apenas um cumprimento ou perguntas gerais:
-                   - Responda cordialmente. [NO_CARS].
-                4. Pergunta sobre endereço/localização:
-                    - Responda com o endereço da loja. [NO_CARS].
-                
-                Retorne apenas a resposta do bot seguida da flag [SHOW_CARS] ou [NO_CARS].
-                `;
-
-                const result = await this.model.generateContent(prompt);
-                const aiResponse = result.response.text();
-
-                if (aiResponse.includes('[SHOW_CARS]')) shouldShowCars = true;
-                responseText = aiResponse.replace(/\[SHOW_CARS\]|\[NO_CARS\]/g, '').trim();
-
-            } catch (error) {
-                this.logger.error('AI Failed', error);
-                responseText = await fallbackResponse();
-            }
-        } else {
-            responseText = await fallbackResponse();
         }
 
-        await this.sendMessage(userId, from, responseText);
-        this.logMessage(userId, from, 'bot', responseText, storeName + ' (Bot)', true);
 
         if (shouldShowCars && contextVehicles.length > 0) {
             // STRICT MODE: Only show context vehicles. NEVER fall back to random generic list if specific search failed.
