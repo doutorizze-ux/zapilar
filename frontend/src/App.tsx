@@ -15,6 +15,7 @@ import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 import { AdminFinancialPage } from './pages/admin/AdminFinancialPage';
 import { StorePlansPage } from './pages/StorePlansPage';
 import { TrainingPage } from './pages/TrainingPage';
+import { ConsultasPage } from './pages/ConsultasPage';
 
 import { SimulatorPage } from './pages/SimulatorPage';
 import { LeadsPage } from './pages/LeadsPage';
@@ -53,6 +54,7 @@ function App() {
             <Route path="leads" element={<LeadsPage />} />
             <Route path="whatsapp" element={<WhatsappPage />} />
             <Route path="training" element={<TrainingPage />} />
+            <Route path="consultas" element={<ConsultasPage />} />
             <Route path="plans" element={<StorePlansPage />} />
             <Route path="simulator" element={<SimulatorPage />} />
             <Route path="settings" element={<SettingsPage />} />
