@@ -45,6 +45,12 @@ export class User {
     logoUrl: string;
 
     @Column({ nullable: true })
+    coverUrl: string; // Banner/Cover image for the store
+
+    @Column({ nullable: true })
+    address: string; // Physical address of the store
+
+    @Column({ nullable: true })
     asaasCustomerId: string;
 
     @Column({ nullable: true })

@@ -1,4 +1,4 @@
-import { Store, CreditCard, LogOut, MessageCircle, Upload, Save, Pencil, Globe, ExternalLink } from 'lucide-react';
+import { Store, CreditCard, LogOut, MessageCircle, Upload, Save, Pencil, Globe, ExternalLink, Image as ImageIcon } from 'lucide-react';
 import { API_URL } from '../config';
 import { useNavigate } from 'react-router-dom';
 
@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from 'react';
 export function SettingsPage() {
     const navigate = useNavigate();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const coverInputRef = useRef<HTMLInputElement>(null);
 
     const [user, setUser] = useState({
         name: "Carregando...",
@@ -14,13 +15,16 @@ export function SettingsPage() {
         phone: "",
         slug: "",
         primaryColor: "#000000",
+        address: "",
         plan: "Plano Gratuito",
-        logoUrl: ""
+        logoUrl: "",
+        coverUrl: ""
     });
 
     const [isEditing, setIsEditing] = useState(false);
-    const [editForm, setEditForm] = useState({ name: "", phone: "", slug: "", primaryColor: "#000000" });
+    const [editForm, setEditForm] = useState({ name: "", phone: "", slug: "", primaryColor: "#000000", address: "" });
     const [uploadingLogo, setUploadingLogo] = useState(false);
+    const [uploadingCover, setUploadingCover] = useState(false);
 
     const fetchProfile = async () => {
         const token = localStorage.getItem('token');
@@ -69,6 +73,7 @@ export function SettingsPage() {
                     logoUrl: data.logoUrl,
                     slug: data.slug || '',
                     primaryColor: data.primaryColor || '#000000',
+                    address: data.address || '',
                     status: subStatus,
                     nextBilling: nextBilling
                 } as any);
@@ -76,7 +81,8 @@ export function SettingsPage() {
                     name: data.storeName || 'Minha Loja',
                     phone: data.phone || '',
                     slug: data.slug || '',
-                    primaryColor: data.primaryColor || '#000000'
+                    primaryColor: data.primaryColor || '#000000',
+                    address: data.address || ''
                 });
             } else {
                 if (response.status === 401) navigate('/login');
@@ -111,7 +117,8 @@ export function SettingsPage() {
                     storeName: editForm.name,
                     phone: editForm.phone,
                     slug: editForm.slug,
-                    primaryColor: editForm.primaryColor
+                    primaryColor: editForm.primaryColor,
+                    address: editForm.address
                 })
             });
 
@@ -122,7 +129,8 @@ export function SettingsPage() {
                     name: updatedUser.storeName,
                     phone: updatedUser.phone,
                     slug: updatedUser.slug,
-                    primaryColor: updatedUser.primaryColor
+                    primaryColor: updatedUser.primaryColor,
+                    address: updatedUser.address
                 }));
                 setIsEditing(false);
                 alert('Perfil atualizado com sucesso!');
@@ -166,6 +174,34 @@ export function SettingsPage() {
             console.error('Upload failed', error);
         } finally {
             setUploadingLogo(false);
+        }
+    };
+
+    const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (!event.target.files || event.target.files.length === 0) return;
+        const file = event.target.files[0];
+        setUploadingCover(true);
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_URL}/users/cover`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+
+            if (response.ok) {
+                await fetchProfile(); // Refresh
+            } else {
+                alert('Erro ao enviar capa.');
+            }
+        } catch (error) {
+            console.error('Cover upload failed', error);
+        } finally {
+            setUploadingCover(false);
         }
     };
 
@@ -222,6 +258,19 @@ export function SettingsPage() {
                             <p className="text-sm text-gray-500">
                                 {uploadingLogo ? 'Enviando logo...' : 'Clique na logo para alterar'}
                             </p>
+                            <button
+                                onClick={() => coverInputRef.current?.click()}
+                                className="mt-2 text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1"
+                            >
+                                <ImageIcon className="w-3 h-3" /> {uploadingCover ? 'Enviando...' : 'Alterar Capa do Site'}
+                            </button>
+                            <input
+                                type="file"
+                                ref={coverInputRef}
+                                className="hidden"
+                                accept="image/*"
+                                onChange={handleCoverUpload}
+                            />
                         </div>
                     </div>
                 </div>
@@ -241,7 +290,16 @@ export function SettingsPage() {
                             value={isEditing ? editForm.phone : user.phone}
                             onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
                             disabled={!isEditing}
-                            placeholder="Ex: 11999999999"
+                            className={`w-full px-4 py-2 border rounded-xl transition-colors ${isEditing ? 'bg-white border-green-500 ring-2 ring-green-500/20' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Endereço da Loja</label>
+                        <input
+                            value={isEditing ? editForm.address : (user as any).address}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, address: e.target.value }))}
+                            disabled={!isEditing}
+                            placeholder="Rua Exemplo, 123 - Centro"
                             className={`w-full px-4 py-2 border rounded-xl transition-colors ${isEditing ? 'bg-white border-green-500 ring-2 ring-green-500/20' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
                         />
                     </div>

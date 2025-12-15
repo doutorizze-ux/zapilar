@@ -32,7 +32,7 @@ export class UsersController {
 
     @UseGuards(JwtAuthGuard)
     @Patch('profile')
-    async updateProfile(@Request() req, @Body() body: { storeName?: string; phone?: string; slug?: string; primaryColor?: string }) {
+    async updateProfile(@Request() req, @Body() body: { storeName?: string; phone?: string; slug?: string; primaryColor?: string; address?: string }) {
         console.log('--------------------------------------------------');
         console.log('[UsersController] PATCH /profile called');
         console.log('[UsersController] User:', req.user);
@@ -42,6 +42,7 @@ export class UsersController {
         if (body.phone !== undefined) updates.phone = body.phone;
         if (body.slug !== undefined) updates.slug = body.slug;
         if (body.primaryColor !== undefined) updates.primaryColor = body.primaryColor;
+        if (body.address !== undefined) updates.address = body.address;
 
         return this.usersService.updateById(req.user.userId, updates);
     }
@@ -63,6 +64,23 @@ export class UsersController {
         return this.usersService.updateById(req.user.userId, { logoUrl });
     }
 
+    @UseGuards(JwtAuthGuard)
+    @Post('cover')
+    @UseInterceptors(FileInterceptor('file', {
+        storage: diskStorage({
+            destination: './uploads',
+            filename: (req, file, cb) => {
+                const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
+                return cb(null, `cover-${randomName}${extname(file.originalname)}`);
+            }
+        })
+    }))
+    async uploadCover(@Request() req, @UploadedFile() file: Express.Multer.File) {
+        if (!file) throw new Error('File not found');
+        const coverUrl = `/uploads/${file.filename}`;
+        return this.usersService.updateById(req.user.userId, { coverUrl });
+    }
+
     // --- Public Storefront Route --
     @Get('public/:slug')
     async getPublicStore(@Param('slug') slug: string) {
@@ -77,9 +95,11 @@ export class UsersController {
             store: {
                 name: user.storeName,
                 logoUrl: user.logoUrl,
+                coverUrl: user.coverUrl,
                 phone: user.phone,
                 primaryColor: user.primaryColor || '#000000',
-                email: user.email // Optional
+                email: user.email,
+                address: user.address
             },
             vehicles: vehicles
         };
