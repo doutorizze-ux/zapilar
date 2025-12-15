@@ -4,6 +4,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { UsersService } from './users.service';
+import { VehiclesService } from '../vehicles/vehicles.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -11,7 +12,10 @@ import { UserRole } from './entities/user.entity';
 
 @Controller('users')
 export class UsersController {
-    constructor(private readonly usersService: UsersService) { }
+    constructor(
+        private readonly usersService: UsersService,
+        private readonly vehiclesService: VehiclesService
+    ) { }
 
     // --- Rotas de Perfil (UserLogado) - Devem vir antes de :id ---
 
@@ -28,7 +32,7 @@ export class UsersController {
 
     @UseGuards(JwtAuthGuard)
     @Patch('profile')
-    async updateProfile(@Request() req, @Body() body: { storeName?: string; phone?: string }) {
+    async updateProfile(@Request() req, @Body() body: { storeName?: string; phone?: string; slug?: string; primaryColor?: string }) {
         console.log('--------------------------------------------------');
         console.log('[UsersController] PATCH /profile called');
         console.log('[UsersController] User:', req.user);
@@ -36,6 +40,8 @@ export class UsersController {
         const updates: any = {};
         if (body.storeName !== undefined) updates.storeName = body.storeName;
         if (body.phone !== undefined) updates.phone = body.phone;
+        if (body.slug !== undefined) updates.slug = body.slug;
+        if (body.primaryColor !== undefined) updates.primaryColor = body.primaryColor;
 
         return this.usersService.updateById(req.user.userId, updates);
     }
@@ -55,6 +61,28 @@ export class UsersController {
         if (!file) throw new Error('File not found');
         const logoUrl = `/uploads/${file.filename}`;
         return this.usersService.updateById(req.user.userId, { logoUrl });
+    }
+
+    // --- Public Storefront Route --
+    @Get('public/:slug')
+    async getPublicStore(@Param('slug') slug: string) {
+        const user = await this.usersService.findBySlug(slug);
+        if (!user) {
+            throw new Error('Store not found');
+        }
+
+        const vehicles = await this.vehiclesService.findAll(user.id);
+
+        return {
+            store: {
+                name: user.storeName,
+                logoUrl: user.logoUrl,
+                phone: user.phone,
+                primaryColor: user.primaryColor || '#000000',
+                email: user.email // Optional
+            },
+            vehicles: vehicles
+        };
     }
 
     // --- Rotas de Admin (Genéricas ou Parametrizadas) ---

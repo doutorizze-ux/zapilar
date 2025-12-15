@@ -35,6 +35,12 @@ export class User {
     @Column({ nullable: true })
     storeName: string;
 
+    @Column({ unique: true, nullable: true })
+    slug: string; // URL friendly name (e.g. 'motors-v8')
+
+    @Column({ nullable: true, default: '#000000' })
+    primaryColor: string; // Store branding color
+
     @Column({ nullable: true })
     logoUrl: string;
 

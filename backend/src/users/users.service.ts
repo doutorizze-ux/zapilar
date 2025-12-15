@@ -84,4 +84,8 @@ export class UsersService implements OnModuleInit {
 
         return result;
     }
+
+    async findBySlug(slug: string): Promise<User | null> {
+        return this.usersRepository.findOne({ where: { slug } });
+    }
 }

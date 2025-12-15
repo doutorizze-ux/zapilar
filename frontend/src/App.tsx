@@ -18,6 +18,7 @@ import { TrainingPage } from './pages/TrainingPage';
 
 import { SimulatorPage } from './pages/SimulatorPage';
 import { LeadsPage } from './pages/LeadsPage';
+import { PublicStorePage } from './pages/PublicStorePage';
 
 import { useEffect } from 'react';
 import { API_URL } from './config';
@@ -56,6 +57,9 @@ function App() {
             <Route path="simulator" element={<SimulatorPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
+
+          {/* Public Store Route - Must be last to avoid conflicts */}
+          <Route path="/:slug" element={<PublicStorePage />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

@@ -1,4 +1,4 @@
-import { Store, CreditCard, LogOut, MessageCircle, Upload, Save, Pencil } from 'lucide-react';
+import { Store, CreditCard, LogOut, MessageCircle, Upload, Save, Pencil, Globe, ExternalLink } from 'lucide-react';
 import { API_URL } from '../config';
 import { useNavigate } from 'react-router-dom';
 
@@ -12,12 +12,14 @@ export function SettingsPage() {
         name: "Carregando...",
         email: "...",
         phone: "",
+        slug: "",
+        primaryColor: "#000000",
         plan: "Plano Gratuito",
         logoUrl: ""
     });
 
     const [isEditing, setIsEditing] = useState(false);
-    const [editForm, setEditForm] = useState({ name: "", phone: "" });
+    const [editForm, setEditForm] = useState({ name: "", phone: "", slug: "", primaryColor: "#000000" });
     const [uploadingLogo, setUploadingLogo] = useState(false);
 
     const fetchProfile = async () => {
@@ -65,10 +67,17 @@ export function SettingsPage() {
                     phone: data.phone || '',
                     plan: subInfo,
                     logoUrl: data.logoUrl,
+                    slug: data.slug || '',
+                    primaryColor: data.primaryColor || '#000000',
                     status: subStatus,
                     nextBilling: nextBilling
                 } as any);
-                setEditForm({ name: data.storeName || 'Minha Loja', phone: data.phone || '' });
+                setEditForm({
+                    name: data.storeName || 'Minha Loja',
+                    phone: data.phone || '',
+                    slug: data.slug || '',
+                    primaryColor: data.primaryColor || '#000000'
+                });
             } else {
                 if (response.status === 401) navigate('/login');
             }
@@ -98,7 +107,12 @@ export function SettingsPage() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ storeName: editForm.name, phone: editForm.phone })
+                body: JSON.stringify({
+                    storeName: editForm.name,
+                    phone: editForm.phone,
+                    slug: editForm.slug,
+                    primaryColor: editForm.primaryColor
+                })
             });
 
             if (response.ok) {
@@ -106,7 +120,9 @@ export function SettingsPage() {
                 setUser(prev => ({
                     ...prev,
                     name: updatedUser.storeName,
-                    phone: updatedUser.phone
+                    phone: updatedUser.phone,
+                    slug: updatedUser.slug,
+                    primaryColor: updatedUser.primaryColor
                 }));
                 setIsEditing(false);
                 alert('Perfil atualizado com sucesso!');
@@ -232,6 +248,53 @@ export function SettingsPage() {
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Email de Acesso</label>
                         <input value={user.email} disabled className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-gray-500 cursor-not-allowed" />
+                    </div>
+
+                    <div className="md:col-span-2 border-t border-gray-100 pt-6 mt-2">
+                        <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <Globe className="w-5 h-5 text-blue-500" /> Site da Loja
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Link da Loja (Apelido)
+                                    <span className="text-xs text-gray-400 font-normal ml-2">ex: zapicar.com.br/<b>minhaloja</b></span>
+                                </label>
+                                <div className="flex gap-2">
+                                    <input
+                                        value={isEditing ? editForm.slug : (user as any).slug}
+                                        onChange={(e) => setEditForm(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
+                                        disabled={!isEditing}
+                                        placeholder="minhaloja"
+                                        className={`flex-1 px-4 py-2 border rounded-xl lowercase transition-colors ${isEditing ? 'bg-white border-green-500 ring-2 ring-green-500/20' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
+                                    />
+                                    {!(isEditing) && (user as any).slug && (
+                                        <a
+                                            href={`/${(user as any).slug}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors flex items-center gap-2"
+                                            title="Ver site"
+                                        >
+                                            <ExternalLink className="w-5 h-5" />
+                                        </a>
+                                    )}
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Cor Principal</label>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="color"
+                                        value={isEditing ? editForm.primaryColor : (user as any).primaryColor}
+                                        onChange={(e) => setEditForm(prev => ({ ...prev, primaryColor: e.target.value }))}
+                                        disabled={!isEditing}
+                                        className="h-10 w-16 p-1 rounded border border-gray-200 cursor-pointer disabled:opacity-50"
+                                    />
+                                    <span className="text-sm text-gray-500 uppercase">{isEditing ? editForm.primaryColor : (user as any).primaryColor}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div className="flex items-end">
                         {isEditing ? (
