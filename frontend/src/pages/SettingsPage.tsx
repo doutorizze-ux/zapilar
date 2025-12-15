@@ -27,6 +27,8 @@ export function SettingsPage() {
     const [uploadingLogo, setUploadingLogo] = useState(false);
     const [uploadingCover, setUploadingCover] = useState(false);
 
+    const [hasWebsiteFeature, setHasWebsiteFeature] = useState(false);
+
     const fetchProfile = async () => {
         const token = localStorage.getItem('token');
         if (!token) {
@@ -47,6 +49,27 @@ export function SettingsPage() {
 
             if (response.ok) {
                 const data = await response.json();
+
+                // Check Plan Features
+                if (data.planId) {
+                    try {
+                        const planRes = await fetch(`${API_URL}/plans/${data.planId}`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const planData = await planRes.json();
+                        const features = Array.isArray(planData.features)
+                            ? planData.features
+                            : (typeof planData.features === 'string' ? (planData.features as string).split(',') : []);
+
+                        if (features.some((f: string) => f.includes('Site Personalizado'))) {
+                            setHasWebsiteFeature(true);
+                        } else {
+                            setHasWebsiteFeature(false);
+                        }
+                    } catch (e) {
+                        console.error('Failed to fetch plan details', e);
+                    }
+                }
 
                 // Fetch Subscription Details
                 if (data.subscriptionId) {
@@ -334,26 +357,33 @@ export function SettingsPage() {
                                     Link da Loja (Apelido)
                                     <span className="text-xs text-gray-400 font-normal ml-2">ex: zapicar.com.br/<b>minhaloja</b></span>
                                 </label>
-                                <div className="flex gap-2">
-                                    <input
-                                        value={isEditing ? editForm.slug : (user as any).slug}
-                                        onChange={(e) => setEditForm(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
-                                        disabled={!isEditing}
-                                        placeholder="minhaloja"
-                                        className={`flex-1 px-4 py-2 border rounded-xl lowercase transition-colors ${isEditing ? 'bg-white border-green-500 ring-2 ring-green-500/20' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
-                                    />
-                                    {!(isEditing) && (user as any).slug && (
-                                        <a
-                                            href={`/${(user as any).slug}`}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors flex items-center gap-2"
-                                            title="Ver site"
-                                        >
-                                            <ExternalLink className="w-5 h-5" />
-                                        </a>
-                                    )}
-                                </div>
+                                {hasWebsiteFeature ? (
+                                    <div className="flex gap-2">
+                                        <input
+                                            value={isEditing ? editForm.slug : (user as any).slug}
+                                            onChange={(e) => setEditForm(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
+                                            disabled={!isEditing}
+                                            placeholder="minhaloja"
+                                            className={`flex-1 px-4 py-2 border rounded-xl lowercase transition-colors ${isEditing ? 'bg-white border-green-500 ring-2 ring-green-500/20' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
+                                        />
+                                        {!(isEditing) && (user as any).slug && (
+                                            <a
+                                                href={`/${(user as any).slug}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors flex items-center gap-2"
+                                                title="Ver site"
+                                            >
+                                                <ExternalLink className="w-5 h-5" />
+                                            </a>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-500 flex items-center gap-2">
+                                        <ExternalLink className="w-4 h-4 text-gray-400" />
+                                        Disponível no Plano Enterprise
+                                    </div>
+                                )}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Cor Principal</label>
