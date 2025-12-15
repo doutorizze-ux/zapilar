@@ -449,32 +449,7 @@ export function SettingsPage() {
                 </div>
             </div>
 
-            {/* AI Config (Mock) */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center">
-                            <MessageCircle className="w-6 h-6" />
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-bold text-gray-900">Inteligência Artificial</h3>
-                            <p className="text-sm text-gray-500">Configure como o bot responde</p>
-                        </div>
-                    </div>
-                </div>
-                <div className="p-6 space-y-4">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="font-medium text-gray-900">Respostas Humanizadas</p>
-                            <p className="text-sm text-gray-500">Usar IA Generativa (Gemini) para criar respostas naturais.</p>
-                        </div>
-                        <div className="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
-                            <input type="checkbox" name="toggle" id="toggle" className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer border-green-600 right-0" />
-                            <label htmlFor="toggle" className="toggle-label block overflow-hidden h-6 rounded-full bg-green-600 cursor-pointer"></label>
-                        </div>
-                    </div>
-                </div>
-            </div>
+
 
             <div className="pt-4 border-t border-gray-200">
                 <button onClick={handleLogout} className="flex items-center gap-2 text-red-600 font-medium hover:bg-red-50 px-4 py-2 rounded-lg transition-colors">
