@@ -261,6 +261,62 @@ export function PublicStorePage() {
         if (element) element.scrollIntoView({ behavior: 'smooth' });
     };
 
+    // --- Dynamic PWA Manifest & Metadata for Stores ---
+    useEffect(() => {
+        if (!store) return;
+
+        // 1. Update Page Title
+        document.title = store.name;
+
+        // 2. Update Theme Color
+        const metaThemeColor = document.querySelector("meta[name='theme-color']");
+        if (metaThemeColor) {
+            metaThemeColor.setAttribute("content", store.primaryColor);
+        }
+
+        // 3. Generate Dynamic Manifest
+        const dynamicManifest = {
+            name: store.name,
+            short_name: store.name.slice(0, 15),
+            description: store.description || `Confira o estoque da ${store.name}`,
+            start_url: window.location.pathname, // Install THIS store's url as start
+            scope: window.location.pathname,     // Limit scope to this store
+            display: "standalone",
+            background_color: "#ffffff",
+            theme_color: store.primaryColor,
+            icons: store.logoUrl ? [
+                {
+                    src: getImageUrl(store.logoUrl),
+                    sizes: "192x192",
+                    type: "image/png",
+                    purpose: "any maskable"
+                },
+                {
+                    src: getImageUrl(store.logoUrl),
+                    sizes: "512x512",
+                    type: "image/png",
+                    purpose: "any maskable"
+                }
+            ] : undefined
+        };
+
+        const stringManifest = JSON.stringify(dynamicManifest);
+        const blob = new Blob([stringManifest], { type: 'application/json' });
+        const manifestURL = URL.createObjectURL(blob);
+
+        let linkManifest = document.querySelector("link[rel='manifest']");
+        if (linkManifest) {
+            linkManifest.setAttribute('href', manifestURL);
+        } else {
+            // If for some reason missing (unlikely due to vite-plugin-pwa)
+            const newLink = document.createElement('link');
+            newLink.setAttribute('rel', 'manifest');
+            newLink.setAttribute('href', manifestURL);
+            document.head.appendChild(newLink);
+        }
+
+    }, [store, slug]);
+
     if (loading) return <div className="h-screen flex items-center justify-center"><div className="w-10 h-10 border-4 border-gray-200 border-t-black rounded-full animate-spin" /></div>;
 
     if (!store) return (
