@@ -1,7 +1,7 @@
 import { Plus, Search, Filter } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { API_URL } from '../config';
-import { AddVehicleModal } from '../components/AddVehicleModal';
+import { VehicleManagerModal } from '../components/VehicleManagerModal';
 
 // Interfaces matching backend entity
 interface Vehicle {
@@ -80,7 +80,7 @@ export function VehiclesPage() {
 
     return (
         <div className="space-y-8">
-            <AddVehicleModal
+            <VehicleManagerModal
                 isOpen={isModalOpen}
                 onClose={handleClose}
                 onSuccess={fetchVehicles}
@@ -149,7 +149,7 @@ export function VehiclesPage() {
                                         onClick={() => handleEdit(vehicle)}
                                         className="text-sm font-medium text-gray-500 hover:text-green-600 transition-colors"
                                     >
-                                        Editar
+                                        Gerenciar
                                     </button>
                                 </div>
                             </div>

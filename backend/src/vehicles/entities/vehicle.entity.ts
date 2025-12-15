@@ -54,6 +54,9 @@ export class Vehicle {
     @Column('simple-json', { nullable: true })
     images: string[];
 
+    @Column('simple-json', { nullable: true })
+    documents: { name: string; url: string; type: string; date: string }[];
+
     @Column({ default: false })
     trava: boolean;
 

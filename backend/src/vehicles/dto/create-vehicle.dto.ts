@@ -19,4 +19,5 @@ export class CreateVehicleDto {
     som?: boolean;
     teto?: boolean;
     banco_couro?: boolean;
+    documents?: { name: string; url: string; type: string; date: string }[];
 }

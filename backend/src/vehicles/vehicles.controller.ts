@@ -44,6 +44,38 @@ export class VehiclesController {
         return this.vehiclesService.update(id, { images: vehicle.images });
     }
 
+    @Post(':id/upload-doc')
+    @UseInterceptors(FilesInterceptor('files', 10, {
+        storage: diskStorage({
+            destination: './uploads/docs',
+            filename: (req, file, cb) => {
+                const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
+                return cb(null, `${randomName}${extname(file.originalname)}`);
+            }
+        })
+    }))
+    async uploadDocuments(@Param('id') id: string, @UploadedFiles() files: Array<Express.Multer.File>) {
+        // Ensure uploads/docs exists (In production code we'd check/create folder, but assuming it works or standard multer pattern)
+        if (!files || files.length === 0) throw new Error('No files found');
+
+        const vehicle = await this.vehiclesService.findOne(id);
+        if (!vehicle) throw new Error('Vehicle not found');
+
+        if (!vehicle.documents) vehicle.documents = [];
+
+        files.forEach(file => {
+            const docUrl = `/uploads/docs/${file.filename}`;
+            vehicle.documents.push({
+                name: file.originalname,
+                url: docUrl,
+                type: file.mimetype,
+                date: new Date().toISOString()
+            });
+        });
+
+        return this.vehiclesService.update(id, { documents: vehicle.documents });
+    }
+
     @UseGuards(JwtAuthGuard)
     @Get()
     findAll(@Request() req) {
