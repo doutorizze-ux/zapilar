@@ -524,8 +524,24 @@ export function PublicStorePage() {
                 <div className="container mx-auto px-4 mt-16 pt-8 border-t border-gray-800 text-center text-gray-500 text-sm">
                     <p>&copy; {new Date().getFullYear()} {store.name}. Todos os direitos reservados. Tecnologia <a href="https://zapicar.com.br" className="text-white hover:underline">ZapCar</a>.</p>
                 </div>
-            </footer>
-        </div>
+            </footer >
+
+            {/* Floating WhatsApp Button */}
+            {
+                store.phone && (
+                    <a
+                        href={`https://wa.me/${store.phone.replace(/\D/g, '')}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="fixed bottom-6 right-6 z-50 p-4 bg-[#25D366] text-white rounded-full shadow-2xl hover:scale-110 transition-transform hover:shadow-green-500/50 flex items-center justify-center animate-bounce-slow"
+                        title="Fale conosco no WhatsApp"
+                        style={{ animationDuration: '3s' }}
+                    >
+                        <MessageCircle className="w-8 h-8 fill-current" />
+                    </a>
+                )
+            }
+        </div >
     );
 }
 
