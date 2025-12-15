@@ -10,11 +10,14 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from './entities/user.entity';
 
+import { PlansService } from '../plans/plans.service';
+
 @Controller('users')
 export class UsersController {
     constructor(
         private readonly usersService: UsersService,
-        private readonly vehiclesService: VehiclesService
+        private readonly vehiclesService: VehiclesService,
+        private readonly plansService: PlansService
     ) { }
 
     // --- Rotas de Perfil (UserLogado) - Devem vir antes de :id ---
@@ -90,6 +93,27 @@ export class UsersController {
             throw new Error('Store not found');
         }
 
+        // Verify Plan Access
+        let allowSite = false;
+        if (user.planId) {
+            const plan = await this.plansService.findOne(user.planId);
+            if (plan && plan.isActive) {
+                const features = Array.isArray(plan.features)
+                    ? plan.features
+                    : (typeof plan.features === 'string' ? (plan.features as string).split(',') : []);
+
+                // Check both partial match (legacy) or exact string
+                if (features.some(f => f.trim().includes('Site Personalizado'))) {
+                    allowSite = true;
+                }
+            }
+        }
+
+        // Allow Admin bypass or specific debug scenarios if needed, but per request:
+        if (!allowSite) {
+            throw new Error('Store website not active for this plan.');
+        }
+
         const vehicles = await this.vehiclesService.findAll(user.id);
 
         return {
@@ -101,7 +125,7 @@ export class UsersController {
                 primaryColor: user.primaryColor || '#000000',
                 email: user.email,
                 address: user.address,
-                description: user.storeDescription
+                description: user.storeDescription,
             },
             vehicles: vehicles
         };
