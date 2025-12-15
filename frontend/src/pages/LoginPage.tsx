@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Mail, Lock, ArrowRight, Car, ChevronLeft } from 'lucide-react';
+import { Mail, Lock, ArrowRight, ChevronLeft } from 'lucide-react';
 
 export function LoginPage() {
     const { login } = useAuth();
@@ -51,10 +51,7 @@ export function LoginPage() {
 
                 <div className="relative z-10">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center shadow-lg shadow-green-900/20">
-                            <Car className="text-white w-6 h-6" />
-                        </div>
-                        <span className="text-2xl font-bold tracking-tight">Zapicar</span>
+                        <img src="/logo-dark.png" alt="Zapicar" className="h-10 w-auto brightness-0 invert" />
                     </div>
                 </div>
 
@@ -76,20 +73,17 @@ export function LoginPage() {
             <div className="flex flex-col justify-center px-6 py-12 lg:px-20 xl:px-24 bg-white relative">
                 <button
                     onClick={() => navigate('/')}
-                    className="absolute top-8 left-6 md:left-20 flex items-center gap-2 text-sm text-gray-500 hover:text-green-600 transition-colors"
+                    className="absolute top-6 left-6 md:top-8 md:left-20 flex items-center gap-2 text-sm text-gray-500 hover:text-green-600 transition-colors z-20"
                 >
                     <ChevronLeft className="w-4 h-4" />
                     Voltar para Home
                 </button>
 
-                <div className="w-full max-w-sm mx-auto">
+                <div className="w-full max-w-sm mx-auto mt-12 md:mt-0">
                     <div className="mb-10">
                         {/* Mobile Logo Show */}
-                        <div className="flex md:hidden items-center gap-2 mb-6">
-                            <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-                                <Car className="text-white w-5 h-5" />
-                            </div>
-                            <span className="text-xl font-bold text-gray-900">Zapicar</span>
+                        <div className="flex md:hidden items-center justify-center mb-8">
+                            <img src="/logo-dark.png" alt="Zapicar" className="h-10 w-auto" />
                         </div>
 
                         <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Bem-vindo de volta!</h2>
