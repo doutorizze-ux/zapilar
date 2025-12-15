@@ -267,7 +267,14 @@ export function LandingPage() {
                                 </div>
 
                                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <span className="text-white font-bold border border-white px-4 py-2 rounded-full uppercase tracking-wider text-sm hover:bg-white hover:text-black transition-colors">Ver Exemplo</span>
+                                    <a
+                                        href="https://zapicar.com.br/zapicar"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-white font-bold border border-white px-4 py-2 rounded-full uppercase tracking-wider text-sm hover:bg-white hover:text-black transition-colors"
+                                    >
+                                        Ver Exemplo
+                                    </a>
                                 </div>
                             </div>
                         </motion.div>
