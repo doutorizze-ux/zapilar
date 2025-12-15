@@ -576,7 +576,7 @@ export class WhatsappService implements OnModuleInit {
         const greetings = ['oi', 'ola', 'olá', 'bom dia', 'boa tarde', 'boa noite', 'menu', 'inicio', 'início', 'começar'];
         if (greetings.some(g => msg === g || (msg.includes(g) && msg.length < 10))) {
             this.userStates.set(stateKey, { mode: 'MENU' });
-            await this.sendMessage(userId, from, `👋 Olá! Bem-vindo(a) à *${storeName}*.\n\nSou seu assistente virtual. Por favor, escolha uma opção:\n\n1️⃣ *Buscar Veículo por Nome*\n2️⃣ *Buscar por Ano*\n3️⃣ *Ver Estoque Completo*\n\n_Responda com o número da opção._`);
+            await this.sendMessage(userId, from, `👋 Olá! Bem-vindo(a) à *${storeName}*.\n\nSou seu assistente virtual. Por favor, escolha uma opção:\n\n1️⃣ *Buscar Veículo por Nome*\n2️⃣ *Buscar por Ano*\n3️⃣ *Falar com Atendente*\n\n_Responda com o número da opção._`);
             return;
         }
 
@@ -590,14 +590,14 @@ export class WhatsappService implements OnModuleInit {
                 this.userStates.set(stateKey, { mode: 'WAITING_YEAR' });
                 await this.sendMessage(userId, from, '📅 Digite o *ano* mínimo que você deseja (ex: 2018):');
                 return;
-            } else if (msg === '3' || msg.includes('estoque') || msg.includes('ver') || msg.includes('todos')) {
-                // Option 3: VIEW ALL STOCK (Forces them to see cars first)
-                shouldShowCars = true;
-                contextVehicles = await this.vehiclesService.findAll(userId);
-                responseText = "Aqui está nosso estoque completo:";
-                // Pass through to the end logic where it sends the cars
+            } else if (msg === '3' || msg.includes('falar') || msg.includes('atendente') || msg.includes('duvida')) {
+                // Option 3: HUMAN HANDOFF (Safe Mode)
+                await this.sendMessage(userId, from, '👨‍💻 Um de nossos atendentes irá te responder em instantes! Aguarde um momento.');
+                // Do not show cars. Do not change state (stays in MENU for now or could reset).
+                this.userStates.set(stateKey, { mode: 'MENU' });
+                return;
             } else {
-                await this.sendMessage(userId, from, '⚠️ Opção inválida. Digite:\n\n*1* para buscar por nome\n*2* para buscar por ano\n*3* para ver todo o estoque');
+                await this.sendMessage(userId, from, '⚠️ Opção inválida. Digite:\n\n*1* para buscar por nome\n*2* para buscar por ano\n*3* para falar com atendente');
                 return;
             }
         }
