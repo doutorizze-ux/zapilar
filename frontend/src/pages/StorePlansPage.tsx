@@ -176,7 +176,7 @@ function PlanCardGroup({ variants, currentSubscription, onSubscribe }: { variant
             </div>
 
             <div className="space-y-4 flex-1 mb-8">
-                {(activePlan.features || []).map((feature, i) => (
+                {(Array.isArray(activePlan.features) ? activePlan.features : []).map((feature, i) => (
                     <div key={i} className="flex items-start gap-3 text-sm text-gray-600">
                         <div className="mt-0.5 w-4 h-4 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
                             <Check className="w-2.5 h-2.5 text-green-600" />
