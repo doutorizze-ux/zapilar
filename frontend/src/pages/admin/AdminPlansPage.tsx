@@ -188,11 +188,46 @@ export function AdminPlansPage() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Funcionalidades (separadas por vírgula)</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Recursos Premium</label>
+                                <div className="flex items-center gap-2 p-3 border border-gray-200 rounded-lg bg-gray-50">
+                                    <input
+                                        type="checkbox"
+                                        id="websiteToggle"
+                                        checked={Array.isArray(editingPlan.features)
+                                            ? editingPlan.features.some(f => f.includes('Site Personalizado'))
+                                            : String(editingPlan.features || '').includes('Site Personalizado')
+                                        }
+                                        onChange={e => {
+                                            const isChecked = e.target.checked;
+                                            const featureName = "Site Personalizado (zapicar.com.br/nome-loja)";
+                                            let currentFeatures = Array.isArray(editingPlan.features)
+                                                ? [...editingPlan.features]
+                                                : (editingPlan.features ? String(editingPlan.features).split(',').map(s => s.trim()) : []);
+
+                                            if (isChecked) {
+                                                if (!currentFeatures.some(f => f.includes('Site Personalizado'))) {
+                                                    currentFeatures.push(featureName);
+                                                }
+                                            } else {
+                                                currentFeatures = currentFeatures.filter(f => !f.includes('Site Personalizado'));
+                                            }
+                                            setEditingPlan({ ...editingPlan, features: currentFeatures });
+                                        }}
+                                        className="w-4 h-4 text-green-600 rounded border-gray-300 focus:ring-green-500"
+                                    />
+                                    <label htmlFor="websiteToggle" className="text-sm font-medium text-gray-700 select-none cursor-pointer">
+                                        Incluir Geração de Site Próprio
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Outras Funcionalidades (separadas por vírgula)</label>
                                 <textarea
                                     value={Array.isArray(editingPlan.features) ? editingPlan.features.join(', ') : editingPlan.features || ''}
                                     onChange={e => setEditingPlan({ ...editingPlan, features: e.target.value.split(',') })}
                                     className="w-full border border-gray-300 rounded-lg px-3 py-2 h-24"
+                                    placeholder="Ex: 50 Carros, WhatsApp Ilimitado, Suporte 24h..."
                                 />
                             </div>
 
