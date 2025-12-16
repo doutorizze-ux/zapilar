@@ -151,15 +151,7 @@ export function DashboardHome() {
                             </div>
                         </div>
 
-                        <div>
-                            <div className="flex justify-between text-sm mb-2">
-                                <span className="text-gray-500">Limite de Mensagens</span>
-                                <span className="text-gray-900 font-medium">0 / 5,000</span>
-                            </div>
-                            <div className="w-full bg-gray-100 rounded-full h-2">
-                                <div className="bg-green-500 h-2 rounded-full" style={{ width: '5%' }}></div>
-                            </div>
-                        </div>
+
                     </div>
                 </div>
             </div>

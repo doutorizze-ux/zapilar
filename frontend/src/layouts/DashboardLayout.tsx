@@ -18,7 +18,7 @@ const sidebarItems = [
 export function DashboardLayout() {
     const location = useLocation();
     const navigate = useNavigate();
-    const [storeInfo, setStoreInfo] = useState<{ name: string; logoUrl: string; subscriptionId?: string; subscriptionStatus?: string; planName?: string } | null>(null);
+    const [storeInfo, setStoreInfo] = useState<{ name: string; logoUrl: string; subscriptionId?: string; subscriptionStatus?: string; planName?: string; nextDueDate?: string } | null>(null);
     const [loading, setLoading] = useState(true);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -60,7 +60,8 @@ export function DashboardLayout() {
                             logoUrl: data.logoUrl || '',
                             subscriptionId: data.subscriptionId,
                             subscriptionStatus: status,
-                            planName: subData?.planName
+                            planName: subData?.planName,
+                            nextDueDate: subData?.nextDueDate
                         });
                     }
                 } catch (error) {
@@ -204,7 +205,12 @@ export function DashboardLayout() {
                             </span>
                         </div>
                         <p className="text-white font-bold text-sm relative z-10">{storeInfo?.planName || 'Plano Desconhecido'}</p>
-                        <p className="text-gray-500 text-xs mt-0.5 relative z-10">Renova em {new Date().toLocaleDateString('pt-BR', { month: 'long', day: 'numeric' })}</p>
+                        <p className="text-gray-500 text-xs mt-0.5 relative z-10">
+                            {storeInfo?.nextDueDate
+                                ? `Renova em ${new Date(storeInfo.nextDueDate).toLocaleDateString('pt-BR', { month: 'long', day: 'numeric' })}`
+                                : 'Assinatura Vitalícia'
+                            }
+                        </p>
 
                         {/* Progress bar decoration */}
                         <div className="w-full bg-white/10 h-1 rounded-full mt-3 overflow-hidden">
