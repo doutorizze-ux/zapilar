@@ -45,7 +45,7 @@ export function SubscribeModal({ plan, onClose, onSuccess }: SubscribeModalProps
                     });
                     if (response.ok) {
                         const data = await response.json();
-                        if (data.status === 'ACTIVE' || data.latestPaymentStatus === 'RECEIVED' || data.latestPaymentStatus === 'CONFIRMED') {
+                        if (data.latestPaymentStatus === 'RECEIVED' || data.latestPaymentStatus === 'CONFIRMED') {
                             // alert('Pagamento Confirmado!'); // Optional: removed alert for smoother UX
                             onSuccess();
                             onClose();
