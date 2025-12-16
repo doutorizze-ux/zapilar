@@ -348,6 +348,13 @@ export class WhatsappService implements OnModuleInit {
                 qrcode: true,
                 webhook: webhookUrl,
                 webhookUrl: webhookUrl,
+                integration: 'WHATSAPP-BAILEYS',
+                reject_call: false,
+                msg_call: false,
+                groups_ignore: true,
+                always_online: true,
+                read_messages: true,
+                read_status: false
             };
 
             const res = await axios.post(`${this.evolutionUrl}/instance/create`, payload, { headers: globalHeaders });
