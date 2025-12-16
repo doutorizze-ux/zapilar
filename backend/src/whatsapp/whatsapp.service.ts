@@ -374,16 +374,28 @@ Ou escolha uma opção:
                 }
 
                 // Send Details
-                const specsParts: string[] = [];
-                if (car.year) specsParts.push(`${car.year}`);
-                if (car.km) specsParts.push(`${car.km}km`);
-                if (car.fuel) specsParts.push(car.fuel);
-                if (car.transmission) specsParts.push(car.transmission);
+                const price = Number(car.price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 
-                const description = specsParts.join(' | ') || 'Sem detalhes adicionais';
-                const specs = `🚘 *${car.brand} ${car.name} ${car.model || ''}*
-💰 R$ ${Number(car.price).toLocaleString('pt-BR')}
-📋 ${description}`;
+                const optionals: string[] = [];
+                if (car.trava) optionals.push('Trava');
+                if (car.alarme) optionals.push('Alarme');
+                if (car.som) optionals.push('Som');
+                if (car.teto) optionals.push('Teto Solar');
+                if (car.banco_couro) optionals.push('Banco de Couro');
+
+                let specs = `🚘 *${car.brand} ${car.name}*
+📝 *Versão:* ${car.model || ''}
+📅 *Ano:* ${car.year}
+🛣️ *KM:* ${car.km}
+🎨 *Cor:* ${car.color || 'Não inf.'}
+💰 *R$ ${price}*
+
+⚙️ *Especificações:*
+${car.transmission || ''} | ${car.fuel || ''}`;
+
+                if (optionals.length > 0) {
+                    specs += `\n\n✨ *Opcionais:* \n${optionals.join(' | ')}`;
+                }
 
                 await this.sendMessage(userId, jid, specs);
                 await new Promise(r => setTimeout(r, 800));
