@@ -581,20 +581,20 @@ export class WhatsappService implements OnModuleInit {
 
     private async processIncomingMessage(userId: string, from: string, senderName: string, text: string, isFromMe: boolean, messageTimestamp?: number, wamid?: string) {
         if (messageTimestamp) {
-            let msgTime = 0;
-            const ts = Number(messageTimestamp);
-            if (ts > 9999999999) {
-                msgTime = ts;
-            } else {
-                msgTime = ts * 1000;
-            }
+            // 2. Check for stale messages (Timestamp check)
+            // Increased to 10 minutes (600000ms) to allow for some clock drift/queue delay,
+            // but prevents processing very old messages (spam prevention).
+            const messageTime = typeof messageTimestamp === 'number'
+                ? messageTimestamp * 1000
+                : parseInt(messageTimestamp as any) * 1000; // Cast to any to allow string or number
 
             const now = Date.now();
-            const diff = now - msgTime;
+            const diff = now - messageTime;
 
-            if (diff > 120000) {
-                this.logger.warn(`[Time Drift] Message appears old (${Math.round(diff / 1000)}s ago), but processing anyway to ensure delivery.`);
-                // Removed strict return to prevent dropped messages
+            // If message is older than 10 minutes, ignore it to prevent replying to history
+            if (diff > 600000) {
+                this.logger.warn(`[Time Drift] Message ignored because it is too old (${Math.round(diff / 1000)}s ago).`);
+                return;
             }
         }
 
