@@ -49,6 +49,7 @@ export class WhatsappController {
     }
 
     @UseGuards(JwtAuthGuard)
+    @Post('reset')
     async resetConnection(@Request() req) {
         await this.whatsappService.deleteInstance(req.user.userId);
         return { success: true, message: 'Instance deleted. Reconnect now.' };
