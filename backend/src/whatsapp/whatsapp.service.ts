@@ -321,16 +321,17 @@ export class WhatsappService implements OnModuleInit {
     }
 
     private getEffectiveWebhookUrl(): string | undefined {
+        // Priority 1: Internal Docker Network (Fixes "Not Arriving" issues due to NAT/DNS)
+        if (this.evolutionUrl.includes('evolution-api')) {
+            return 'http://backend:3000/whatsapp/webhook';
+        }
+
+        // Priority 2: Configured Public URL
         const configuredUrl = this.configService.get<string>('WEBHOOK_URL');
         if (configuredUrl) {
             return configuredUrl;
         }
 
-        // Fallback for local/dev auto-detection
-        if (this.evolutionUrl.includes('evolution-api')) {
-            const internalWebhook = 'http://backend:3000/whatsapp/webhook';
-            return internalWebhook;
-        }
         return undefined;
     }
 
@@ -584,8 +585,8 @@ export class WhatsappService implements OnModuleInit {
             const diff = now - msgTime;
 
             if (diff > 120000) {
-                this.logger.debug(`[Ignored] Message is too old (${Math.round(diff / 1000)}s ago). Skipping.`);
-                return;
+                this.logger.warn(`[Time Drift] Message appears old (${Math.round(diff / 1000)}s ago), but processing anyway to ensure delivery.`);
+                // Removed strict return to prevent dropped messages
             }
         }
 
