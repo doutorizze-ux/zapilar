@@ -364,13 +364,25 @@ export class WhatsappService implements OnModuleInit {
         if (!webhookUrl) return;
 
         try {
+            const finalWebhook = webhookUrl || 'http://backend:3000/whatsapp/webhook';
+            this.logger.log(`Ensuring webhook for ${userId}: ${finalWebhook}`);
+
+            // 1. Set Global Settings (Legacy/V2 mix)
             await axios.post(`${this.evolutionUrl}/webhook/set/${instanceName}`, {
-                url: webhookUrl,
-                webhook: webhookUrl,
-                webhookUrl: webhookUrl,
-                webhookByEvents: false,
-                enabled: true
+                webhook: finalWebhook,
+                webhookUrl: finalWebhook,
+                enabled: true,
+                webhookByEvents: true,
+                events: ['MESSAGES_UPSERT', 'messages.upsert', 'MESSAGES_UPDATE', 'messages.update', 'CONNECTION_UPDATE', 'connection.update']
             }, { headers: this.getHeaders() });
+
+            // 2. Set Instance Config (Double Safety)
+            await axios.post(`${this.evolutionUrl}/instance/update/${instanceName}`, {
+                webhook: finalWebhook,
+                events: ['MESSAGES_UPSERT']
+            }, { headers: this.getHeaders() });
+
+            this.logger.log(`Webhook successfully set for ${instanceName}`);
 
             await this.configureSettings(instanceName);
 
