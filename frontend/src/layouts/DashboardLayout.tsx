@@ -207,7 +207,7 @@ export function DashboardLayout() {
                         <p className="text-white font-bold text-sm relative z-10">{storeInfo?.planName || 'Plano Desconhecido'}</p>
                         <p className="text-gray-500 text-xs mt-0.5 relative z-10">
                             {storeInfo?.nextDueDate
-                                ? `Renova em ${new Date(storeInfo.nextDueDate).toLocaleDateString('pt-BR', { month: 'long', day: 'numeric' })}`
+                                ? `Renova em ${new Date(storeInfo.nextDueDate).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}`
                                 : 'Assinatura Vitalícia'
                             }
                         </p>
