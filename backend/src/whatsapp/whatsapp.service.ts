@@ -567,8 +567,8 @@ export class WhatsappService implements OnModuleInit {
         await this.processIncomingMessage(userId, cleanFrom, pushName, body, fromMe, messageTimestamp, msgId);
     }
 
-    // Simple in-memory state for demo purposes. In production use Redis/DB.
-    private userStates: Map<string, { mode: 'MENU' | 'WAITING_NAME' | 'WAITING_YEAR' | 'AI_CHAT' }> = new Map();
+    // Updated state types for the new flow
+    private userStates: Map<string, { mode: 'MENU' | 'WAITING_CAR_NAME' | 'WAITING_FAQ' }> = new Map();
 
     private async processIncomingMessage(userId: string, from: string, senderName: string, text: string, isFromMe: boolean, messageTimestamp?: number, wamid?: string) {
         if (messageTimestamp) {
@@ -589,7 +589,7 @@ export class WhatsappService implements OnModuleInit {
             }
         }
 
-        this.logger.log(`[DEBUG] Processing incoming msg. User: ${userId}, From: ${from}, Text: ${text}, FromMe: ${isFromMe}, WAMID: ${wamid}`);
+        this.logger.log(`[DEBUG] Processing incoming msg. User: ${userId}, From: ${from}, Text: ${text}`);
 
         // Final Deduplication check before logic
         if (wamid) {
@@ -604,7 +604,6 @@ export class WhatsappService implements OnModuleInit {
 
         // Loop Guard
         if (isFromMe) {
-            this.logger.log(`[Loop Guard] Ignoring update from myself/bot.`);
             return;
         }
 
@@ -619,154 +618,128 @@ export class WhatsappService implements OnModuleInit {
             return;
         }
 
-        const msg = text.toLowerCase().trim();
+        const msg = text.trim();
+        const lowerMsg = msg.toLowerCase();
         const user = await this.usersService.findById(userId);
         const storeName = user?.storeName || "ZapCar";
 
-        let contextVehicles: any[] = [];
-        let shouldShowCars = false;
-        let responseText = '';
-
-        // --- MENU LOGIC START ---
-
-        // Unique key for this user's state (combination of StoreId + CustomerNumber)
         const stateKey = `${userId}:${from}`;
         const currentState = this.userStates.get(stateKey)?.mode || 'MENU';
 
-        // 1. Reset / Menu Triggers
-        const greetings = ['oi', 'ola', 'olá', 'bom dia', 'boa tarde', 'boa noite', 'menu', 'inicio', 'início', 'começar'];
-        if (greetings.some(g => msg === g || (msg.includes(g) && msg.length < 10))) {
+        // 1. GLOBAL TRIGGERS (Menu, Reset, First interaction)
+        // If state is not tracked yet, it's effectively the first message of this session in memory
+        const isFirstMessage = !this.userStates.has(stateKey);
+
+        if (isFirstMessage || ['menu', 'início', 'inicio', 'voltar'].includes(lowerMsg)) {
             this.userStates.set(stateKey, { mode: 'MENU' });
-            await this.sendMessage(userId, from, `👋 Olá! Bem-vindo(a) à *${storeName}*.\n\nSou seu assistente virtual. Por favor, escolha uma opção:\n\n1️⃣ *Buscar Veículo por Nome*\n2️⃣ *Buscar por Ano*\n3️⃣ *Falar com Atendente*\n\n_Responda com o número da opção._`);
+            await this.sendMainMenu(userId, from, storeName);
             return;
         }
 
-        // 2. Handle State Transitions
+        // 2. STATE MACHINE
         if (currentState === 'MENU') {
-            if (msg === '1' || msg.includes('nome')) {
-                this.userStates.set(stateKey, { mode: 'WAITING_NAME' });
-                await this.sendMessage(userId, from, '🔍 Digite o *nome* ou *modelo* do veículo que você procura (ex: Civic, Gol, Hilux):');
-                return;
-            } else if (msg === '2' || msg.includes('ano')) {
-                this.userStates.set(stateKey, { mode: 'WAITING_YEAR' });
-                await this.sendMessage(userId, from, '📅 Digite o *ano* mínimo que você deseja (ex: 2018):');
-                return;
-            } else if (msg === '3' || msg.includes('falar') || msg.includes('atendente') || msg.includes('duvida')) {
-                // Option 3: HUMAN HANDOFF (Safe Mode)
-                await this.sendMessage(userId, from, '👨‍💻 Um de nossos atendentes irá te responder em instantes! Aguarde um momento.');
-                // Do not show cars. Do not change state (stays in MENU for now or could reset).
-                this.userStates.set(stateKey, { mode: 'MENU' });
-                return;
+            if (msg === '2') {
+                // Attendant
+                await this.sendMessage(userId, from, "Certo 👍. Um atendente será notificado e responderá em instantes!");
+                // Usually we stay in MENU or do nothing.
+            } else if (msg === '3') {
+                // FAQ Mode
+                this.userStates.set(stateKey, { mode: 'WAITING_FAQ' });
+                await this.sendMessage(userId, from, "Envie sua dúvida e eu responderei com base nas informações da loja 😉");
             } else {
-                await this.sendMessage(userId, from, '⚠️ Opção inválida. Digite:\n\n*1* para buscar por nome\n*2* para buscar por ano\n*3* para falar com atendente');
-                return;
+                // Variable text in MENU -> Treat as car search
+                // Any other input is treated as a name search
+                await this.handleCarSearch(userId, from, msg, storeName);
+            }
+
+        } else if (currentState === 'WAITING_FAQ') {
+            // FAQ Logic
+            const answer = await this.faqService.findMatch(userId, msg);
+
+            if (answer) {
+                await this.sendMessage(userId, from, answer);
+                // Back to menu
+                await this.sendMainMenu(userId, from, storeName);
+                this.userStates.set(stateKey, { mode: 'MENU' });
+            } else {
+                await this.sendMessage(userId, from, "Ainda não tenho uma resposta para isso 😅. Digite *menu* para voltar ou pergunte outra coisa.");
+                // Stay in WAITING_FAQ
             }
         }
+    }
 
-        // 3. Handle Specific States
+    private async sendMainMenu(userId: string, to: string, storeName: string) {
+        const menu = `🚗 *${storeName}*
+Diga o nome do veículo que você procura!
+(ex: Corolla, Onix, Hilux)
+
+Ou escolha uma opção:
+2️⃣ Falar com atendente
+3️⃣ Tire suas dúvidas`;
+        await this.sendMessage(userId, to, menu);
+    }
+
+    private async handleCarSearch(userId: string, to: string, query: string, storeName: string) {
         const allVehicles = await this.vehiclesService.findAll(userId);
+        let found: any[] = [];
 
-        if (currentState === 'WAITING_NAME') {
-            // Search by Name
-            contextVehicles = allVehicles.filter(v =>
-                (v.name && v.name.toLowerCase().includes(msg)) ||
-                (v.model && v.model.toLowerCase().includes(msg)) ||
-                (v.brand && v.brand.toLowerCase().includes(msg))
+        if (!query) {
+            // Fallback if query is empty (shouldn't happen with new logic unless user sends empty strings)
+            // But per requirement, "Quando digitar o nome do carro".
+            // If empty, maybe show random 3? Or just nothing?
+            // Let's assume strict search required.
+            found = [];
+        } else {
+            const q = query.toLowerCase();
+            found = allVehicles.filter(v =>
+                (v.name && v.name.toLowerCase().includes(q)) ||
+                (v.model && v.model.toLowerCase().includes(q)) ||
+                (v.brand && v.brand.toLowerCase().includes(q))
             );
-
-            if (contextVehicles.length > 0) {
-                await this.sendMessage(userId, from, `✅ Encontrei ${contextVehicles.length} veículo(s) com "${text}". Veja abaixo:`);
-                shouldShowCars = true;
-                // Return to menu after success? Or stay? Let's stay in 'MENU' to reset cycle.
-                this.userStates.set(stateKey, { mode: 'MENU' });
-            } else {
-                await this.sendMessage(userId, from, `❌ Poxa, não encontrei nenhum veículo com o nome "${text}".\n\nTente outro nome ou digite *Menu* para voltar.`);
-                return;
-            }
-
-        } else if (currentState === 'WAITING_YEAR') {
-            // Search by Year
-            const yearStr = msg.replace(/\D/g, ''); // extract numbers
-            if (yearStr.length === 4) {
-                const targetYear = parseInt(yearStr);
-                contextVehicles = allVehicles.filter(v => v.year >= targetYear);
-
-                if (contextVehicles.length > 0) {
-                    await this.sendMessage(userId, from, `✅ Encontrei ${contextVehicles.length} veículo(s) ano ${targetYear} ou mais novos. Veja:`);
-                    shouldShowCars = true;
-                    this.userStates.set(stateKey, { mode: 'MENU' });
-                } else {
-                    await this.sendMessage(userId, from, `❌ Nenhum veículo encontrado acima do ano ${targetYear}. Tente outro ano ou digite *Menu*.`);
-                    return;
-                }
-            } else {
-                await this.sendMessage(userId, from, '⚠️ Por favor, digite um ano válido com 4 dígitos (ex: 2020).');
-                return;
-            }
-
-        } else if (currentState === 'AI_CHAT') {
-            // --- AI REMOVED AS REQUESTED (Training Mode / Hard Logic Only) ---
-
-            // Check specific stock keywords
-            if (msg.includes('estoque') || msg.includes('catalogo')) {
-                contextVehicles = allVehicles;
-                shouldShowCars = true;
-                responseText = "Aqui está nosso estoque completo:";
-                await this.sendMessage(userId, from, responseText);
-            } else {
-                // Simple Fallback / Human Handoff
-                const faqMatch = await this.faqService.findMatch(userId, msg);
-                if (faqMatch) {
-                    await this.sendMessage(userId, from, faqMatch);
-                } else {
-                    await this.sendMessage(userId, from, "👨‍💻 Um de nossos atendentes irá te responder em instantes! Enquanto isso, digite *Menu* se quiser buscar outro veículo.");
-                }
-            }
         }
 
-
-        if (shouldShowCars && contextVehicles.length > 0) {
-            // STRICT MODE: Only show context vehicles. NEVER fall back to random generic list if specific search failed.
-            const vehiclesToShow = contextVehicles;
-
-            for (const car of vehiclesToShow.slice(0, 5)) {
-                const features: string[] = [];
-                if (car.trava) features.push('Trava');
-                if (car.alarme) features.push('Alarme');
-                if (car.som) features.push('Som');
-                if (car.teto) features.push('Teto Solar');
-                if (car.banco_couro) features.push('Banco de Couro');
-
-                const featuresText = features.length > 0 ? `✨ Opcionais: ${features.join(', ')}\n` : '';
-                const specs = `🔹 *${car.brand} ${car.name}* ${car.model || ''}
-📅 Ano: ${car.year} | 🚦 Km: ${car.km || 'N/A'}
-⛽ Combustível: ${car.fuel} | ⚙️ Câmbio: ${car.transmission}
-🎨 Cor: ${car.color}
-${featuresText}💰 *R$ ${Number(car.price).toLocaleString('pt-BR')}*
-
-_Gostou deste? Digite_ *"Quero o ${car.name} ${car.year}"*`;
-
-                await this.sendMessage(userId, from, specs);
-                this.logMessage(userId, from, 'bot', specs, storeName + ' (Bot)', true);
-
-                const delay = (ms) => new Promise(r => setTimeout(r, ms));
-                await delay(800);
-
+        if (found.length > 0) {
+            // Show up to 3 cars
+            const limit = 3;
+            for (const car of found.slice(0, limit)) {
+                // 1. Send ALL images first
                 if (car.images && car.images.length > 0) {
-                    for (const imageUrl of car.images.slice(0, 4)) {
-                        if (!imageUrl) continue;
-
-                        const finalUrl = this.resolveImageUrl(imageUrl);
-                        this.logger.debug(`[Sending Image] Car: ${car.name}, URL: ${finalUrl}`);
-
-                        await this.sendImage(userId, from, finalUrl, car.name);
-                        await delay(1500);
+                    for (const img of car.images) {
+                        await this.sendImage(userId, to, this.resolveImageUrl(img));
+                        // Small delay to ensure order
+                        await new Promise(r => setTimeout(r, 500));
                     }
                 }
 
-                await this.sendMessage(userId, from, '--------------------------------');
-                await delay(500);
+                // 2. Send formatted details
+                // Format:
+                // 🚘 *{nome do carro}*  
+                // 💰 {preço formatado}  
+                // 📋 {descrição resumida ou principais especificações}
+
+                // Construct description from specs
+                const specsParts: string[] = [];
+                if (car.year) specsParts.push(`${car.year}`);
+                if (car.km) specsParts.push(`${car.km}km`);
+                if (car.fuel) specsParts.push(car.fuel);
+                if (car.transmission) specsParts.push(car.transmission);
+
+                const description = specsParts.join(' | ') || 'Sem detalhes adicionais';
+
+                const specs = `🚘 *${car.brand} ${car.name} ${car.model || ''}*
+💰 R$ ${Number(car.price).toLocaleString('pt-BR')}
+📋 ${description}`;
+
+                await this.sendMessage(userId, to, specs);
+
+                // Delay between cars
+                await new Promise(r => setTimeout(r, 800));
             }
+            // Send menu again
+            await this.sendMainMenu(userId, to, storeName);
+        } else {
+            await this.sendMessage(userId, to, "😕 Não encontrei esse modelo. Quer tentar outro nome?");
+            await this.sendMainMenu(userId, to, storeName);
         }
     }
 }
