@@ -65,12 +65,21 @@ export class WhatsappService implements OnModuleInit {
         this.logger.log('Starting Backup Polling (45s)...');
         setInterval(() => this.pollAllInstances(), 45000);
 
-        // Sync existing sessions (recover from restart)
+        // Sync sessions periodically (every 60s) to auto-recover connections
+        this.logger.log('Starting Session Sync Interval (60s)...');
+        setInterval(() => this.syncSessions(), 60000);
+
+        // Sync existing sessions (recover from restart) immediately
         await this.syncSessions();
     }
 
     // --- Polling Logic ---
     private async pollAllInstances() {
+        // If no statuses known, try to sync first
+        if (this.statuses.size === 0) {
+            await this.syncSessions();
+        }
+
         for (const [userId, status] of this.statuses.entries()) {
             // STRICT CHECK: Only poll if explicit connected status
             if (status === 'CONNECTED') {
@@ -182,7 +191,7 @@ export class WhatsappService implements OnModuleInit {
                 }
             }
         } catch (e) {
-            this.logger.warn(`Failed to sync sessions on startup: ${e.message}`);
+            this.logger.warn(`Failed to sync sessions: ${e.message}`);
         }
     }
 
@@ -437,18 +446,30 @@ export class WhatsappService implements OnModuleInit {
         return `${baseUrl}${imageUrl}`;
     }
 
+    // Retry wrapper for robust API calls
+    private async retryWithBackoff<T>(fn: () => Promise<T>, retries = 3, delay = 1000): Promise<T> {
+        try {
+            return await fn();
+        } catch (error) {
+            if (retries === 0) throw error;
+            this.logger.warn(`API call failed, retrying in ${delay}ms... (${retries} left). Error: ${error.message}`);
+            await new Promise(res => setTimeout(res, delay));
+            return this.retryWithBackoff(fn, retries - 1, delay * 2);
+        }
+    }
+
     async sendMessage(userId: string, to: string, text: string) {
         const instanceName = this.getInstanceName(userId);
         let number = to.replace(/\D/g, '');
 
         try {
-            await axios.post(`${this.evolutionUrl}/message/sendText/${instanceName}`, {
+            await this.retryWithBackoff(() => axios.post(`${this.evolutionUrl}/message/sendText/${instanceName}`, {
                 number: number,
                 options: { delay: 1200, presence: 'composing' },
                 textMessage: { text: text }
-            }, { headers: this.getHeaders() });
+            }, { headers: this.getHeaders() }));
         } catch (e) {
-            this.logger.error(`Failed to send message to ${to}`, e.response?.data || e.message);
+            this.logger.error(`Failed to send message to ${to} after retries`, e.response?.data || e.message);
         }
     }
 
@@ -457,13 +478,13 @@ export class WhatsappService implements OnModuleInit {
         let number = to.replace(/\D/g, '');
 
         try {
-            await axios.post(`${this.evolutionUrl}/message/sendMedia/${instanceName}`, {
+            await this.retryWithBackoff(() => axios.post(`${this.evolutionUrl}/message/sendMedia/${instanceName}`, {
                 number: number,
                 options: { delay: 1200, presence: 'composing' },
                 mediaMessage: { mediatype: 'image', caption: caption, media: imageUrl }
-            }, { headers: this.getHeaders() });
+            }, { headers: this.getHeaders() }));
         } catch (e) {
-            this.logger.error(`Failed to send image to ${to}`, e.response?.data || e.message);
+            this.logger.error(`Failed to send image to ${to} after retries`, e.response?.data || e.message);
         }
     }
 
@@ -485,12 +506,13 @@ export class WhatsappService implements OnModuleInit {
         const msgType = payload.type || payload.event;
 
         if (msgType !== 'MESSAGES_UPSERT' && msgType !== 'messages.upsert') {
-            this.logger.debug(`Ignored webhook event type: ${msgType}`);
+            // Reduce noise for other events
+            // this.logger.debug(`Ignored webhook event type: ${msgType}`);
             return;
         }
 
         if (!data || !data.key) {
-            this.logger.debug('Webhook data or key missing');
+            this.logger.warn(`Webhook data or key missing for ${userId}. Data: ${JSON.stringify(data).substring(0, 200)}`);
             return;
         }
 

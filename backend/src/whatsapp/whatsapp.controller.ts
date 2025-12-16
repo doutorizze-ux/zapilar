@@ -49,10 +49,17 @@ export class WhatsappController {
     }
 
     @UseGuards(JwtAuthGuard)
-    @Post('reset')
     async resetConnection(@Request() req) {
         await this.whatsappService.deleteInstance(req.user.userId);
         return { success: true, message: 'Instance deleted. Reconnect now.' };
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('force-sync')
+    async forceSync() {
+        // @ts-ignore - access private method via cast or just make public
+        await (this.whatsappService as any).syncSessions();
+        return { success: true, message: 'Sessions synced' };
     }
 
     @Post('webhook')
