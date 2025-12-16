@@ -161,8 +161,8 @@ export function AddVehicleModal({ isOpen, onClose, onSuccess, initialData }: Add
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             const filesArray = Array.from(e.target.files);
-            // Limit to 4 images
-            const totalFiles = [...imageFiles, ...filesArray].slice(0, 4);
+            // Limit to 5 images
+            const totalFiles = [...imageFiles, ...filesArray].slice(0, 5);
             setImageFiles(totalFiles);
         }
     };
@@ -184,9 +184,9 @@ export function AddVehicleModal({ isOpen, onClose, onSuccess, initialData }: Add
                 <form onSubmit={handleSubmit} className="p-6 space-y-6">
                     {/* Image Upload Area */}
                     <div className="w-full">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Fotos do Veículo (Novas)</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Fotos do Veículo (Máx: 5)</label>
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
                             {imageFiles.map((file, idx) => (
                                 <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-gray-100 group">
                                     <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" />
@@ -200,7 +200,7 @@ export function AddVehicleModal({ isOpen, onClose, onSuccess, initialData }: Add
                                 </div>
                             ))}
 
-                            {imageFiles.length < 4 && (
+                            {imageFiles.length < 5 && (
                                 <div className="border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center text-center aspect-square hover:bg-gray-50 transition-colors relative">
                                     <div className="w-8 h-8 bg-green-50 text-green-600 rounded-full flex items-center justify-center mb-2">
                                         <Upload className="w-4 h-4" />
