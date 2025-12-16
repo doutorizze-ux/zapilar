@@ -303,7 +303,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
 
         // Retrieve Store Name
         const user = await this.usersService.findById(userId);
-        const storeName = user?.storeName || "ZapCar";
+        const storeName = user?.storeName || "Loja";
 
         const stateKey = `${userId}:${jid}`;
         const currentState = this.userStates.get(stateKey)?.mode || 'MENU';
