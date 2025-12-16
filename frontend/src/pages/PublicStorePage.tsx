@@ -218,6 +218,28 @@ export function PublicStorePage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+    // --- Install Prompt Logic (Moved to Top) ---
+    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+    useEffect(() => {
+        const handler = (e: any) => {
+            e.preventDefault();
+            setDeferredPrompt(e);
+        };
+        window.addEventListener('beforeinstallprompt', handler);
+        return () => window.removeEventListener('beforeinstallprompt', handler);
+    }, []);
+
+    const handleInstallClick = () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult: any) => {
+            if (choiceResult.outcome === 'accepted') {
+                setDeferredPrompt(null);
+            }
+        });
+    };
+
     useEffect(() => {
         const fetchData = async () => {
             if (!slug) return;
@@ -326,27 +348,7 @@ export function PublicStorePage() {
         </div>
     );
 
-    // --- Install Prompt Logic ---
-    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
-    useEffect(() => {
-        const handler = (e: any) => {
-            e.preventDefault();
-            setDeferredPrompt(e);
-        };
-        window.addEventListener('beforeinstallprompt', handler);
-        return () => window.removeEventListener('beforeinstallprompt', handler);
-    }, []);
-
-    const handleInstallClick = () => {
-        if (!deferredPrompt) return;
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((choiceResult: any) => {
-            if (choiceResult.outcome === 'accepted') {
-                setDeferredPrompt(null);
-            }
-        });
-    };
 
     return (
         <div className="min-h-screen bg-neutral-50 font-sans selection:bg-black/10">
