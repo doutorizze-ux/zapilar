@@ -1,47 +1,44 @@
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
+import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import axios from 'axios';
-import { VehiclesService } from '../vehicles/vehicles.service';
-import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
-
-import { ChatMessage } from './entities/chat-message.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import * as fs from 'fs';
+import * as path from 'path';
+import makeWASocket, {
+    DisconnectReason,
+    useMultiFileAuthState,
+    fetchLatestBaileysVersion,
+    Browsers,
+    WASocket,
+    proto,
+    makeCacheableSignalKeyStore
+} from '@whiskeysockets/baileys';
+import pino from 'pino';
+
+import { ChatMessage } from './entities/chat-message.entity';
+import { VehiclesService } from '../vehicles/vehicles.service';
 import { UsersService } from '../users/users.service';
 import { FaqService } from '../faq/faq.service';
 import { LeadsService } from '../leads/leads.service';
-import { ChatGateway } from './chat.gateway';
+import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 
 @Injectable()
-export class WhatsappService implements OnModuleInit {
+export class WhatsappService implements OnModuleInit, OnModuleDestroy {
     private readonly logger = new Logger(WhatsappService.name);
-
-    // Map<userId, qrCodeString>
+    private sessions: Map<string, WASocket> = new Map();
     private qrCodes: Map<string, string> = new Map();
-    // Map<userId, status>
-    private statuses: Map<string, 'DISCONNECTED' | 'CONNECTED' | 'QR_READY'> = new Map();
+    private connectionStatuses: Map<string, 'CONNECTED' | 'DISCONNECTED' | 'QR_READY' | 'CONNECTING'> = new Map();
 
-    // SAFETY: Default to ACTIVE. Only users in this set are ignored.
-    private pausedUsers: Set<string> = new Set();
+    // AI
     private genAI: GoogleGenerativeAI;
     private model: GenerativeModel;
 
-    private evolutionUrl: string;
-    private evolutionApiKey: string;
+    // State Machine for Chat
+    private userStates: Map<string, { mode: 'MENU' | 'WAITING_CAR_NAME' | 'WAITING_FAQ' }> = new Map();
+    // Pause List
+    private pausedUsers: Set<string> = new Set();
 
-    setBotPaused(userId: string, paused: boolean) {
-        if (paused) {
-            this.pausedUsers.add(userId); // Add to paused list
-        } else {
-            this.pausedUsers.delete(userId); // Remove from paused list (Activate)
-        }
-        this.logger.log(`Bot for user ${userId} is now ${paused ? 'PAUSED' : 'ACTIVE'}`);
-    }
-
-    isBotPaused(userId: string): boolean {
-        // If in paused list, it is PAUSED. Otherwise active.
-        return this.pausedUsers.has(userId);
-    }
+    private readonly SESSIONS_DIR = path.join(process.cwd(), 'whatsapp_sessions');
 
     constructor(
         @InjectRepository(ChatMessage)
@@ -50,167 +47,419 @@ export class WhatsappService implements OnModuleInit {
         private configService: ConfigService,
         private usersService: UsersService,
         private faqService: FaqService,
-        private leadsService: LeadsService,
-        private chatGateway: ChatGateway
-    ) { }
+        private leadsService: LeadsService
+    ) {
+        if (!fs.existsSync(this.SESSIONS_DIR)) {
+            fs.mkdirSync(this.SESSIONS_DIR, { recursive: true });
+        }
+    }
 
     async onModuleInit() {
-        // Revert to configured URL (Public) as internal connect failed (ECONNREFUSED)
-        this.evolutionUrl = this.configService.get<string>('EVOLUTION_API_URL') || 'http://localhost:8081';
-
-        // This keeps using the ENV key, which is correct.
-        this.evolutionApiKey = this.configService.get<string>('EVOLUTION_API_KEY') || '';
         this.initializeAI();
-
-        // Start Polling for Messages (Brute Force Mode)
-        this.logger.log('Starting Brute Force Polling...');
-        // Start Polling for Messages (Backup Mode - Only if Webhook fails)
-        this.logger.log('Starting Backup Polling (45s)...');
-        setInterval(() => this.pollAllInstances(), 45000);
-
-        // Sync sessions periodically (every 60s) to auto-recover connections
-        this.logger.log('Starting Session Sync Interval (60s)...');
-        setInterval(() => this.syncSessions(), 60000);
-
-        // Sync existing sessions (recover from restart) immediately
-        await this.syncSessions();
+        await this.restoreSessions();
+        this.startInactivityCheck();
     }
 
-    // --- Polling Logic ---
-    private async pollAllInstances() {
-        // If no statuses known, try to sync first
-        if (this.statuses.size === 0) {
-            await this.syncSessions();
-        }
-
-        for (const [userId, status] of this.statuses.entries()) {
-            // STRICT CHECK: Only poll if explicit connected status
-            if (status === 'CONNECTED') {
-                await this.checkNewMessages(userId);
+    async onModuleDestroy() {
+        this.logger.log('Shutting down WhatsApp sessions...');
+        for (const [userId, socket] of this.sessions) {
+            try {
+                socket.end(undefined);
+            } catch (e) {
+                // ignore
             }
-        }
-    }
-
-    private processedMessageIds: Set<string> = new Set();
-
-    private async checkNewMessages(userId: string) {
-        // Double check status before heavy call
-        if (this.statuses.get(userId) !== 'CONNECTED') return;
-
-        const instanceName = this.getInstanceName(userId);
-        const user = await this.usersService.findById(userId);
-        const apiKey = user?.evolutionApiKey;
-
-        try {
-            // Check connection state via API to be sure (Sanity Check)
-            const connectionState = await axios.get(`${this.evolutionUrl}/instance/connectionState/${instanceName}`, {
-                headers: this.getHeaders(apiKey)
-            });
-
-            if (connectionState.data?.instance?.state !== 'open') {
-                if (connectionState.data?.instance?.state === 'close') {
-                    this.statuses.set(userId, 'DISCONNECTED');
-                }
-                return;
-            }
-
-            const res = await axios.get(`${this.evolutionUrl}/chat/findChats/${instanceName}`, {
-                headers: this.getHeaders(apiKey)
-            });
-            const chats = res.data || [];
-
-            // AGGRESSIVE POLLING: Check top 3 chats regardless of status
-            for (const chat of chats.slice(0, 3)) {
-                const remoteJid = chat.id;
-
-                try {
-                    const msgsRes = await axios.post(`${this.evolutionUrl}/chat/findMessages/${instanceName}`, {
-                        where: { key: { remoteJid: remoteJid } },
-                        options: { limit: 5 } // Fetch last 5 to be safe
-                    }, { headers: this.getHeaders(apiKey) });
-
-                    const messages = (msgsRes.data || []).reverse();
-
-                    for (const msg of messages) {
-                        const msgId = msg.key?.id;
-                        if (!msgId) continue;
-
-                        // STRICT GUARD: Ignore messages sent by me (API or Mobile)
-                        if (msg.key?.fromMe) continue;
-
-                        if (this.processedMessageIds.has(msgId)) continue;
-
-                        // DB DEDUPLICATION: Check if WAMID exists
-                        const exists = await this.chatRepository.findOne({
-                            where: { wamid: msgId }
-                        });
-
-                        if (exists) {
-                            this.processedMessageIds.add(msgId);
-                            continue;
-                        }
-
-                        this.processedMessageIds.add(msgId);
-
-                        console.log(`[Polling] Processing NEW message: ${msgId} from ${remoteJid}`);
-
-                        const payload = {
-                            instance: instanceName,
-                            type: 'MESSAGES_UPSERT',
-                            data: msg
-                        };
-
-                        await this.handleWebhook(payload);
-                    }
-                } catch (innerErr) {
-                    console.error(`[Polling] Error fetching msgs for ${remoteJid}:`, innerErr.message);
-                }
-            }
-
-            if (this.processedMessageIds.size > 2000) this.processedMessageIds.clear();
-
-        } catch (e) {
-            console.error(`[Polling] Failed to find chats for ${instanceName}:`, e.message);
-        }
-    }
-
-    private async syncSessions() {
-        try {
-            this.logger.log('Syncing sessions with Evolution API...');
-            const res = await axios.get(`${this.evolutionUrl}/instance/fetch`, {
-                headers: this.getHeaders()
-            });
-
-            const instances = res.data || [];
-            // Evolution v1.8/v2 structure: array of objects
-            for (const item of instances) {
-                const instance = item.instance || item;
-                const name = instance.instanceName || instance.name;
-                const state = instance.state || instance.status;
-
-                if (name && name.startsWith('store-') && state === 'open') {
-                    const userId = name.replace('store-', '');
-                    this.statuses.set(userId, 'CONNECTED');
-                    this.logger.log(`Restored session for user ${userId}`);
-                    // Ensure webhook is set for this session
-                    this.ensureWebhook(userId);
-                }
-            }
-        } catch (e) {
-            this.logger.warn(`Failed to sync sessions: ${e.message}`);
         }
     }
 
     private initializeAI() {
         const apiKey = this.configService.get<string>('GEMINI_API_KEY');
         if (apiKey) {
-            this.genAI = new GoogleGenerativeAI(apiKey);
-            this.model = this.genAI.getGenerativeModel({ model: "gemini-1.0-pro" });
-        } else {
-            this.logger.warn('GEMINI_API_KEY not found. AI features disabled.');
+            try {
+                this.genAI = new GoogleGenerativeAI(apiKey);
+                this.model = this.genAI.getGenerativeModel({ model: "gemini-1.0-pro" });
+                this.logger.log('AI Initialized');
+            } catch (e) {
+                this.logger.error('Failed to init AI', e);
+            }
         }
     }
 
+    // --- Session Management ---
+
+    private async restoreSessions() {
+        try {
+            const files = fs.readdirSync(this.SESSIONS_DIR);
+            const userDirs = files.filter(f => fs.statSync(path.join(this.SESSIONS_DIR, f)).isDirectory() && f.startsWith('user_'));
+
+            this.logger.log(`Found ${userDirs.length} existing sessions to restore.`);
+
+            for (const dir of userDirs) {
+                const userId = dir.replace('user_', '');
+                this.logger.log(`Restoring session for user ${userId}...`);
+                await this.createSession(userId);
+            }
+        } catch (e) {
+            this.logger.error('Failed to restore sessions', e);
+        }
+    }
+
+    async getSession(userId: string) {
+        let status = this.connectionStatuses.get(userId) || 'DISCONNECTED';
+        const socket = this.sessions.get(userId);
+
+        // If disconnected and no socket, try to initialize (user trying to connect)
+        if (!socket && status === 'DISCONNECTED') {
+            await this.createSession(userId);
+            status = 'CONNECTING'; // will update shortly
+        }
+
+        const qr = this.qrCodes.get(userId) || null;
+
+        // Map native status to API response expected by frontend
+        let finalStatus = status;
+        if (status === 'CONNECTING') finalStatus = 'DISCONNECTED'; // Frontend might not handle CONNECTING
+
+        return { status: finalStatus, qr };
+    }
+
+    async createSession(userId: string) {
+        if (this.sessions.has(userId)) {
+            return this.sessions.get(userId);
+        }
+
+        this.sessionStartTimes.set(userId, Date.now());
+        this.connectionStatuses.set(userId, 'CONNECTING');
+        const sessionPath = path.join(this.SESSIONS_DIR, `user_${userId}`);
+
+        if (!fs.existsSync(sessionPath)) {
+            fs.mkdirSync(sessionPath, { recursive: true });
+        }
+
+        const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
+        const { version } = await fetchLatestBaileysVersion();
+
+        const sock = makeWASocket({
+            version,
+            logger: pino({ level: 'silent' }) as any,
+            printQRInTerminal: false,
+            auth: {
+                creds: state.creds,
+                keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' }) as any),
+            },
+            browser: Browsers.macOS('Desktop'),
+            connectTimeoutMs: 60000,
+            retryRequestDelayMs: 2000,
+        });
+
+        this.sessions.set(userId, sock);
+
+        sock.ev.on('creds.update', saveCreds);
+
+        sock.ev.on('connection.update', (update) => {
+            const { connection, lastDisconnect, qr } = update;
+
+            if (qr) {
+                this.logger.log(`QR Code generated for User ${userId}`);
+                this.qrCodes.set(userId, qr);
+                this.connectionStatuses.set(userId, 'QR_READY');
+            }
+
+            if (connection === 'close') {
+                const shouldReconnect = (lastDisconnect?.error as any)?.output?.statusCode !== DisconnectReason.loggedOut;
+                this.logger.warn(`Connection closed for User ${userId}. Reconnecting: ${shouldReconnect}`);
+
+                if (shouldReconnect) {
+                    this.connectionStatuses.set(userId, 'DISCONNECTED');
+                    this.sessions.delete(userId);
+                    // Add delay before reconnect to prevent loops
+                    setTimeout(() => this.createSession(userId), 3000);
+                } else {
+                    this.connectionStatuses.set(userId, 'DISCONNECTED');
+                    this.sessions.delete(userId);
+                    this.qrCodes.delete(userId);
+                    // Clean up files on logout?
+                    try {
+                        fs.rmSync(sessionPath, { recursive: true, force: true });
+                    } catch (e) {
+                        this.logger.error(`Failed to remove session files for ${userId}`, e);
+                    }
+                }
+            } else if (connection === 'open') {
+                this.logger.log(`Connection opened for User ${userId}!`);
+                this.connectionStatuses.set(userId, 'CONNECTED');
+                this.qrCodes.delete(userId);
+            }
+        });
+
+        sock.ev.on('messages.upsert', async (m) => {
+            if (m.type !== 'notify') return;
+
+            for (const msg of m.messages) {
+                if (!msg.key?.remoteJid || msg.key.fromMe) continue;
+
+                try {
+                    await this.processIncomingMessage(userId, msg);
+                } catch (e) {
+                    this.logger.error(`Error processing message for user ${userId}`, e);
+                }
+            }
+        });
+
+        return sock;
+    }
+
+    // Interval to clean up inactive (stuck in QR) sessions
+    private startInactivityCheck() {
+        setInterval(() => {
+            const now = Date.now();
+            this.connectionStatuses.forEach((status, userId) => {
+                // If QR has been waiting for > 10 minutes, clean it up
+                if (status === 'QR_READY' || status === 'CONNECTING') {
+                    // We need to track when it started. For simplicity, we can check if it has a QR and how old?
+                    // Or just rely on the fact that if it's not CONNECTED in 10 mins, reset.
+                    // A robust way: Map<userId, timestamp>
+                    const started = this.sessionStartTimes.get(userId) || 0;
+                    if (now - started > 600000 && started > 0) { // 10 mins
+                        this.logger.log(`Session for ${userId} timed out (Inactive). Destroying.`);
+                        this.deleteInstance(userId);
+                    }
+                }
+            });
+        }, 60000); // Check every minute
+    }
+
+    private sessionStartTimes: Map<string, number> = new Map();
+
+    async deleteInstance(userId: string) {
+        const sock = this.sessions.get(userId);
+        if (sock) {
+            try {
+                await sock.logout();
+            } catch (e) {
+                // ignore
+            }
+            sock.end(undefined);
+            this.sessions.delete(userId);
+        }
+
+        this.connectionStatuses.set(userId, 'DISCONNECTED');
+        this.qrCodes.delete(userId);
+
+        const sessionPath = path.join(this.SESSIONS_DIR, `user_${userId}`);
+        if (fs.existsSync(sessionPath)) {
+            fs.rmSync(sessionPath, { recursive: true, force: true });
+        }
+    }
+
+    // --- Message Processing ---
+
+    private async processIncomingMessage(userId: string, msg: proto.IWebMessageInfo) {
+        const jid = msg.key?.remoteJid;
+        if (!jid) return;
+
+        const from = jid;
+        const name = msg.pushName || jid.split('@')[0];
+
+        // Handling Text Content
+        let text = '';
+        if (msg.message?.conversation) text = msg.message.conversation;
+        else if (msg.message?.extendedTextMessage?.text) text = msg.message.extendedTextMessage.text;
+        else if (msg.message?.imageMessage?.caption) text = msg.message.imageMessage.caption;
+
+        if (!text) return; // Ignore non-text messages for now (audio, sticker, etc without caption)
+
+        // Timestamp Check
+        const msgTime = (typeof msg.messageTimestamp === 'number'
+            ? msg.messageTimestamp
+            : (msg.messageTimestamp as any).low) * 1000;
+
+        const now = Date.now();
+        // 2 Minutes Tolerance
+        if (now - msgTime > 120000) {
+            // this.logger.debug(`Ignoring old message from ${name} (${Math.round((now - msgTime)/1000)}s ago)`);
+            return;
+        }
+
+        this.logger.log(`[Native] Msg from ${name}: ${text}`);
+
+        // Log to DB
+        await this.logMessage(userId, jid, jid, text, name, false, msg.key?.id || undefined);
+
+        if (this.isBotPaused(userId)) return;
+
+        // Auto-reply Logic
+        await this.handleAutoReply(userId, jid, text, name);
+    }
+
+    private async handleAutoReply(userId: string, jid: string, text: string, name: string) {
+        try {
+            await this.leadsService.upsert(userId, jid, text, name);
+        } catch (e) {
+            // ignore
+        }
+
+        const msg = text.trim();
+        const lowerMsg = msg.toLowerCase();
+
+        // Retrieve Store Name
+        const user = await this.usersService.findById(userId);
+        const storeName = user?.storeName || "ZapCar";
+
+        const stateKey = `${userId}:${jid}`;
+        const currentState = this.userStates.get(stateKey)?.mode || 'MENU';
+        const isFirstMessage = !this.userStates.has(stateKey);
+
+        if (isFirstMessage || ['menu', 'início', 'inicio', 'voltar'].includes(lowerMsg)) {
+            this.userStates.set(stateKey, { mode: 'MENU' });
+            await this.sendMainMenu(userId, jid, storeName);
+            return;
+        }
+
+        // State Machine
+        if (currentState === 'MENU') {
+            if (msg === '2') {
+                await this.sendMessage(userId, jid, "Certo 👍. Um atendente será notificado e responderá em instantes!");
+            } else if (msg === '3') {
+                this.userStates.set(stateKey, { mode: 'WAITING_FAQ' });
+                await this.sendMessage(userId, jid, "Envie sua dúvida e eu responderei com base nas informações da loja 😉");
+            } else {
+                await this.handleCarSearch(userId, jid, msg, storeName);
+            }
+        } else if (currentState === 'WAITING_FAQ') {
+            const answer = await this.faqService.findMatch(userId, msg);
+            if (answer) {
+                await this.sendMessage(userId, jid, answer);
+                await this.sendMainMenu(userId, jid, storeName);
+                this.userStates.set(stateKey, { mode: 'MENU' });
+            } else {
+                await this.sendMessage(userId, jid, "Ainda não tenho uma resposta para isso 😅. Digite *menu* para voltar ou pergunte outra coisa.");
+            }
+        }
+    }
+
+    private async sendMainMenu(userId: string, jid: string, storeName: string) {
+        const menu = `🚗 *${storeName}*
+Diga o nome do veículo que você procura!
+(ex: Corolla, Onix, Hilux)
+
+Ou escolha uma opção:
+2️⃣ Falar com atendente
+3️⃣ Tire suas dúvidas`;
+        await this.sendMessage(userId, jid, menu);
+    }
+
+    private async handleCarSearch(userId: string, jid: string, query: string, storeName: string) {
+        const allVehicles = await this.vehiclesService.findAll(userId);
+        let found: any[] = [];
+
+        if (query) {
+            const q = query.toLowerCase();
+            found = allVehicles.filter(v =>
+                (v.name && v.name.toLowerCase().includes(q)) ||
+                (v.model && v.model.toLowerCase().includes(q)) ||
+                (v.brand && v.brand.toLowerCase().includes(q))
+            );
+        }
+
+        if (found.length > 0) {
+            const limit = 3;
+            const cars: any[] = found;
+            for (const car of cars.slice(0, limit)) {
+                // Send Images
+                if (car.images && car.images.length > 0) {
+                    for (const img of car.images) {
+                        await this.sendImage(userId, jid, this.resolveImageUrl(img));
+                        await new Promise(r => setTimeout(r, 500));
+                    }
+                }
+
+                // Send Details
+                const specsParts: string[] = [];
+                if (car.year) specsParts.push(`${car.year}`);
+                if (car.km) specsParts.push(`${car.km}km`);
+                if (car.fuel) specsParts.push(car.fuel);
+                if (car.transmission) specsParts.push(car.transmission);
+
+                const description = specsParts.join(' | ') || 'Sem detalhes adicionais';
+                const specs = `🚘 *${car.brand} ${car.name} ${car.model || ''}*
+💰 R$ ${Number(car.price).toLocaleString('pt-BR')}
+📋 ${description}`;
+
+                await this.sendMessage(userId, jid, specs);
+                await new Promise(r => setTimeout(r, 800));
+            }
+            // Send Menu
+            await this.sendMainMenu(userId, jid, storeName);
+        } else {
+            await this.sendMessage(userId, jid, "😕 Não encontrei esse modelo. Quer tentar outro nome?");
+            await this.sendMainMenu(userId, jid, storeName);
+        }
+    }
+
+    // --- Sending Methods ---
+
+    async sendMessage(userId: string, to: string, text: string) {
+        const sock = this.sessions.get(userId);
+        if (!sock) {
+            this.logger.warn(`Cannot send message. No session for user ${userId}`);
+            return;
+        }
+
+        let jid = to;
+        if (!jid.includes('@')) jid = `${jid.replace(/\D/g, '')}@s.whatsapp.net`;
+
+        try {
+            await sock.sendMessage(jid, { text });
+            await this.logMessage(userId, jid, 'me', text, 'Atendente', true, undefined);
+        } catch (e) {
+            this.logger.error('Failed to send text message', e);
+        }
+    }
+
+    async sendImage(userId: string, to: string, imageUrl: string, caption?: string) {
+        const sock = this.sessions.get(userId);
+        if (!sock) return;
+
+        let jid = to;
+        if (!jid.includes('@')) jid = `${jid.replace(/\D/g, '')}@s.whatsapp.net`;
+
+        try {
+            await sock.sendMessage(jid, {
+                image: { url: imageUrl },
+                caption: caption
+            });
+        } catch (e) {
+            this.logger.error('Failed to send image', e);
+        }
+    }
+
+    async sendManualMessage(userId: string, to: string, message: string) {
+        await this.sendMessage(userId, to, message);
+    }
+
+    // --- Helpers ---
+
+    private resolveImageUrl(imageUrl: string): string {
+        if (!imageUrl) return '';
+        if (imageUrl.startsWith('http')) return imageUrl;
+
+        // Localhost fallback
+        const appUrl = this.configService.get('APP_URL') || `http://localhost:${process.env.PORT || 3000}`;
+        if (!appUrl.endsWith('/') && !imageUrl.startsWith('/')) return `${appUrl}/${imageUrl}`;
+        return `${appUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
+    }
+
+    isBotPaused(userId: string): boolean {
+        return this.pausedUsers.has(userId);
+    }
+
+    setBotPaused(userId: string, paused: boolean) {
+        if (paused) this.pausedUsers.add(userId);
+        else this.pausedUsers.delete(userId);
+        this.logger.log(`Bot for user ${userId} is now ${paused ? 'PAUSED' : 'ACTIVE'}`);
+    }
+
+    // Legacy Evolution support / DB Logging
     private async logMessage(storeId: string, contactId: string, from: string, body: string, senderName: string, isBot: boolean, wamid?: string) {
         try {
             await this.chatRepository.save({
@@ -250,13 +499,9 @@ export class WhatsappService implements OnModuleInit {
             let body = '';
             if (chat.rawLastMessage) {
                 const parts = chat.rawLastMessage.split('|||');
-                if (parts.length >= 2) {
-                    body = parts.slice(1).join('|||');
-                } else {
-                    body = chat.rawLastMessage;
-                }
+                if (parts.length >= 2) body = parts.slice(1).join('|||');
+                else body = chat.rawLastMessage;
             }
-
             return {
                 id: chat.id,
                 name: chat.customerName || chat.id,
@@ -266,491 +511,13 @@ export class WhatsappService implements OnModuleInit {
         });
     }
 
-    // --- Evolution API Interactions ---
-
-    private getHeaders(apiKey?: string) {
-        return {
-            'Content-Type': 'application/json',
-            'apikey': apiKey || this.evolutionApiKey
-        };
-    }
-
-    private getInstanceName(userId: string) {
-        return `store-${userId}`;
-    }
-
-    async getSession(userId: string) {
-        const instanceName = this.getInstanceName(userId);
-        const user = await this.usersService.findById(userId);
-        const apiKey = user?.evolutionApiKey;
-
-        try {
-            const stateRes = await axios.get(`${this.evolutionUrl}/instance/connectionState/${instanceName}`, {
-                headers: this.getHeaders(apiKey),
-                validateStatus: () => true
-            });
-
-            if (stateRes.status === 404) {
-                await this.createInstance(userId);
-                return { status: 'DISCONNECTED', qr: null };
-            }
-
-            const state = stateRes.data?.instance?.state || 'close';
-
-            if (state === 'open') {
-                this.statuses.set(userId, 'CONNECTED');
-                await this.ensureWebhook(userId);
-                return { status: 'CONNECTED', qr: null };
-            } else if (state === 'connecting') {
-                const qrRes = await axios.get(`${this.evolutionUrl}/instance/connect/${instanceName}`, {
-                    headers: this.getHeaders(apiKey)
-                });
-                if (qrRes.data?.code) {
-                    this.statuses.set(userId, 'QR_READY');
-                    this.qrCodes.set(userId, qrRes.data.code);
-                    return { status: 'QR_READY', qr: qrRes.data.code };
-                }
-            }
-
-            return { status: 'DISCONNECTED', qr: this.qrCodes.get(userId) || null };
-
-        } catch (error) {
-            this.logger.error(`Error checking session for ${userId}`, error);
-            if (error.response?.status === 404) {
-                await this.createInstance(userId);
-            }
-            return { status: 'DISCONNECTED', qr: null };
-        }
-    }
-
-    private getEffectiveWebhookUrl(): string | undefined {
-        const configuredUrl = this.configService.get<string>('WEBHOOK_URL');
-        if (configuredUrl) {
-            return configuredUrl;
-        }
-
-        if (this.evolutionUrl.includes('evolution-api')) {
-            return 'http://backend:3000/whatsapp/webhook';
-        }
-
-        return undefined;
-    }
-
-    private async createInstance(userId: string) {
-        const instanceName = this.getInstanceName(userId);
-        try {
-            this.logger.log(`Creating instance for ${userId}`);
-
-            const webhookUrl = this.getEffectiveWebhookUrl();
-            const globalHeaders = this.getHeaders(); // Use Global Key for creation
-
-            const payload = {
-                instanceName: instanceName,
-                qrcode: true,
-                webhook: webhookUrl,
-                webhookUrl: webhookUrl,
-                integration: 'WHATSAPP-BAILEYS',
-                reject_call: false,
-                msg_call: false,
-                groups_ignore: true,
-                always_online: true,
-                read_messages: true,
-                read_status: false
-            };
-
-            const res = await axios.post(`${this.evolutionUrl}/instance/create`, payload, { headers: globalHeaders });
-
-            const data = res.data;
-            let newApiKey = '';
-
-            if (data?.hash?.apikey) newApiKey = data.hash.apikey;
-            else if (data?.apikey) newApiKey = data.apikey;
-            else if (data?.instance?.apikey) newApiKey = data.instance.apikey;
-
-            if (newApiKey) {
-                await this.usersService.updateById(userId, {
-                    evolutionInstanceName: instanceName,
-                    evolutionApiKey: newApiKey
-                });
-                this.logger.log(`Saved new API Key for user ${userId}`);
-            }
-
-            if (webhookUrl) {
-                setTimeout(() => this.ensureWebhook(userId), 2000);
-            }
-
-        } catch (e) {
-            this.logger.error(`Failed to create instance for ${userId}`, e.response?.data || e.message);
-        }
-    }
-
-    async deleteInstance(userId: string) {
-        const instanceName = this.getInstanceName(userId);
-        try {
-            this.logger.log(`Deleting instance for ${userId}`);
-            await axios.delete(`${this.evolutionUrl}/instance/delete/${instanceName}`, { headers: this.getHeaders() });
-            this.statuses.delete(userId);
-            this.qrCodes.delete(userId);
-        } catch (e) {
-            this.logger.error(`Failed to delete instance for ${userId}`, e.response?.data || e.message);
-        }
-    }
-
-    private async ensureWebhook(userId: string) {
-        const instanceName = this.getInstanceName(userId);
-        const webhookUrl = this.getEffectiveWebhookUrl();
-        if (!webhookUrl) return;
-
-        try {
-            const user = await this.usersService.findById(userId);
-            const apiKey = user?.evolutionApiKey;
-
-            const finalWebhook = webhookUrl || 'http://backend:3000/whatsapp/webhook';
-            this.logger.log(`Ensuring webhook for ${userId}: ${finalWebhook}`);
-
-            // 1. Set Global Settings (Legacy/V2 mix)
-            await axios.post(`${this.evolutionUrl}/webhook/set/${instanceName}`, {
-                webhook: finalWebhook,
-                webhookUrl: finalWebhook,
-                enabled: true,
-                webhookByEvents: true,
-                events: ['MESSAGES_UPSERT', 'messages.upsert', 'MESSAGES_UPDATE', 'messages.update', 'CONNECTION_UPDATE', 'connection.update']
-            }, { headers: this.getHeaders(apiKey) });
-
-            // 2. Set Instance Config (Double Safety)
-            await axios.post(`${this.evolutionUrl}/instance/update/${instanceName}`, {
-                webhook: finalWebhook,
-                events: ['MESSAGES_UPSERT']
-            }, { headers: this.getHeaders(apiKey) });
-
-            this.logger.log(`Webhook successfully set for ${instanceName}`);
-
-            await this.configureSettings(instanceName, apiKey);
-
-        } catch (e) {
-            this.logger.debug(`Failed to ensure webhook for ${userId}: ${e.message}`);
-        }
-    }
-
-    private async configureSettings(instanceName: string, apiKey?: string) {
-        try {
-            await axios.post(`${this.evolutionUrl}/settings/set/${instanceName}`, {
-                reject_call: false,
-                groups_ignore: false,
-                always_online: true,
-                read_messages: true,
-                read_status: false
-            }, { headers: this.getHeaders(apiKey) });
-        } catch (e) {
-            this.logger.warn(`Failed to configure settings for ${instanceName}`, e.message);
-        }
-    }
-
-    // Helper to resolve Image URL for Docker/Local split
-    // Helper to resolve Image URL for Docker/Local split
-    private resolveImageUrl(imageUrl: string): string {
-        if (!imageUrl) return '';
-        if (imageUrl.startsWith('http')) return imageUrl;
-
-        // Try to get public URL first
-        const webhookUrl = this.configService.get('WEBHOOK_URL'); // e.g., https://api.zapcar.com.br/whatsapp/webhook
-        let baseUrl = '';
-
-        if (webhookUrl) {
-            // Remove /whatsapp/webhook to get root
-            baseUrl = webhookUrl.replace('/whatsapp/webhook', '');
-        } else {
-            baseUrl = `http://localhost:${process.env.PORT || 3000}`;
-        }
-
-        // Docker internal adjustment (only if using localhost)
-        if (baseUrl.includes('localhost') && this.evolutionUrl.includes('localhost')) {
-            baseUrl = baseUrl.replace('localhost', 'host.docker.internal');
-        }
-
-        // Ensure no double slash issues
-        if (!baseUrl.endsWith('/') && !imageUrl.startsWith('/')) {
-            return `${baseUrl}/${imageUrl}`;
-        } else if (baseUrl.endsWith('/') && imageUrl.startsWith('/')) {
-            return `${baseUrl}${imageUrl.substring(1)}`;
-        }
-
-        return `${baseUrl}${imageUrl}`;
-    }
-
-    // Retry wrapper for robust API calls
-    private async retryWithBackoff<T>(fn: () => Promise<T>, retries = 3, delay = 1000): Promise<T> {
-        try {
-            return await fn();
-        } catch (error) {
-            if (retries === 0) throw error;
-            this.logger.warn(`API call failed, retrying in ${delay}ms... (${retries} left). Error: ${error.message}`);
-            await new Promise(res => setTimeout(res, delay));
-            return this.retryWithBackoff(fn, retries - 1, delay * 2);
-        }
-    }
-
-    async sendMessage(userId: string, to: string, text: string) {
-        const instanceName = this.getInstanceName(userId);
-        let number = to.replace(/\D/g, '');
-        const user = await this.usersService.findById(userId);
-        const apiKey = user?.evolutionApiKey;
-
-        try {
-            await this.retryWithBackoff(() => axios.post(`${this.evolutionUrl}/message/sendText/${instanceName}`, {
-                number: number,
-                options: { delay: 1200, presence: 'composing' },
-                textMessage: { text: text }
-            }, { headers: this.getHeaders(apiKey) }));
-        } catch (e) {
-            this.logger.error(`Failed to send message to ${to} after retries`, e.response?.data || e.message);
-        }
-    }
-
-    async sendImage(userId: string, to: string, imageUrl: string, caption?: string) {
-        const instanceName = this.getInstanceName(userId);
-        let number = to.replace(/\D/g, '');
-        const user = await this.usersService.findById(userId);
-        const apiKey = user?.evolutionApiKey;
-
-        try {
-            await this.retryWithBackoff(() => axios.post(`${this.evolutionUrl}/message/sendMedia/${instanceName}`, {
-                number: number,
-                options: { delay: 1200, presence: 'composing' },
-                mediaMessage: { mediatype: 'image', caption: caption, media: imageUrl }
-            }, { headers: this.getHeaders(apiKey) }));
-        } catch (e) {
-            this.logger.error(`Failed to send image to ${to} after retries`, e.response?.data || e.message);
-        }
-    }
-
-    async sendManualMessage(userId: string, to: string, message: string) {
-        await this.sendMessage(userId, to, message);
-        this.logMessage(userId, to, 'me', message, 'Atendente', true);
-    }
-
+    // Stub for controller compatibility
     async handleWebhook(payload: any) {
-        this.logger.log(`[Webhook Receipt] Payload: ${JSON.stringify(payload)}`);
-        const instanceName = payload.instance || payload.sender?.instanceId;
-
-        if (!instanceName || !instanceName.startsWith('store-')) {
-            return;
-        }
-
-        const userId = instanceName.replace('store-', '');
-        const data = payload.data;
-        const msgType = payload.type || payload.event;
-
-        if (msgType !== 'MESSAGES_UPSERT' && msgType !== 'messages.upsert') {
-            // Reduce noise for other events
-            // this.logger.debug(`Ignored webhook event type: ${msgType}`);
-            return;
-        }
-
-        if (!data || !data.key) {
-            this.logger.warn(`Webhook data or key missing for ${userId}. Data: ${JSON.stringify(data).substring(0, 200)}`);
-            return;
-        }
-
-        const fromMe = data.key.fromMe;
-        const remoteJid = data.key.remoteJid;
-        const cleanFrom = remoteJid.replace(/@s\.whatsapp\.net|@g\.us/g, '');
-
-        let body = '';
-        if (data.message?.conversation) {
-            body = data.message.conversation;
-        } else if (data.message?.extendedTextMessage?.text) {
-            body = data.message.extendedTextMessage.text;
-        } else if (data.message?.imageMessage?.caption) {
-            body = data.message.imageMessage.caption;
-        } else if (typeof data.message === 'string') {
-            body = data.message;
-        }
-
-        if (!body) return;
-
-        const pushName = data.pushName || cleanFrom;
-        const messageTimestamp = data.messageTimestamp;
-        const msgId = data.key?.id;
-
-        await this.processIncomingMessage(userId, cleanFrom, pushName, body, fromMe, messageTimestamp, msgId);
+        // No-op
     }
 
-    // Updated state types for the new flow
-    private userStates: Map<string, { mode: 'MENU' | 'WAITING_CAR_NAME' | 'WAITING_FAQ' }> = new Map();
-
-    private async processIncomingMessage(userId: string, from: string, senderName: string, text: string, isFromMe: boolean, messageTimestamp?: number, wamid?: string) {
-        if (messageTimestamp) {
-            // 2. Check for stale messages (Timestamp check)
-            // STRICT SAFETY: 2 minutes (120000ms) tolerance.
-            // This ensures we ONLY reply to "Live" messages.
-            // If the bot was offline or just connected, it will IGNORE the backlog/history
-            // to prevent spamming the user's entire contact list.
-            const messageTime = typeof messageTimestamp === 'number'
-                ? messageTimestamp * 1000
-                : parseInt(messageTimestamp as any) * 1000;
-
-            const now = Date.now();
-            const diff = now - messageTime;
-
-            // Strict 2-minute window. Older than that = Ignored.
-            if (diff > 120000) {
-                this.logger.warn(`[SafeGuard] Old message ignored (${Math.round(diff / 1000)}s ago). Prevents spam.`);
-                return;
-            }
-        }
-
-        this.logger.log(`[DEBUG] Processing incoming msg. User: ${userId}, From: ${from}, Text: ${text}`);
-
-        // Final Deduplication check before logic
-        if (wamid) {
-            const exists = await this.chatRepository.findOne({ where: { wamid } });
-            if (exists) {
-                this.logger.warn(`[Duplicate] Skipping already processed WAMID: ${wamid}`);
-                return;
-            }
-        }
-
-        await this.logMessage(userId, from, from, text, senderName, isFromMe, wamid);
-
-        // Loop Guard
-        if (isFromMe) {
-            return;
-        }
-
-        try {
-            await this.leadsService.upsert(userId, from, text, senderName);
-        } catch (e) {
-            this.logger.error('Error tracking lead', e);
-        }
-
-        if (this.isBotPaused(userId)) {
-            this.logger.log(`Bot paused for ${userId}, skipping auto-reply.`);
-            return;
-        }
-
-        const msg = text.trim();
-        const lowerMsg = msg.toLowerCase();
-        const user = await this.usersService.findById(userId);
-        const storeName = user?.storeName || "ZapCar";
-
-        const stateKey = `${userId}:${from}`;
-        const currentState = this.userStates.get(stateKey)?.mode || 'MENU';
-
-        // 1. GLOBAL TRIGGERS (Menu, Reset, First interaction)
-        // If state is not tracked yet, it's effectively the first message of this session in memory
-        const isFirstMessage = !this.userStates.has(stateKey);
-
-        if (isFirstMessage || ['menu', 'início', 'inicio', 'voltar'].includes(lowerMsg)) {
-            this.userStates.set(stateKey, { mode: 'MENU' });
-            await this.sendMainMenu(userId, from, storeName);
-            return;
-        }
-
-        // 2. STATE MACHINE
-        if (currentState === 'MENU') {
-            if (msg === '2') {
-                // Attendant
-                await this.sendMessage(userId, from, "Certo 👍. Um atendente será notificado e responderá em instantes!");
-                // Usually we stay in MENU or do nothing.
-            } else if (msg === '3') {
-                // FAQ Mode
-                this.userStates.set(stateKey, { mode: 'WAITING_FAQ' });
-                await this.sendMessage(userId, from, "Envie sua dúvida e eu responderei com base nas informações da loja 😉");
-            } else {
-                // Variable text in MENU -> Treat as car search
-                // Any other input is treated as a name search
-                await this.handleCarSearch(userId, from, msg, storeName);
-            }
-
-        } else if (currentState === 'WAITING_FAQ') {
-            // FAQ Logic
-            const answer = await this.faqService.findMatch(userId, msg);
-
-            if (answer) {
-                await this.sendMessage(userId, from, answer);
-                // Back to menu
-                await this.sendMainMenu(userId, from, storeName);
-                this.userStates.set(stateKey, { mode: 'MENU' });
-            } else {
-                await this.sendMessage(userId, from, "Ainda não tenho uma resposta para isso 😅. Digite *menu* para voltar ou pergunte outra coisa.");
-                // Stay in WAITING_FAQ
-            }
-        }
-    }
-
-    private async sendMainMenu(userId: string, to: string, storeName: string) {
-        const menu = `🚗 *${storeName}*
-Diga o nome do veículo que você procura!
-(ex: Corolla, Onix, Hilux)
-
-Ou escolha uma opção:
-2️⃣ Falar com atendente
-3️⃣ Tire suas dúvidas`;
-        await this.sendMessage(userId, to, menu);
-    }
-
-    private async handleCarSearch(userId: string, to: string, query: string, storeName: string) {
-        const allVehicles = await this.vehiclesService.findAll(userId);
-        let found: any[] = [];
-
-        if (!query) {
-            // Fallback if query is empty (shouldn't happen with new logic unless user sends empty strings)
-            // But per requirement, "Quando digitar o nome do carro".
-            // If empty, maybe show random 3? Or just nothing?
-            // Let's assume strict search required.
-            found = [];
-        } else {
-            const q = query.toLowerCase();
-            found = allVehicles.filter(v =>
-                (v.name && v.name.toLowerCase().includes(q)) ||
-                (v.model && v.model.toLowerCase().includes(q)) ||
-                (v.brand && v.brand.toLowerCase().includes(q))
-            );
-        }
-
-        if (found.length > 0) {
-            // Show up to 3 cars
-            const limit = 3;
-            for (const car of found.slice(0, limit)) {
-                // 1. Send ALL images first
-                if (car.images && car.images.length > 0) {
-                    for (const img of car.images) {
-                        await this.sendImage(userId, to, this.resolveImageUrl(img));
-                        // Small delay to ensure order
-                        await new Promise(r => setTimeout(r, 500));
-                    }
-                }
-
-                // 2. Send formatted details
-                // Format:
-                // 🚘 *{nome do carro}*  
-                // 💰 {preço formatado}  
-                // 📋 {descrição resumida ou principais especificações}
-
-                // Construct description from specs
-                const specsParts: string[] = [];
-                if (car.year) specsParts.push(`${car.year}`);
-                if (car.km) specsParts.push(`${car.km}km`);
-                if (car.fuel) specsParts.push(car.fuel);
-                if (car.transmission) specsParts.push(car.transmission);
-
-                const description = specsParts.join(' | ') || 'Sem detalhes adicionais';
-
-                const specs = `🚘 *${car.brand} ${car.name} ${car.model || ''}*
-💰 R$ ${Number(car.price).toLocaleString('pt-BR')}
-📋 ${description}`;
-
-                await this.sendMessage(userId, to, specs);
-
-                // Delay between cars
-                await new Promise(r => setTimeout(r, 800));
-            }
-            // Send menu again
-            await this.sendMainMenu(userId, to, storeName);
-        } else {
-            await this.sendMessage(userId, to, "😕 Não encontrei esse modelo. Quer tentar outro nome?");
-            await this.sendMainMenu(userId, to, storeName);
-        }
+    // Stub for sync
+    async syncSessions() {
+        await this.restoreSessions();
     }
 }

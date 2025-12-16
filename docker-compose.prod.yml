@@ -13,14 +13,12 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       # - ASAAS_API_KEY=$ASAAS_API_KEY # Injected by Coolify runtime
       - ASAAS_API_URL=${ASAAS_API_URL}
-      - EVOLUTION_API_URL=https://evolution.zapicar.com.br
-      - EVOLUTION_API_KEY=429683C4C977415CAAFCCE10F7D57E11
-      - WEBHOOK_URL=https://api.zapicar.com.br/whatsapp/webhook
-    depends_on:
-      - evolution-api
+      - ASAAS_API_URL=${ASAAS_API_URL}
+      # WhatsApp now native
     volumes:
       - zapcar_data:/app/data
       - zapcar_uploads:/app/uploads
+      - zapcar_whatsapp_sessions:/app/whatsapp_sessions
 
   frontend:
     build: ./frontend
@@ -30,25 +28,7 @@ services:
     depends_on:
       - backend
 
-  evolution-api:
-    image: atendai/evolution-api:v1.8.2
-    restart: always
-    expose:
-      - "8080"
-    environment:
-      - SERVER_PORT=8080
-      - SERVER_URL=https://evolution.zapicar.com.br
-      - AUTHENTICATION_API_KEY=429683C4C977415CAAFCCE10F7D57E11
-      - DATABASE_ENABLED=false
-      # v1 doesn't strictly require Postgres/Redis for basic mode, running lighter
-    volumes:
-      - evolution_instances:/evolution/instances
-      - evolution_store:/evolution/store
-  # Removed Postgres and Redis for simplicity and stability with v1.8.2
-  # If needed later for scaling, we can re-add, but v1 runs fine with local store for fewer instances.
-
 volumes:
   zapcar_data:
   zapcar_uploads:
-  evolution_instances:
-  evolution_store:
+  zapcar_whatsapp_sessions:
