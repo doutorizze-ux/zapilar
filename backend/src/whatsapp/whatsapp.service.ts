@@ -321,10 +321,16 @@ export class WhatsappService implements OnModuleInit {
     }
 
     private getEffectiveWebhookUrl(): string | undefined {
-        // FORCE Internal Docker Network URL.
-        // The previous check failed because EVOLUTION_API_URL was external.
-        // In Docker Compose, this is the correct and reliable URL.
-        return 'http://backend:3000/whatsapp/webhook';
+        const configuredUrl = this.configService.get<string>('WEBHOOK_URL');
+        if (configuredUrl) {
+            return configuredUrl;
+        }
+
+        if (this.evolutionUrl.includes('evolution-api')) {
+            return 'http://backend:3000/whatsapp/webhook';
+        }
+
+        return undefined;
     }
 
     private async createInstance(userId: string) {
