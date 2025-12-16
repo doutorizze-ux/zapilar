@@ -326,6 +326,28 @@ export function PublicStorePage() {
         </div>
     );
 
+    // --- Install Prompt Logic ---
+    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+    useEffect(() => {
+        const handler = (e: any) => {
+            e.preventDefault();
+            setDeferredPrompt(e);
+        };
+        window.addEventListener('beforeinstallprompt', handler);
+        return () => window.removeEventListener('beforeinstallprompt', handler);
+    }, []);
+
+    const handleInstallClick = () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult: any) => {
+            if (choiceResult.outcome === 'accepted') {
+                setDeferredPrompt(null);
+            }
+        });
+    };
+
     return (
         <div className="min-h-screen bg-neutral-50 font-sans selection:bg-black/10">
             <AnimatePresence>
@@ -337,6 +359,15 @@ export function PublicStorePage() {
                     />
                 )}
             </AnimatePresence>
+
+            {/* Install App Button (Visible if prompt available) */}
+            {deferredPrompt && (
+                <div onClick={handleInstallClick} className="fixed top-24 right-4 z-40 bg-black text-white px-4 py-2 rounded-full shadow-lg cursor-pointer flex items-center gap-2 animate-pulse hover:animate-none">
+                    <Share2 className="w-4 h-4" />
+                    <span className="text-sm font-bold">Instalar App</span>
+                </div>
+            )}
+
 
             {/* Navbar */}
             <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100">
@@ -354,6 +385,11 @@ export function PublicStorePage() {
 
                     {/* Desktop Menu */}
                     <div className="hidden md:flex items-center gap-8 font-medium text-sm text-gray-500">
+                        {deferredPrompt && (
+                            <button onClick={handleInstallClick} className="flex items-center gap-2 text-green-600 font-bold hover:bg-green-50 px-3 py-1 rounded-full transition-colors">
+                                <Share2 className="w-4 h-4" /> Instalar App
+                            </button>
+                        )}
                         <button onClick={() => scrollToSection('stock')} className="hover:text-gray-900 transition-colors">Estoque</button>
                         <button onClick={() => scrollToSection('about')} className="hover:text-gray-900 transition-colors">Sobre a Loja</button>
                         <button onClick={() => scrollToSection('footer')} className="hover:text-gray-900 transition-colors">Contato</button>
