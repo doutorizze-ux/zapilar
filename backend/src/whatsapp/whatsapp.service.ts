@@ -582,18 +582,20 @@ export class WhatsappService implements OnModuleInit {
     private async processIncomingMessage(userId: string, from: string, senderName: string, text: string, isFromMe: boolean, messageTimestamp?: number, wamid?: string) {
         if (messageTimestamp) {
             // 2. Check for stale messages (Timestamp check)
-            // Increased to 10 minutes (600000ms) to allow for some clock drift/queue delay,
-            // but prevents processing very old messages (spam prevention).
+            // STRICT SAFETY: 2 minutes (120000ms) tolerance.
+            // This ensures we ONLY reply to "Live" messages.
+            // If the bot was offline or just connected, it will IGNORE the backlog/history
+            // to prevent spamming the user's entire contact list.
             const messageTime = typeof messageTimestamp === 'number'
                 ? messageTimestamp * 1000
-                : parseInt(messageTimestamp as any) * 1000; // Cast to any to allow string or number
+                : parseInt(messageTimestamp as any) * 1000;
 
             const now = Date.now();
             const diff = now - messageTime;
 
-            // If message is older than 10 minutes, ignore it to prevent replying to history
-            if (diff > 600000) {
-                this.logger.warn(`[Time Drift] Message ignored because it is too old (${Math.round(diff / 1000)}s ago).`);
+            // Strict 2-minute window. Older than that = Ignored.
+            if (diff > 120000) {
+                this.logger.warn(`[SafeGuard] Old message ignored (${Math.round(diff / 1000)}s ago). Prevents spam.`);
                 return;
             }
         }
