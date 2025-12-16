@@ -75,7 +75,9 @@ export class SubscriptionsService {
         const subscriptionPayload = {
             billingType: billingType || 'PIX',
             value: plan.price,
-            nextDueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            nextDueDate: billingType === 'CREDIT_CARD'
+                ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+                : new Date().toISOString().split('T')[0],
             cycle: plan.interval,
             description: `Assinatura Plano ${plan.name}`,
             creditCard,
