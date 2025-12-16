@@ -338,13 +338,19 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
     }
 
     private async sendMainMenu(userId: string, jid: string, storeName: string) {
-        const menu = `🚗 *${storeName}*
-Diga o nome do veículo que você procura!
-(ex: Corolla, Onix, Hilux)
+        const menu = `👋 Olá! Bem-vindo(a) à *${storeName}*.\n
+Estou aqui para te ajudar a encontrar seu carro novo! 🚘
 
-Ou escolha uma opção:
-2️⃣ Falar com atendente
-3️⃣ Tire suas dúvidas`;
+🔍 *Deseja buscar um veículo?*
+Digite o nome, marca ou modelo abaixo.
+_Ex: Civic, Toro, S10_
+
+━━━━━━━━━━━━━━━━
+
+👇 *Ou escolha uma opção:*
+
+2️⃣  Falar com um consultor
+3️⃣  Dúvidas frequentes`;
         await this.sendMessage(userId, jid, menu);
     }
 
