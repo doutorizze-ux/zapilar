@@ -86,7 +86,13 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
-            setImageFiles([...imageFiles, ...Array.from(e.target.files)].slice(0, 4));
+            const currentCount = (initialData?.images?.length || 0) + imageFiles.length;
+            const remainingSlots = 5 - currentCount;
+
+            if (remainingSlots <= 0) return;
+
+            const newFiles = Array.from(e.target.files).slice(0, remainingSlots);
+            setImageFiles([...imageFiles, ...newFiles]);
         }
     };
 
@@ -270,10 +276,11 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                                 <h4 className="font-bold text-gray-800 mb-4 flex items-center gap-2"><Upload className="w-4 h-4" /> Fotos da Galeria</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                                    {/* Existing Images (Mockup for now as we don't handle delete existing yet) */}
+                                    {/* Existing Images */}
                                     {initialData?.images?.map((img: string, idx: number) => (
                                         <div key={`exist-${idx}`} className="relative aspect-square rounded-xl overflow-hidden border border-gray-200 group">
                                             <img src={img.startsWith('http') ? img : `${API_URL}${img}`} className="w-full h-full object-cover" />
+                                            {/* TODO: Add delete functionality for existing images */}
                                         </div>
                                     ))}
 
@@ -284,12 +291,17 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                         </div>
                                     ))}
 
-                                    <label className="border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center text-center aspect-square hover:bg-gray-50 cursor-pointer transition-colors relative">
-                                        <Upload className="w-6 h-6 text-gray-400 mb-2" />
-                                        <span className="text-xs text-gray-500 font-medium">Adicionar Foto</span>
-                                        <input type="file" accept="image/*" multiple onChange={handleFileChange} className="hidden" />
-                                    </label>
+                                    {((initialData?.images?.length || 0) + imageFiles.length) < 5 && (
+                                        <label className="border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center text-center aspect-square hover:bg-gray-50 cursor-pointer transition-colors relative">
+                                            <Upload className="w-6 h-6 text-gray-400 mb-2" />
+                                            <span className="text-xs text-gray-500 font-medium">Adicionar Foto</span>
+                                            <input type="file" accept="image/*" multiple onChange={handleFileChange} className="hidden" />
+                                        </label>
+                                    )}
                                 </div>
+                                <p className="text-xs text-gray-400 mt-2 text-right">
+                                    {(initialData?.images?.length || 0) + imageFiles.length} / 5 fotos
+                                </p>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
