@@ -321,18 +321,10 @@ export class WhatsappService implements OnModuleInit {
     }
 
     private getEffectiveWebhookUrl(): string | undefined {
-        // Priority 1: Internal Docker Network (Fixes "Not Arriving" issues due to NAT/DNS)
-        if (this.evolutionUrl.includes('evolution-api')) {
-            return 'http://backend:3000/whatsapp/webhook';
-        }
-
-        // Priority 2: Configured Public URL
-        const configuredUrl = this.configService.get<string>('WEBHOOK_URL');
-        if (configuredUrl) {
-            return configuredUrl;
-        }
-
-        return undefined;
+        // FORCE Internal Docker Network URL.
+        // The previous check failed because EVOLUTION_API_URL was external.
+        // In Docker Compose, this is the correct and reliable URL.
+        return 'http://backend:3000/whatsapp/webhook';
     }
 
     private async createInstance(userId: string) {
