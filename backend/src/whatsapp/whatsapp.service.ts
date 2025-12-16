@@ -55,8 +55,8 @@ export class WhatsappService implements OnModuleInit {
     ) { }
 
     async onModuleInit() {
-        // FORCE Internal Communication on Port 8081 (Default container port)
-        this.evolutionUrl = 'http://evolution-api:8081';
+        // Revert to configured URL (Public) as internal connect failed (ECONNREFUSED)
+        this.evolutionUrl = this.configService.get<string>('EVOLUTION_API_URL') || 'http://localhost:8081';
 
         // This keeps using the ENV key, which is correct.
         this.evolutionApiKey = this.configService.get<string>('EVOLUTION_API_KEY') || '';
