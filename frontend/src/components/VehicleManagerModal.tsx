@@ -22,6 +22,7 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
 
     // Form Data (Details Tab)
     const [imageFiles, setImageFiles] = useState<File[]>([]);
+    const [existingImages, setExistingImages] = useState<string[]>([]);
     const [docFiles, setDocFiles] = useState<File[]>([]);
     const [formData, setFormData] = useState({
         brand: 'Toyota', name: '', model: '', year: new Date().getFullYear(),
@@ -56,7 +57,10 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
                 teto: initialData.teto || false,
                 banco_couro: initialData.banco_couro || false,
             });
+            setExistingImages(initialData.images || []);
             generateMarketingText();
+        } else {
+            setExistingImages([]);
         }
     }, [initialData]);
 
@@ -86,7 +90,7 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
-            const currentCount = (initialData?.images?.length || 0) + imageFiles.length;
+            const currentCount = existingImages.length + imageFiles.length;
             const remainingSlots = 5 - currentCount;
 
             if (remainingSlots <= 0) return;
@@ -98,6 +102,10 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
 
     const removeFile = (index: number) => {
         setImageFiles(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const removeExistingImage = (index: number) => {
+        setExistingImages(prev => prev.filter((_, i) => i !== index));
     };
 
     // --- Document Logic ---
@@ -149,7 +157,7 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
                 price: formatMoneyRequest(formData.price),
                 year: Number(formData.year),
                 km: Number(formData.km),
-                images: initialData?.images || []
+                images: initialData ? existingImages : [] // Use modified list if editing
             };
 
             let response;
@@ -277,10 +285,10 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                 <h4 className="font-bold text-gray-800 mb-4 flex items-center gap-2"><Upload className="w-4 h-4" /> Fotos da Galeria</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                                     {/* Existing Images */}
-                                    {initialData?.images?.map((img: string, idx: number) => (
+                                    {existingImages.map((img: string, idx: number) => (
                                         <div key={`exist-${idx}`} className="relative aspect-square rounded-xl overflow-hidden border border-gray-200 group">
                                             <img src={img.startsWith('http') ? img : `${API_URL}${img}`} className="w-full h-full object-cover" />
-                                            {/* TODO: Add delete functionality for existing images */}
+                                            <button type="button" onClick={() => removeExistingImage(idx)} className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-3 h-3" /></button>
                                         </div>
                                     ))}
 
@@ -291,7 +299,7 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                         </div>
                                     ))}
 
-                                    {((initialData?.images?.length || 0) + imageFiles.length) < 5 && (
+                                    {(existingImages.length + imageFiles.length) < 5 && (
                                         <label className="border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center text-center aspect-square hover:bg-gray-50 cursor-pointer transition-colors relative">
                                             <Upload className="w-6 h-6 text-gray-400 mb-2" />
                                             <span className="text-xs text-gray-500 font-medium">Adicionar Foto</span>
@@ -300,7 +308,7 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                     )}
                                 </div>
                                 <p className="text-xs text-gray-400 mt-2 text-right">
-                                    {(initialData?.images?.length || 0) + imageFiles.length} / 5 fotos
+                                    {existingImages.length + imageFiles.length} / 5 fotos
                                 </p>
                             </div>
 
