@@ -55,7 +55,11 @@ export class WhatsappService implements OnModuleInit {
     ) { }
 
     async onModuleInit() {
-        this.evolutionUrl = this.configService.get<string>('EVOLUTION_API_URL') || 'http://localhost:8081';
+        // FORCE Internal Communication to fix 404 Loopback issues
+        // We use the docker service name directly.
+        this.evolutionUrl = 'http://evolution-api:8080';
+
+        // This keeps using the ENV key, which is correct.
         this.evolutionApiKey = this.configService.get<string>('EVOLUTION_API_KEY') || '';
         this.initializeAI();
 
