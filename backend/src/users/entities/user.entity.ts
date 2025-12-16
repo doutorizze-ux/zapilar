@@ -62,6 +62,12 @@ export class User {
     @Column({ nullable: true })
     planId: string;
 
+    @Column({ nullable: true })
+    evolutionApiKey: string;
+
+    @Column({ nullable: true })
+    evolutionInstanceName: string;
+
 
     // @ManyToOne(() => Store, { nullable: true })
     // store: Store;

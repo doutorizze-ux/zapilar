@@ -95,10 +95,13 @@ export class WhatsappService implements OnModuleInit {
         if (this.statuses.get(userId) !== 'CONNECTED') return;
 
         const instanceName = this.getInstanceName(userId);
+        const user = await this.usersService.findById(userId);
+        const apiKey = user?.evolutionApiKey;
+
         try {
             // Check connection state via API to be sure (Sanity Check)
             const connectionState = await axios.get(`${this.evolutionUrl}/instance/connectionState/${instanceName}`, {
-                headers: this.getHeaders()
+                headers: this.getHeaders(apiKey)
             });
 
             if (connectionState.data?.instance?.state !== 'open') {
@@ -109,7 +112,7 @@ export class WhatsappService implements OnModuleInit {
             }
 
             const res = await axios.get(`${this.evolutionUrl}/chat/findChats/${instanceName}`, {
-                headers: this.getHeaders()
+                headers: this.getHeaders(apiKey)
             });
             const chats = res.data || [];
 
@@ -121,7 +124,7 @@ export class WhatsappService implements OnModuleInit {
                     const msgsRes = await axios.post(`${this.evolutionUrl}/chat/findMessages/${instanceName}`, {
                         where: { key: { remoteJid: remoteJid } },
                         options: { limit: 5 } // Fetch last 5 to be safe
-                    }, { headers: this.getHeaders() });
+                    }, { headers: this.getHeaders(apiKey) });
 
                     const messages = (msgsRes.data || []).reverse();
 
@@ -262,10 +265,10 @@ export class WhatsappService implements OnModuleInit {
 
     // --- Evolution API Interactions ---
 
-    private getHeaders() {
+    private getHeaders(apiKey?: string) {
         return {
             'Content-Type': 'application/json',
-            'apikey': this.evolutionApiKey
+            'apikey': apiKey || this.evolutionApiKey
         };
     }
 
@@ -275,10 +278,12 @@ export class WhatsappService implements OnModuleInit {
 
     async getSession(userId: string) {
         const instanceName = this.getInstanceName(userId);
+        const user = await this.usersService.findById(userId);
+        const apiKey = user?.evolutionApiKey;
 
         try {
             const stateRes = await axios.get(`${this.evolutionUrl}/instance/connectionState/${instanceName}`, {
-                headers: this.getHeaders(),
+                headers: this.getHeaders(apiKey),
                 validateStatus: () => true
             });
 
@@ -295,7 +300,7 @@ export class WhatsappService implements OnModuleInit {
                 return { status: 'CONNECTED', qr: null };
             } else if (state === 'connecting') {
                 const qrRes = await axios.get(`${this.evolutionUrl}/instance/connect/${instanceName}`, {
-                    headers: this.getHeaders()
+                    headers: this.getHeaders(apiKey)
                 });
                 if (qrRes.data?.code) {
                     this.statuses.set(userId, 'QR_READY');
@@ -335,16 +340,31 @@ export class WhatsappService implements OnModuleInit {
             this.logger.log(`Creating instance for ${userId}`);
 
             const webhookUrl = this.getEffectiveWebhookUrl();
+            const globalHeaders = this.getHeaders(); // Use Global Key for creation
 
             const payload = {
                 instanceName: instanceName,
-                token: instanceName,
                 qrcode: true,
                 webhook: webhookUrl,
                 webhookUrl: webhookUrl,
             };
 
-            await axios.post(`${this.evolutionUrl}/instance/create`, payload, { headers: this.getHeaders() });
+            const res = await axios.post(`${this.evolutionUrl}/instance/create`, payload, { headers: globalHeaders });
+
+            const data = res.data;
+            let newApiKey = '';
+
+            if (data?.hash?.apikey) newApiKey = data.hash.apikey;
+            else if (data?.apikey) newApiKey = data.apikey;
+            else if (data?.instance?.apikey) newApiKey = data.instance.apikey;
+
+            if (newApiKey) {
+                await this.usersService.updateById(userId, {
+                    evolutionInstanceName: instanceName,
+                    evolutionApiKey: newApiKey
+                });
+                this.logger.log(`Saved new API Key for user ${userId}`);
+            }
 
             if (webhookUrl) {
                 setTimeout(() => this.ensureWebhook(userId), 2000);
@@ -373,6 +393,9 @@ export class WhatsappService implements OnModuleInit {
         if (!webhookUrl) return;
 
         try {
+            const user = await this.usersService.findById(userId);
+            const apiKey = user?.evolutionApiKey;
+
             const finalWebhook = webhookUrl || 'http://backend:3000/whatsapp/webhook';
             this.logger.log(`Ensuring webhook for ${userId}: ${finalWebhook}`);
 
@@ -383,24 +406,24 @@ export class WhatsappService implements OnModuleInit {
                 enabled: true,
                 webhookByEvents: true,
                 events: ['MESSAGES_UPSERT', 'messages.upsert', 'MESSAGES_UPDATE', 'messages.update', 'CONNECTION_UPDATE', 'connection.update']
-            }, { headers: this.getHeaders() });
+            }, { headers: this.getHeaders(apiKey) });
 
             // 2. Set Instance Config (Double Safety)
             await axios.post(`${this.evolutionUrl}/instance/update/${instanceName}`, {
                 webhook: finalWebhook,
                 events: ['MESSAGES_UPSERT']
-            }, { headers: this.getHeaders() });
+            }, { headers: this.getHeaders(apiKey) });
 
             this.logger.log(`Webhook successfully set for ${instanceName}`);
 
-            await this.configureSettings(instanceName);
+            await this.configureSettings(instanceName, apiKey);
 
         } catch (e) {
             this.logger.debug(`Failed to ensure webhook for ${userId}: ${e.message}`);
         }
     }
 
-    private async configureSettings(instanceName: string) {
+    private async configureSettings(instanceName: string, apiKey?: string) {
         try {
             await axios.post(`${this.evolutionUrl}/settings/set/${instanceName}`, {
                 reject_call: false,
@@ -408,7 +431,7 @@ export class WhatsappService implements OnModuleInit {
                 always_online: true,
                 read_messages: true,
                 read_status: false
-            }, { headers: this.getHeaders() });
+            }, { headers: this.getHeaders(apiKey) });
         } catch (e) {
             this.logger.warn(`Failed to configure settings for ${instanceName}`, e.message);
         }
@@ -461,13 +484,15 @@ export class WhatsappService implements OnModuleInit {
     async sendMessage(userId: string, to: string, text: string) {
         const instanceName = this.getInstanceName(userId);
         let number = to.replace(/\D/g, '');
+        const user = await this.usersService.findById(userId);
+        const apiKey = user?.evolutionApiKey;
 
         try {
             await this.retryWithBackoff(() => axios.post(`${this.evolutionUrl}/message/sendText/${instanceName}`, {
                 number: number,
                 options: { delay: 1200, presence: 'composing' },
                 textMessage: { text: text }
-            }, { headers: this.getHeaders() }));
+            }, { headers: this.getHeaders(apiKey) }));
         } catch (e) {
             this.logger.error(`Failed to send message to ${to} after retries`, e.response?.data || e.message);
         }
@@ -476,13 +501,15 @@ export class WhatsappService implements OnModuleInit {
     async sendImage(userId: string, to: string, imageUrl: string, caption?: string) {
         const instanceName = this.getInstanceName(userId);
         let number = to.replace(/\D/g, '');
+        const user = await this.usersService.findById(userId);
+        const apiKey = user?.evolutionApiKey;
 
         try {
             await this.retryWithBackoff(() => axios.post(`${this.evolutionUrl}/message/sendMedia/${instanceName}`, {
                 number: number,
                 options: { delay: 1200, presence: 'composing' },
                 mediaMessage: { mediatype: 'image', caption: caption, media: imageUrl }
-            }, { headers: this.getHeaders() }));
+            }, { headers: this.getHeaders(apiKey) }));
         } catch (e) {
             this.logger.error(`Failed to send image to ${to} after retries`, e.response?.data || e.message);
         }
