@@ -11,6 +11,8 @@ interface User {
     createdAt: string;
     planId?: string;
     subscriptionId?: string;
+    document?: string;
+    password?: string; // Only for updating
 }
 
 interface Plan {
@@ -218,6 +220,32 @@ export function AdminUsersPage() {
                                     ))}
                                 </select>
                                 <p className="text-xs text-gray-500 mt-1">Ao selecionar um plano aqui, ele será ativado como "Gratuito" (SubscriptionId = MANUAL).</p>
+                            </div>
+
+                            <div className="pt-4 border-t border-gray-100">
+                                <h3 className="text-sm font-bold text-gray-900 mb-3">Segurança e Dados</h3>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Nova Senha (opcional)</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Digite para redefinir a senha"
+                                            onChange={e => setEditingUser({ ...editingUser, password: e.target.value })}
+                                            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                                        />
+                                        <p className="text-xs text-yellow-600 mt-1">Deixe em branco para manter a senha atual.</p>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">CNPJ / CPF</label>
+                                        <input
+                                            value={editingUser.document || ''}
+                                            onChange={e => setEditingUser({ ...editingUser, document: e.target.value })}
+                                            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                                            placeholder="00.000.000/0000-00"
+                                        />
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="flex justify-end gap-3 pt-4">

@@ -3,6 +3,7 @@ import { Controller, Get, Post, Patch, Body, Param, UseGuards, Request, UseInter
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import * as bcrypt from 'bcrypt';
 import { UsersService } from './users.service';
 import { VehiclesService } from '../vehicles/vehicles.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -143,8 +144,15 @@ export class UsersController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.ADMIN)
     @Patch(':id')
     async updateUser(@Param('id') id: string, @Body() body: any) {
+        if (body.password) {
+            const salt = await bcrypt.genSalt();
+            body.passwordHash = await bcrypt.hash(body.password, salt);
+            delete body.password;
+        }
         return this.usersService.updateById(id, body);
     }
 
