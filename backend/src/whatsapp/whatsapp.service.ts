@@ -332,7 +332,10 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         // State Machine
         if (currentState === 'MENU') {
             if (msg === '2') {
-                const hour = new Date().getHours();
+                // Ensure Brazil Timezone
+                const brazilTime = new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
+                const hour = new Date(brazilTime).getHours();
+
                 const isBusinessHours = hour >= 7 && hour < 18;
 
                 if (isBusinessHours) {
