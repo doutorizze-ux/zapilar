@@ -73,7 +73,7 @@ export function LandingPage() {
                                 className="px-8 py-4 bg-[#25D366] text-white rounded-full font-bold text-lg hover:bg-green-500 transition-all shadow-xl shadow-green-500/20 flex items-center justify-center gap-3 transform hover:scale-105"
                             >
                                 <MessageCircle className="w-6 h-6" />
-                                Testar grátis por 7 dias
+                                Começar Agora
                             </button>
                         </div>
 
@@ -463,14 +463,14 @@ export function LandingPage() {
                 <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
                     <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Pronto para vender carros no piloto automático?</h2>
                     <p className="text-xl text-gray-400 mb-10 max-w-2xl mx-auto">
-                        Teste o Zapicar gratuitamente por 7 dias e veja seu WhatsApp trabalhando por você.
+                        Comece a usar o Zapicar hoje mesmo e veja seu WhatsApp trabalhando por você.
                     </p>
 
                     <button
                         onClick={() => navigate('/register')}
                         className="px-10 py-5 bg-[#25D366] text-white rounded-full font-bold text-lg hover:bg-green-500 transition-all shadow-xl shadow-green-500/20 transform hover:scale-105"
                     >
-                        Começar teste grátis
+                        Começar Agora
                     </button>
 
                     <p className="mt-6 text-sm text-gray-500">
