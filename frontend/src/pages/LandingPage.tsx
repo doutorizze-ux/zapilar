@@ -46,7 +46,7 @@ export function LandingPage() {
                             Novo: Integração Total com seu Estoque
                         </div>
 
-                        <h1 className="text-5xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.1]">
+                        <h1 className="text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.1]">
                             Venda carros no <span className="text-[#25D366]">WhatsApp</span> automaticamente
                         </h1>
 
@@ -95,7 +95,7 @@ export function LandingPage() {
                             <motion.div
                                 animate={{ y: [0, 10, 0] }}
                                 transition={{ duration: 4, repeat: Infinity, delay: 0.5 }}
-                                className="absolute -left-20 top-20 bg-gray-900/90 backdrop-blur-xl p-3 rounded-2xl border border-white/10 shadow-2xl z-50 flex items-center gap-3 w-48 hover:scale-105 transition-transform"
+                                className="absolute -left-20 top-20 bg-gray-900/90 backdrop-blur-xl p-3 rounded-2xl border border-white/10 shadow-2xl z-50 hidden md:flex items-center gap-3 w-48 hover:scale-105 transition-transform"
                                 style={{ transformStyle: 'preserve-3d', transform: 'translateZ(50px)' }}
                             >
                                 <div className="bg-green-500/20 p-2 rounded-lg">
@@ -111,7 +111,7 @@ export function LandingPage() {
                             <motion.div
                                 animate={{ y: [0, -10, 0] }}
                                 transition={{ duration: 5, repeat: Infinity, delay: 0 }}
-                                className="absolute -right-16 bottom-32 bg-gray-900/90 backdrop-blur-xl p-3 rounded-2xl border border-white/10 shadow-2xl z-50 flex items-center gap-3 hover:scale-105 transition-transform"
+                                className="absolute -right-16 bottom-32 bg-gray-900/90 backdrop-blur-xl p-3 rounded-2xl border border-white/10 shadow-2xl z-50 hidden md:flex items-center gap-3 hover:scale-105 transition-transform"
                                 style={{ transformStyle: 'preserve-3d', transform: 'translateZ(50px)' }}
                             >
                                 <div className="bg-blue-500/20 p-2 rounded-lg">
@@ -488,7 +488,7 @@ export function LandingPage() {
                     </div>
 
                     <form
-                        className="bg-white/5 backdrop-blur-sm p-8 rounded-3xl border border-white/10 space-y-6"
+                        className="bg-white/5 backdrop-blur-sm p-6 md:p-8 rounded-3xl border border-white/10 space-y-6"
                         onSubmit={async (e) => {
                             e.preventDefault();
                             const form = e.target as HTMLFormElement;

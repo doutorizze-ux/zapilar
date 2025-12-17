@@ -210,7 +210,7 @@ export function SupportChatWidget() {
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                        className="mb-4 w-[350px] md:w-[380px] bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col max-h-[600px]"
+                        className="mb-4 w-[85vw] sm:w-[350px] md:w-[380px] bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col max-h-[600px]"
                     >
                         {/* Header */}
                         <div className="bg-[#0B2B26] p-4 flex items-center justify-between border-b border-white/10">
