@@ -16,6 +16,7 @@ import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { FaqModule } from './faq/faq.module';
 import { LeadsModule } from './leads/leads.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { SupportModule } from './support/support.module';
 
 @Module({
   imports: [
@@ -49,7 +50,9 @@ import { DashboardModule } from './dashboard/dashboard.module';
     SubscriptionsModule,
     FaqModule,
     LeadsModule,
+    LeadsModule,
     DashboardModule,
+    SupportModule,
   ],
   controllers: [AppController],
   providers: [AppService],
