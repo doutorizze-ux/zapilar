@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Store, Mail, Lock, CheckCircle, ArrowRight, FileText } from 'lucide-react';
 import { API_URL } from '../config';
 import { useAuth } from '../contexts/AuthContext';
+import { TermsModal } from '../components/TermsModal';
 
 export function RegisterPage() {
     const [formData, setFormData] = useState({
@@ -14,6 +15,7 @@ export function RegisterPage() {
         document: '' // CNPJ/CPF
     });
     const [loading, setLoading] = useState(false);
+    const [showTerms, setShowTerms] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
 
@@ -171,6 +173,18 @@ export function RegisterPage() {
                             </div>
                         </div>
 
+                        <div className="flex items-start gap-3 mt-4">
+                            <input
+                                required
+                                type="checkbox"
+                                id="terms"
+                                className="mt-1 w-4 h-4 text-green-600 rounded border-gray-300 focus:ring-green-500"
+                            />
+                            <label htmlFor="terms" className="text-sm text-gray-500">
+                                Li e concordo com os <button type="button" onClick={() => setShowTerms(true)} className="text-green-600 font-bold hover:underline">Termos de Uso, Segurança e Privacidade</button> da plataforma.
+                            </label>
+                        </div>
+
                         <button type="submit" disabled={loading} className="w-full py-3.5 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-600/20">
                             {loading ? 'Criando conta...' : (
                                 <>
@@ -180,6 +194,8 @@ export function RegisterPage() {
                             )}
                         </button>
                     </form>
+
+                    <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
 
                     <p className="text-center mt-8 text-gray-500">
                         Já tem uma conta? <a href="/login" className="text-green-600 font-semibold hover:underline">Fazer login</a>
