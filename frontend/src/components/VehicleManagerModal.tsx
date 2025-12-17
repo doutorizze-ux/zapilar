@@ -58,11 +58,21 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
                 banco_couro: initialData.banco_couro || false,
             });
             setExistingImages(initialData.images || []);
+            setDocFiles([]); // Reset pending docs
+            setImageFiles([]); // Reset pending images
             generateMarketingText();
         } else {
+            setFormData({
+                brand: 'Toyota', name: '', model: '', year: new Date().getFullYear(),
+                price: '', category: 'Seminovo', km: 0, fuel: 'Flex',
+                transmission: 'Automático', color: '', description: '', location: '',
+                trava: false, alarme: false, som: false, teto: false, banco_couro: false,
+            });
             setExistingImages([]);
+            setDocFiles([]);
+            setImageFiles([]);
         }
-    }, [initialData]);
+    }, [initialData, isOpen]);
 
     const formatMoneyRequest = (value: string) => {
         if (!value) return 0;
@@ -395,10 +405,11 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                                 <a
                                                     href={doc.url.startsWith('http') ? doc.url : `${API_URL}${doc.url}`}
                                                     target="_blank"
-                                                    rel="noreferrer"
+                                                    rel="noopener noreferrer"
+                                                    download={doc.name}
                                                     className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
                                                 >
-                                                    Visualizar
+                                                    Baixar
                                                 </a>
                                             </div>
                                         ))}

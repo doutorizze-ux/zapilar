@@ -57,6 +57,16 @@ export function VehiclesPage() {
         fetchVehicles();
     }, []);
 
+    // Update editingVehicle if the underlying data changes (e.g. after upload)
+    useEffect(() => {
+        if (editingVehicle) {
+            const updated = vehicles.find(v => v.id === editingVehicle.id);
+            if (updated) {
+                setEditingVehicle(updated);
+            }
+        }
+    }, [vehicles]);
+
     const handleEdit = (vehicle: Vehicle) => {
         setEditingVehicle(vehicle);
         setIsModalOpen(true);
