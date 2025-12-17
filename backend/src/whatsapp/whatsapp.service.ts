@@ -34,7 +34,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
     private model: GenerativeModel;
 
     // State Machine for Chat
-    private userStates: Map<string, { mode: 'MENU' | 'WAITING_CAR_NAME' | 'WAITING_FAQ' }> = new Map();
+    private userStates: Map<string, { mode: 'MENU' | 'WAITING_CAR_NAME' | 'WAITING_FAQ' | 'HANDOVER' }> = new Map();
     // Pause List
     private pausedUsers: Set<string> = new Set();
 
@@ -317,16 +317,23 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         const currentState = this.userStates.get(stateKey)?.mode || 'MENU';
         const isFirstMessage = !this.userStates.has(stateKey);
 
+        // Always allow breaking out of any state with 'menu'
         if (isFirstMessage || ['menu', 'início', 'inicio', 'voltar'].includes(lowerMsg)) {
             this.userStates.set(stateKey, { mode: 'MENU' });
             await this.sendMainMenu(userId, jid, storeName);
             return;
         }
 
+        // If in HANDOVER mode, ignore everything (silence) unless it was the 'menu' command handled above
+        if (currentState === 'HANDOVER') {
+            return;
+        }
+
         // State Machine
         if (currentState === 'MENU') {
             if (msg === '2') {
-                await this.sendMessage(userId, jid, "Certo 👍. Um atendente será notificado e responderá em instantes!");
+                await this.sendMessage(userId, jid, "Certo 👍. Um atendente foi notificado e responderá em breve!\n\n(🤖 O robô ficará em silêncio. Para me reativar, digite *Menu*)");
+                this.userStates.set(stateKey, { mode: 'HANDOVER' });
             } else if (msg === '3') {
                 this.userStates.set(stateKey, { mode: 'WAITING_FAQ' });
                 await this.sendMessage(userId, jid, "Envie sua dúvida e eu responderei com base nas informações da loja 😉");
