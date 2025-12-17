@@ -2,6 +2,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Car, Settings, LogOut, Smartphone, CreditCard, BookOpen, Menu, X, Calculator, Users, Search } from 'lucide-react';
 import { cn } from '../utils';
 import { useState, useEffect } from 'react';
+import { SupportChatWidget } from '../components/SupportChatWidget';
 
 const sidebarItems = [
     { icon: LayoutDashboard, label: 'Visão Geral', path: '/dashboard' },
@@ -243,6 +244,8 @@ export function DashboardLayout() {
             <main className="flex-1 overflow-auto bg-gray-50 p-4 md:p-8 pt-20 md:pt-8 w-full">
                 <Outlet />
             </main>
+
+            <SupportChatWidget />
         </div>
     );
 }
