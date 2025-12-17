@@ -296,7 +296,7 @@ export function SupportChatWidget() {
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
                                     placeholder={isAuthenticated ? "Digite sua dúvida técnica..." : "Digite sua dúvida..."}
-                                    className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#0B2B26] transition-colors"
+                                    className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#0B2B26] transition-colors"
                                 />
                                 <button
                                     type="submit"
