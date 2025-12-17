@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { MessageCircle, CheckCircle, TrendingUp, Smartphone, Shield, ArrowRight, Play } from 'lucide-react';
+import { MessageCircle, CheckCircle, TrendingUp, Smartphone, Shield, ArrowRight, Play, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export function LandingPage() {
@@ -46,12 +46,25 @@ export function LandingPage() {
                         </div>
 
                         <h1 className="text-5xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.1]">
-                            Aumente suas vendas e fidelize clientes no <span className="text-[#25D366]">WhatsApp</span>
+                            Venda carros no <span className="text-[#25D366]">WhatsApp</span> automaticamente
                         </h1>
 
                         <p className="text-xl text-gray-400 leading-relaxed font-light">
-                            O Zapicar transforma o WhatsApp em um grande aliado para o crescimento da sua loja de veículos. Atendimento 24h com IA.
+                            Atendimento 24h que envia fotos, preços e detalhes do carro exato que o cliente procura, direto do seu estoque.
                         </p>
+
+                        <div className="space-y-3 py-2">
+                            {[
+                                "Cada lojista usa seu próprio WhatsApp",
+                                "Sem disparos em massa, sem spam",
+                                "Funciona como o WhatsApp Web, 100% seguro"
+                            ].map((item, i) => (
+                                <div key={i} className="flex items-center gap-2 text-gray-300">
+                                    <CheckCircle className="w-5 h-5 text-[#25D366]" />
+                                    {item}
+                                </div>
+                            ))}
+                        </div>
 
                         <div className="flex flex-col sm:flex-row gap-4 pt-4">
                             <button
@@ -59,19 +72,12 @@ export function LandingPage() {
                                 className="px-8 py-4 bg-[#25D366] text-white rounded-full font-bold text-lg hover:bg-green-500 transition-all shadow-xl shadow-green-500/20 flex items-center justify-center gap-3 transform hover:scale-105"
                             >
                                 <MessageCircle className="w-6 h-6" />
-                                Experimente 7 Dias Grátis
+                                Testar grátis por 7 dias
                             </button>
                         </div>
 
                         <div className="flex items-center gap-6 text-sm font-medium text-gray-500 pt-4">
-                            <div className="flex items-center gap-2 text-gray-400">
-                                <CheckCircle className="w-5 h-5 text-green-500" />
-                                Sem cartão de crédito
-                            </div>
-                            <div className="flex items-center gap-2 text-gray-400">
-                                <CheckCircle className="w-5 h-5 text-green-500" />
-                                Instalação em 2 min
-                            </div>
+                            <span className="text-gray-500">Sem cartão de crédito • Instalação em 2 minutos</span>
                         </div>
                     </div>
 
@@ -226,8 +232,87 @@ export function LandingPage() {
                 </div>
             </section>
 
-            {/* New Feature: Free Website Promotion */}
-            <section className="py-24 bg-gradient-to-br from-[#0B2B26] to-black relative border-y border-white/5 overflow-hidden">
+            {/* Differential Section */}
+            <section className="py-24 bg-[#051815] border-y border-white/5">
+                <div className="max-w-7xl mx-auto px-6">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">Por que o Zapicar funciona e outros não?</h2>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                        {/* Jeito Antigo */}
+                        <div className="bg-red-500/5 border border-red-500/10 p-8 rounded-3xl">
+                            <h3 className="text-xl font-bold text-red-400 mb-6 flex items-center gap-2">
+                                <XCircle className="w-6 h-6" /> Jeito Antigo
+                            </h3>
+                            <ul className="space-y-4">
+                                <li className="flex items-center gap-3 text-gray-400">
+                                    <XCircle className="w-5 h-5 text-red-500/50 flex-shrink-0" /> Cliente espera resposta
+                                </li>
+                                <li className="flex items-center gap-3 text-gray-400">
+                                    <XCircle className="w-5 h-5 text-red-500/50 flex-shrink-0" /> Mensagens acumulam
+                                </li>
+                                <li className="flex items-center gap-3 text-gray-400">
+                                    <XCircle className="w-5 h-5 text-red-500/50 flex-shrink-0" /> Leads esfriam
+                                </li>
+                                <li className="flex items-center gap-3 text-gray-400">
+                                    <XCircle className="w-5 h-5 text-red-500/50 flex-shrink-0" /> Vendas se perdem
+                                </li>
+                            </ul>
+                        </div>
+
+                        {/* Com Zapicar */}
+                        <div className="bg-[#25D366]/5 border border-[#25D366]/20 p-8 rounded-3xl relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-[#25D366]/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+                            <h3 className="text-xl font-bold text-[#25D366] mb-6 flex items-center gap-2">
+                                <CheckCircle className="w-6 h-6" /> Com Zapicar
+                            </h3>
+                            <ul className="space-y-4">
+                                <li className="flex items-center gap-3 text-white">
+                                    <CheckCircle className="w-5 h-5 text-[#25D366] flex-shrink-0" /> Cliente pede o carro
+                                </li>
+                                <li className="flex items-center gap-3 text-white">
+                                    <CheckCircle className="w-5 h-5 text-[#25D366] flex-shrink-0" /> O bot envia apenas esse carro
+                                </li>
+                                <li className="flex items-center gap-3 text-white">
+                                    <CheckCircle className="w-5 h-5 text-[#25D366] flex-shrink-0" /> Fotos + preço + detalhes na hora
+                                </li>
+                                <li className="flex items-center gap-3 text-white">
+                                    <CheckCircle className="w-5 h-5 text-[#25D366] flex-shrink-0" /> Lead quente direto para o lojista
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            {/* WhatsApp Demo Section */}
+            <section className="py-24 bg-[#08221E] border-y border-white/5">
+                <div className="max-w-5xl mx-auto px-6 text-center">
+                    <h2 className="text-3xl font-bold text-white mb-6 flex items-center justify-center gap-3">
+                        <Play className="w-8 h-8 text-[#25D366] fill-current" />
+                        Veja como o cliente compra sozinho pelo WhatsApp
+                    </h2>
+                    <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-12">
+                        O bot entende o que o cliente quer e responde automaticamente usando o seu estoque real, mesmo fora do horário comercial.
+                    </p>
+
+                    <div className="relative aspect-video bg-black rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
+                        <iframe
+                            className="w-full h-full"
+                            src="https://www.youtube.com/embed/OlQsPKINofc"
+                            title="Desmonstração Zapicar"
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                        ></iframe>
+                    </div>
+                </div>
+            </section>
+
+            {/* Website Bonus Section */}
+            <section className="py-24 bg-gradient-to-br from-[#0B2B26] to-black relative border-white/5 overflow-hidden">
                 <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-10"></div>
                 <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center relative z-10">
                     <div className="order-2 lg:order-1 relative">
@@ -243,7 +328,7 @@ export function LandingPage() {
                                 <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
                                 <div className="w-3 h-3 rounded-full bg-green-500"></div>
                                 <div className="ml-4 w-full bg-gray-900 rounded-md h-5 opacity-50 text-[10px] flex items-center px-2 text-gray-400 font-mono">
-                                    zapicar.com.br/zapicar
+                                    zapicar.com.br/sua-loja
                                 </div>
                             </div>
                             <div className="relative aspect-video bg-gray-900 group cursor-pointer overflow-hidden">
@@ -267,50 +352,28 @@ export function LandingPage() {
                                 </div>
 
                                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <a
-                                        href="https://zapicar.com.br/zapicar"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-white font-bold border border-white px-4 py-2 rounded-full uppercase tracking-wider text-sm hover:bg-white hover:text-black transition-colors"
-                                    >
+                                    <button className="text-white font-bold border border-white px-4 py-2 rounded-full uppercase tracking-wider text-sm hover:bg-white hover:text-black transition-colors">
                                         Ver Exemplo
-                                    </a>
+                                    </button>
                                 </div>
-                            </div>
-                        </motion.div>
-                        {/* Floating Badges */}
-                        <motion.div
-                            initial={{ y: 20, opacity: 0 }}
-                            whileInView={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.3 }}
-                            className="absolute -bottom-6 -right-6 bg-white text-gray-900 px-6 py-4 rounded-xl shadow-xl font-bold flex items-center gap-3 z-20"
-                        >
-                            <CheckCircle className="text-green-500 w-6 h-6" />
-                            <div>
-                                <p className="text-xs text-gray-500 uppercase">Hospedagem</p>
-                                <p className="text-lg leading-none">Inclusa no Plano</p>
                             </div>
                         </motion.div>
                     </div>
 
                     <div className="order-1 lg:order-2 space-y-6">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#25D366]/10 text-[#25D366] text-xs font-bold uppercase tracking-wider">
-                            NOVIDADE EXCLUSIVA
+                            BÔNUS EXCLUSIVO
                         </div>
                         <h2 className="text-4xl md:text-5xl font-bold text-white leading-tight">
-                            Ganhe um <span className="text-[#25D366]">Site Profissional</span> para sua loja
+                            Bônus exclusivo: <span className="text-[#25D366]">site profissional</span> para sua loja
                         </h2>
-                        <p className="text-gray-400 text-lg leading-relaxed">
-                            Não dependa apenas de marketplaces. Com o Zapicar, você ganha automaticamente um
-                            <strong> site próprio, moderno e otimizado para vendas</strong>.
-                        </p>
 
-                        <ul className="space-y-4">
+                        <ul className="space-y-4 pt-4">
                             {[
-                                "Domínio personalizado (zapicar.com.br/zapicar)",
+                                "Domínio personalizado (zapicar.com.br/sua-loja)",
                                 "Sincronização automática com seu estoque",
-                                "Design Premium que transmite confiança",
-                                "Botão de WhatsApp integrado em cada carro"
+                                "Design premium que transmite confiança",
+                                "Botão de WhatsApp em cada veículo"
                             ].map((item, i) => (
                                 <li key={i} className="flex items-center gap-3 text-gray-300">
                                     <div className="w-6 h-6 rounded-full bg-[#25D366]/20 flex items-center justify-center flex-shrink-0">
@@ -323,32 +386,11 @@ export function LandingPage() {
 
                         <button
                             onClick={() => navigate('/register')}
-                            className="mt-4 px-8 py-4 bg-white text-gray-900 rounded-full font-bold hover:bg-gray-100 transition-colors flex items-center gap-2"
+                            className="mt-6 px-8 py-4 bg-white text-gray-900 rounded-full font-bold hover:bg-gray-100 transition-colors flex items-center gap-2"
                         >
-                            Quero meu Site Agora
+                            Quero meu site agora
                             <ArrowRight className="w-5 h-5" />
                         </button>
-                    </div>
-                </div>
-            </section>
-
-            {/* Video Tutorial Section - Requested */}
-            <section className="py-10 bg-[#08221E] border-b border-white/5">
-                <div className="max-w-5xl mx-auto px-6 text-center">
-                    <h2 className="text-2xl font-bold text-white mb-8 flex items-center justify-center gap-3">
-                        <Play className="w-6 h-6 text-[#25D366] fill-current" />
-                        Veja como funciona na prática
-                    </h2>
-
-                    <div className="relative aspect-video bg-black rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
-                        <iframe
-                            className="w-full h-full"
-                            src="https://www.youtube.com/embed/OlQsPKINofc"
-                            title="Vídeo Tutorial"
-                            frameBorder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                        ></iframe>
                     </div>
                 </div>
             </section>
@@ -356,22 +398,27 @@ export function LandingPage() {
             {/* Features Cards */}
             <section className="py-24 relative">
                 <div className="max-w-7xl mx-auto px-6">
-                    <div className="grid md:grid-cols-3 gap-8">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
                         {[
                             {
                                 icon: Smartphone,
-                                title: "Atendimento Automático",
-                                desc: "Responda clientes instantaneamente 24/7 sem intervenção humana."
+                                title: "Atendimento automático 24h",
+                                desc: "Responda clientes instantaneamente, todos os dias"
                             },
                             {
                                 icon: TrendingUp,
-                                title: "Gestão de Estoque",
-                                desc: "Seus carros sincronizados. O robô sabe o que vender e por quanto."
+                                title: "Gestão de estoque",
+                                desc: "Seus carros sempre sincronizados"
+                            },
+                            {
+                                icon: MessageCircle,
+                                title: "Captação de leads",
+                                desc: "Todo contato vira oportunidade"
                             },
                             {
                                 icon: Shield,
-                                title: "Segurança de Dados",
-                                desc: "Tecnologia criptografada para proteger seus leads e conversas."
+                                title: "Segurança de dados",
+                                desc: "Tecnologia criptografada"
                             }
                         ].map((feature, i) => (
                             <div key={i} className="bg-white/5 backdrop-blur-sm p-8 rounded-3xl border border-white/10 hover:border-[#25D366]/50 transition-all hover:-translate-y-2 group">
@@ -386,149 +433,48 @@ export function LandingPage() {
                 </div>
             </section>
 
-            {/* Inventory Preview Section */}
-            <section className="py-24 bg-[#092520] overflow-hidden border-t border-white/5">
-                <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between mb-16 gap-10">
-                    <div className="max-w-xl">
-                        <h2 className="text-3xl font-bold text-white mb-4">Gerencie seu estoque como um gigante</h2>
-                        <p className="text-gray-400 text-lg font-light">
-                            Uma interface limpa e intuitiva para você cadastrar carros, preços e fotos.
-                            Tudo sincronizado em tempo real.
-                        </p>
+            {/* Target Audience */}
+            <section className="py-24 bg-[#092520] border-t border-white/5">
+                <div className="max-w-7xl mx-auto px-6">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl font-bold text-white mb-4">Para quem é o Zapicar?</h2>
                     </div>
-                    <button onClick={() => navigate('/register')} className="text-[#25D366] font-bold hover:text-white flex items-center gap-2 group transition-colors">
-                        Ver Recursos <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </button>
-                </div>
-
-                {/* Horizontal Scroll Cards (Duplicated for seamless loop) */}
-                <div className="relative w-full overflow-hidden">
-                    <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[#092520] to-transparent z-10 pointer-events-none"></div>
-                    <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#092520] to-transparent z-10 pointer-events-none"></div>
-
-                    <div className="flex animate-scroll-slow w-max">
-                        {/* Original Items + Duplicated Items for Loop */}
-                        {[...Array(6)].map((_, i) => (
-                            <div key={i} className="flex gap-6 flex-shrink-0 pr-6">
-                                <div className="min-w-[300px] bg-[#0B2B26] border border-white/10 rounded-2xl overflow-hidden shadow-lg group hover:border-[#25D366]/50 transition-colors">
-                                    <div className="h-48 bg-gray-800 relative">
-                                        <img src="/car-hilux.jpg" alt="Car" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur px-2 py-1 rounded text-xs">R$ 289.900</div>
-                                    </div>
-                                    <div className="p-4">
-                                        <h4 className="font-bold text-white">Toyota Hilux SRX</h4>
-                                        <p className="text-xs text-gray-500 mt-1">Automático • Diesel</p>
-                                    </div>
-                                </div>
-                                <div className="min-w-[300px] bg-[#0B2B26] border border-white/10 rounded-2xl overflow-hidden shadow-lg group hover:border-[#25D366]/50 transition-colors">
-                                    <div className="h-48 bg-gray-800 relative">
-                                        <img src="/car-suv.png" alt="Car" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur px-2 py-1 rounded text-xs">R$ 150.000</div>
-                                    </div>
-                                    <div className="p-4">
-                                        <h4 className="font-bold text-white">Jeep Compass</h4>
-                                        <p className="text-xs text-gray-500 mt-1">Automático • Flex</p>
-                                    </div>
-                                </div>
-                                <div className="min-w-[300px] bg-[#0B2B26] border border-white/10 rounded-2xl overflow-hidden shadow-lg group hover:border-[#25D366]/50 transition-colors">
-                                    <div className="h-48 bg-gray-800 relative">
-                                        <img src="/car-sedan.png" alt="Car" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur px-2 py-1 rounded text-xs">R$ 90.000</div>
-                                    </div>
-                                    <div className="p-4">
-                                        <h4 className="font-bold text-white">Honda Civic</h4>
-                                        <p className="text-xs text-gray-500 mt-1">Automático • Flex</p>
-                                    </div>
-                                </div>
-                                <div className="min-w-[300px] bg-[#0B2B26] border border-white/10 rounded-2xl overflow-hidden shadow-lg group hover:border-[#25D366]/50 transition-colors">
-                                    <div className="h-48 bg-gray-800 relative">
-                                        <img src="/car-hatch.png" alt="Car" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur px-2 py-1 rounded text-xs">R$ 85.000</div>
-                                    </div>
-                                    <div className="p-4">
-                                        <h4 className="font-bold text-white">Fiat Pulse</h4>
-                                        <p className="text-xs text-gray-500 mt-1">Automático • Turbo</p>
-                                    </div>
-                                </div>
+                    <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-4">
+                        {[
+                            "Lojas de veículos",
+                            "Garagistas",
+                            "Concessionárias",
+                            "Quem anuncia em marketplaces",
+                            "Quem perde vendas no WhatsApp"
+                        ].map((item, i) => (
+                            <div key={i} className="bg-[#0B2B26] p-6 rounded-xl border border-white/5 text-center hover:border-[#25D366]/30 transition-colors group">
+                                <CheckCircle className="w-8 h-8 text-[#25D366] mx-auto mb-3 group-hover:scale-110 transition-transform" />
+                                <p className="text-white font-medium">{item}</p>
                             </div>
                         ))}
                     </div>
                 </div>
             </section>
 
-            {/* Contact Section */}
-            <section id="contact" className="py-24 bg-[#0B2B26] relative">
-                <div className="max-w-3xl mx-auto px-6">
-                    <div className="text-center mb-12">
-                        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Fale Conosco</h2>
-                        <p className="text-gray-400">Tem alguma dúvida ou precisa de ajuda? Envie uma mensagem.</p>
-                    </div>
+            {/* Final CTA */}
+            <section className="py-24 bg-[#0B2B26] relative overflow-hidden">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-[#25D366] rounded-full blur-[120px] opacity-10 pointer-events-none"></div>
+                <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
+                    <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Pronto para vender carros no piloto automático?</h2>
+                    <p className="text-xl text-gray-400 mb-10 max-w-2xl mx-auto">
+                        Teste o Zapicar gratuitamente por 7 dias e veja seu WhatsApp trabalhando por você.
+                    </p>
 
-                    <form
-                        className="bg-white/5 backdrop-blur-sm p-8 rounded-3xl border border-white/10 space-y-6"
-                        onSubmit={async (e) => {
-                            e.preventDefault();
-                            const form = e.target as HTMLFormElement;
-                            const formData = new FormData(form);
-                            const data = Object.fromEntries(formData.entries());
-
-                            try {
-                                const response = await fetch(`${import.meta.env.VITE_API_URL}/support`, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify(data)
-                                });
-
-                                if (response.ok) {
-                                    alert('Mensagem enviada com sucesso! Entraremos em contato em breve.');
-                                    form.reset();
-                                } else {
-                                    alert('Erro ao enviar mensagem.');
-                                }
-                            } catch (error) {
-                                alert('Erro de conexão.');
-                            }
-                        }}
+                    <button
+                        onClick={() => navigate('/register')}
+                        className="px-10 py-5 bg-[#25D366] text-white rounded-full font-bold text-lg hover:bg-green-500 transition-all shadow-xl shadow-green-500/20 transform hover:scale-105"
                     >
-                        <div className="grid md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Nome</label>
-                                <input required name="name" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#25D366] transition-colors" placeholder="Seu nome" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">WhatsApp</label>
-                                <input required name="whatsapp" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#25D366] transition-colors" placeholder="(00) 00000-0000" />
-                            </div>
-                        </div>
+                        Começar teste grátis
+                    </button>
 
-                        <div className="grid md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
-                                <input required type="email" name="email" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#25D366] transition-colors" placeholder="seu@email.com" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Assunto</label>
-                                <select name="subject" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#25D366] transition-colors appearance-none cursor-pointer">
-                                    <option value="Dúvida Comercial" className="bg-[#0B2B26]">Dúvida Comercial</option>
-                                    <option value="Suporte Técnico" className="bg-[#0B2B26]">Suporte Técnico</option>
-                                    <option value="Financeiro" className="bg-[#0B2B26]">Financeiro</option>
-                                    <option value="Esqueci minha senha" className="bg-[#0B2B26]">Esqueci minha senha</option>
-                                    <option value="Outros" className="bg-[#0B2B26]">Outros</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">Mensagem</label>
-                            <textarea required name="message" rows={4} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#25D366] transition-colors resize-none" placeholder="Como podemos ajudar?"></textarea>
-                        </div>
-
-                        <div className="flex justify-end">
-                            <button type="submit" className="bg-[#25D366] text-white px-8 py-3 rounded-xl font-bold hover:bg-green-500 transition-colors shadow-lg shadow-green-500/20">
-                                Enviar Mensagem
-                            </button>
-                        </div>
-                    </form>
+                    <p className="mt-6 text-sm text-gray-500">
+                        Não realizamos disparos em massa. O Zapicar responde apenas clientes reais.
+                    </p>
                 </div>
             </section>
 
