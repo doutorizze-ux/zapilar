@@ -122,8 +122,11 @@ export function RegisterPage() {
             {/* Right Panel - Form */}
             <div className="flex-1 flex flex-col justify-center p-8 sm:p-20 bg-white">
                 <div className="max-w-md mx-auto w-full">
-                    <div className="flex items-center gap-2 mb-10">
+                    <div className="flex items-center justify-between mb-10">
                         <img src="/logo-dark.png" alt="Zapicar" className="h-10 w-auto" />
+                        <button onClick={() => navigate('/')} className="text-sm font-medium text-gray-500 hover:text-green-600 transition-colors flex items-center gap-1">
+                            Voltar para o site
+                        </button>
                     </div>
 
                     <h1 className="text-3xl font-bold mb-2">Crie sua conta</h1>
