@@ -258,6 +258,14 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         if (!jid) return;
 
         const from = jid;
+
+        // Filter out Status Updates (Stories), Newsletters (Channels), and Groups
+        if (jid.includes('status@broadcast') ||
+            jid.includes('@newsletter') ||
+            jid.includes('@g.us')) {
+            return;
+        }
+
         const name = msg.pushName || jid.split('@')[0];
 
         // Handling Text Content
