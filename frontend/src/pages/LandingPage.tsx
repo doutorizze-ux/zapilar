@@ -24,7 +24,7 @@ export function LandingPage() {
                             onClick={() => navigate('/register')}
                             className="hidden md:flex bg-white text-[#0B2B26] px-6 py-2.5 rounded-full text-sm font-bold hover:bg-gray-100 transition-all hover:scale-105 shadow-lg"
                         >
-                            Experimente grátis
+                            Começar Agora
                         </button>
                     </div>
                 </div>
