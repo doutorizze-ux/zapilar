@@ -456,6 +456,82 @@ export function LandingPage() {
                 </div>
             </section>
 
+            {/* Contact Section */}
+            < section className="py-24 bg-[#0B2B26] relative" >
+                <div className="max-w-3xl mx-auto px-6">
+                    <div className="text-center mb-12">
+                        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Fale Conosco</h2>
+                        <p className="text-gray-400">Tem alguma dúvida ou precisa de ajuda? Envie uma mensagem.</p>
+                    </div>
+
+                    <form
+                        className="bg-white/5 backdrop-blur-sm p-8 rounded-3xl border border-white/10 space-y-6"
+                        onSubmit={async (e) => {
+                            e.preventDefault();
+                            const form = e.target as HTMLFormElement;
+                            const formData = new FormData(form);
+                            const data = Object.fromEntries(formData.entries());
+
+                            try {
+                                const response = await fetch(`${import.meta.env.VITE_API_URL}/support`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(data)
+                                });
+
+                                if (response.ok) {
+                                    alert('Mensagem enviada com sucesso! Entraremos em contato em breve.');
+                                    form.reset();
+                                } else {
+                                    alert('Erro ao enviar mensagem.');
+                                }
+                            } catch (error) {
+                                alert('Erro de conexão.');
+                            }
+                        }}
+                    >
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Nome</label>
+                                <input required name="name" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#25D366] transition-colors" placeholder="Seu nome" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">WhatsApp</label>
+                                <input required name="whatsapp" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#25D366] transition-colors" placeholder="(00) 00000-0000" />
+                            </div>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                                <input required type="email" name="email" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#25D366] transition-colors" placeholder="seu@email.com" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Assunto</label>
+                                <select name="subject" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#25D366] transition-colors appearance-none cursor-pointer">
+                                    <option value="Dúvida Comercial" className="bg-[#0B2B26]">Dúvida Comercial</option>
+                                    <option value="Suporte Técnico" className="bg-[#0B2B26]">Suporte Técnico</option>
+                                    <option value="Financeiro" className="bg-[#0B2B26]">Financeiro</option>
+                                    <option value="Esqueci minha senha" className="bg-[#0B2B26]">Esqueci minha senha</option>
+                                    <option value="Outros" className="bg-[#0B2B26]">Outros</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">Mensagem</label>
+                            <textarea required name="message" rows={4} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#25D366] transition-colors resize-none" placeholder="Como podemos ajudar?"></textarea>
+                        </div>
+
+                        <div className="flex justify-end">
+                            <button type="submit" className="bg-[#25D366] text-white px-8 py-3 rounded-xl font-bold hover:bg-green-500 transition-colors shadow-lg shadow-green-500/20">
+                                Enviar Mensagem
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
             {/* Footer */}
             <footer className="bg-[#051815] border-t border-white/5 py-12">
                 <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
