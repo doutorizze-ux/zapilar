@@ -141,9 +141,9 @@ export function LoginPage() {
                             </div>
 
                             <div className="text-sm">
-                                <a href="#" className="font-medium text-green-600 hover:text-green-500">
+                                <button type="button" onClick={() => alert('Por favor, entre em contato com o suporte para redefinir sua senha.')} className="font-medium text-green-600 hover:text-green-500">
                                     Esqueceu a senha?
-                                </a>
+                                </button>
                             </div>
                         </div>
 
