@@ -2,25 +2,65 @@ import { useState, useRef, useEffect } from 'react';
 import { X, Send, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Knowledge Base
-const FAQ = [
+// --- VISITOR Knowledge Base (Not Logged In) ---
+const VISITOR_FAQ = [
+    {
+        id: 'whatis',
+        title: '🤔 O que é o Zapicar?',
+        keywords: ['zapicar', 'que é', 'funciona', 'sistema', 'plataforma'],
+        answer: 'O Zapicar é uma plataforma que transforma seu WhatsApp em uma máquina de vendas automática. Ele conecta seu estoque de veículos ao WhatsApp e responde clientes 24h por dia com fotos e preços.'
+    },
+    {
+        id: 'pricing',
+        title: '💰 Preços e Planos',
+        keywords: ['preco', 'valor', 'plano', 'custo', 'pagamento', 'assinatura'],
+        answer: 'Temos planos flexíveis para garagens de todos os tamanhos. Você pode começar com um teste grátis de 7 dias sem compromisso. Clique em "Experimente grátis" no menu para ver detalhes.'
+    },
+    {
+        id: 'automation',
+        title: '🤖 Automação WhatsApp',
+        keywords: ['bot', 'automacao', 'responder', 'sozinho', 'whatsapp'],
+        answer: 'Nosso bot atende seus clientes instantaneamente. Quando alguém pergunta sobre um carro (ex: "tem hilux?"), o bot envia fotos, preço e ficha técnica na hora, sem você precisar digitar nada.'
+    },
     {
         id: 'login',
         title: '🔐 Login & Senha',
         keywords: ['senha', 'login', 'entrar', 'acesso', 'esqueci', 'recuperar'],
-        answer: 'Para redefinir sua senha, clique em "Esqueci minha senha" na tela de login. Um link será enviado ao seu e-mail cadastrado. Se não receber, verifique a caixa de spam.'
+        answer: 'Para recuperar ou alterar sua senha, utilize o formulário de contato no final da página inicial (Home). Selecione a opção "Esqueci minha senha" e nossa equipe ajudará você.'
+    },
+    {
+        id: 'stock',
+        title: '🚗 Integração de Estoque',
+        keywords: ['estoque', 'integracao', 'cadastrar', 'veiculo'],
+        answer: 'Você cadastra seus carros no nosso painel simples e nós sincronizamos tudo. Se você já anuncia em marketplaces, pode ser ainda mais fácil. O sistema é feito para lojistas.'
+    },
+    {
+        id: 'trial',
+        title: '🚀 Teste Grátis',
+        keywords: ['teste', 'gratis', 'testar', 'experiencia', 'free'],
+        answer: 'Sim! Oferecemos 7 dias de acesso completo e gratuito. Você pode conectar seu WhatsApp, cadastrar carros e ver a mágica acontecer. Não pedimos cartão de crédito para começar.'
+    }
+];
+
+// --- CLIENT Knowledge Base (Logged In) ---
+const CLIENT_FAQ = [
+    {
+        id: 'login',
+        title: '🔐 Login & Senha',
+        keywords: ['senha', 'login', 'entrar', 'acesso', 'esqueci', 'recuperar'],
+        answer: 'Para alterar sua senha, utilize o formulário de contato na página inicial (Home) selecionando "Esqueci minha senha" ou solicite diretamente aqui no suporte.'
     },
     {
         id: 'estoque',
         title: '🚗 Estoque & Veículos',
         keywords: ['estoque', 'veiculo', 'carro', 'anuncio', 'foto', 'preco'],
-        answer: 'Acesse o menu "Veículos" no painel. Lá você pode adicionar novos carros, editar preços e fazer upload de fotos. Lembre-se de preencher todos os dados obrigatórios.'
+        answer: 'Acesse o menu "Veículos" no painel. Lá você pode adicionar novos carros, editar preços e fazer upload de fotos. Lembre-se de preencher todos os dados obrigatórios para o bot funcionar bem.'
     },
     {
         id: 'bot',
         title: '🤖 WhatsApp Bot',
         keywords: ['bot', 'whatsapp', 'conectar', 'qr', 'automacao', 'responder'],
-        answer: 'Para ativar o bot, vá em "WhatsApp" no menu lateral e leia o QR Code. O bot responderá automaticamente sobre os carros do seu estoque quando o cliente perguntar.'
+        answer: 'Para ativar o bot, vá em "WhatsApp" no menu lateral e leia o QR Code. O bot responderá automaticamente sobre os carros do seu estoque quando o cliente perguntar. Certifique-se de que o status esteja "Conectado".'
     },
     {
         id: 'planos',
@@ -33,6 +73,12 @@ const FAQ = [
         title: '⚙️ Configurações',
         keywords: ['configuracao', 'loja', 'nome', 'logo', 'endereco'],
         answer: 'No menu "Configurações" você pode alterar o nome da loja, telefone principal e logo. Essas informações aparecem no seu site e nas mensagens do bot.'
+    },
+    {
+        id: 'leads',
+        title: '📈 Leads & Clientes',
+        keywords: ['lead', 'cliente', 'contato', 'crm'],
+        answer: 'Todos os clientes que interagem com o bot ficam salvos na aba "Leads". Você pode ver o histórico de conversas e o carro de interesse de cada um.'
     }
 ];
 
@@ -49,6 +95,32 @@ export function SupportChatWidget() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+    // Determine Auth State on Mount and when Storage changes
+    useEffect(() => {
+        const checkAuth = () => {
+            const token = localStorage.getItem('token');
+            setIsAuthenticated(!!token);
+        };
+
+        checkAuth();
+        window.addEventListener('storage', checkAuth);
+        // Also listen for custom events if any, but storage is good for cross-tab or direct changes
+        // Since we are in the same window, we might need to poll or rely on parent passing prop. 
+        // For now, simple check on open is also good.
+        return () => window.removeEventListener('storage', checkAuth);
+    }, []);
+
+    // Re-check auth when chat opens to ensure we have the latest state
+    useEffect(() => {
+        if (isOpen) {
+            const token = localStorage.getItem('token');
+            setIsAuthenticated(!!token);
+        }
+    }, [isOpen]);
+
+    const activeFAQ = isAuthenticated ? CLIENT_FAQ : VISITOR_FAQ;
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
@@ -62,16 +134,20 @@ export function SupportChatWidget() {
     // Initial Greeting
     useEffect(() => {
         if (isOpen && messages.length === 0) {
+            const greeting = isAuthenticated
+                ? 'Olá! Sou o Suporte Técnico do Zapicar. Como posso te ajudar com sua conta hoje?'
+                : 'Olá! Bem-vindo ao Zapicar. Sou seu assistente de vendas. Como posso ajudar você a conhecer nossa plataforma?';
+
             setMessages([
                 {
                     id: 'welcome',
-                    text: 'Olá! Sou o Assistente Virtual do Zapicar. Como posso te ajudar hoje?',
+                    text: greeting,
                     sender: 'bot',
                     timestamp: new Date()
                 }
             ]);
         }
-    }, [isOpen]);
+    }, [isOpen, isAuthenticated, messages.length]);
 
     const addMessage = (text: string, sender: 'user' | 'bot') => {
         const newMessage: Message = {
@@ -84,7 +160,7 @@ export function SupportChatWidget() {
         return newMessage;
     };
 
-    const handleOptionClick = (faqItem: typeof FAQ[0]) => {
+    const handleOptionClick = (faqItem: typeof activeFAQ[0]) => {
         addMessage(faqItem.title, 'user');
         setIsTyping(true);
 
@@ -115,20 +191,24 @@ export function SupportChatWidget() {
         // Simple Keyword Matching
         setTimeout(() => {
             const lowerText = userText.toLowerCase();
-            const match = FAQ.find(item => item.keywords.some(k => lowerText.includes(k)));
+            const match = activeFAQ.find(item => item.keywords.some(k => lowerText.includes(k)));
 
             setIsTyping(false);
 
             if (match) {
                 addMessage(match.answer, 'bot');
             } else {
-                addMessage('Não encontrei essa informação no meu banco de dados. Por favor, tente escolher uma das opções abaixo ou use o formulário de contato para falar com um humano.', 'bot');
+                const fallbackMsg = isAuthenticated
+                    ? 'Não encontrei essa informação técnica. Por favor, tente escolher uma das opções abaixo ou use o formulário de contato para suporte especializado.'
+                    : 'Ainda estou aprendendo! Para dúvidas específicas ou suporte, recomendo criar uma conta grátis para testar ou usar o formulário de contato.';
+
+                addMessage(fallbackMsg, 'bot');
             }
         }, 800);
     };
 
     return (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end print:hidden">
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
@@ -145,7 +225,9 @@ export function SupportChatWidget() {
                                     <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-[#0B2B26] rounded-full"></span>
                                 </div>
                                 <div>
-                                    <h3 className="text-white font-bold text-sm">Suporte Zapicar</h3>
+                                    <h3 className="text-white font-bold text-sm">
+                                        {isAuthenticated ? 'Suporte Técnico' : 'Vendas Zapicar'}
+                                    </h3>
                                     <p className="text-xs text-green-400 font-medium">Online Agora</p>
                                 </div>
                             </div>
@@ -167,7 +249,7 @@ export function SupportChatWidget() {
                                     className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                                 >
                                     <div
-                                        className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${msg.sender === 'user'
+                                        className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${msg.sender === 'user'
                                             ? 'bg-[#0B2B26] text-white rounded-br-none'
                                             : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'
                                             }`}
@@ -194,7 +276,7 @@ export function SupportChatWidget() {
                         <div className="p-4 bg-white border-t border-gray-100">
                             {/* Quick Options Area */}
                             <div className="flex gap-2 overflow-x-auto pb-3 mb-2 scrollbar-hide">
-                                {FAQ.map((item) => (
+                                {activeFAQ.map((item) => (
                                     <button
                                         key={item.id}
                                         onClick={() => handleOptionClick(item)}
@@ -213,7 +295,7 @@ export function SupportChatWidget() {
                                     type="text"
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
-                                    placeholder="Digite sua dúvida..."
+                                    placeholder={isAuthenticated ? "Digite sua dúvida técnica..." : "Digite sua dúvida..."}
                                     className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#0B2B26] transition-colors"
                                 />
                                 <button
