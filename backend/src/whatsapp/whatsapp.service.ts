@@ -332,7 +332,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         // State Machine
         if (currentState === 'MENU') {
             if (msg === '2') {
-                await this.sendMessage(userId, jid, "Certo 👍. Um atendente foi notificado e responderá em breve!\n\n(🤖 O robô ficará em silêncio. Para me reativar, digite *Menu*)");
+                await this.sendMessage(userId, jid, "Certo 👍. Um atendente foi notificado e pode te responder em até 3 minutos.\n\nCaso queira retornar para o menu, digite *Menu* ou *Voltar*.");
                 this.userStates.set(stateKey, { mode: 'HANDOVER' });
             } else if (msg === '3') {
                 this.userStates.set(stateKey, { mode: 'WAITING_FAQ' });
