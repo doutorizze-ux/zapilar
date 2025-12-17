@@ -457,7 +457,7 @@ export function LandingPage() {
             </section>
 
             {/* Contact Section */}
-            < section className="py-24 bg-[#0B2B26] relative" >
+            <section id="contact" className="py-24 bg-[#0B2B26] relative">
                 <div className="max-w-3xl mx-auto px-6">
                     <div className="text-center mb-12">
                         <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Fale Conosco</h2>

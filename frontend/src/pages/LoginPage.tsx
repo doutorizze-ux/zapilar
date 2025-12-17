@@ -141,7 +141,7 @@ export function LoginPage() {
                             </div>
 
                             <div className="text-sm">
-                                <button type="button" onClick={() => alert('Por favor, entre em contato com o suporte para redefinir sua senha.')} className="font-medium text-green-600 hover:text-green-500">
+                                <button type="button" onClick={() => window.location.href = '/#contact'} className="font-medium text-green-600 hover:text-green-500">
                                     Esqueceu a senha?
                                 </button>
                             </div>
