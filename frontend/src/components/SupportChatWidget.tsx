@@ -14,7 +14,7 @@ const VISITOR_FAQ = [
         id: 'pricing',
         title: '💰 Preços e Planos',
         keywords: ['preco', 'valor', 'plano', 'custo', 'pagamento', 'assinatura'],
-        answer: 'Temos planos flexíveis para garagens de todos os tamanhos. Você pode começar com um teste grátis de 7 dias sem compromisso. Clique em "Experimente grátis" no menu para ver detalhes.'
+        answer: 'Temos planos flexíveis para garagens de todos os tamanhos. Comece a transformar suas vendas hoje mesmo. Clique em "Planos" no menu para ver detalhes.'
     },
     {
         id: 'automation',
@@ -34,12 +34,7 @@ const VISITOR_FAQ = [
         keywords: ['estoque', 'integracao', 'cadastrar', 'veiculo'],
         answer: 'Você cadastra seus carros no nosso painel simples e nós sincronizamos tudo. Se você já anuncia em marketplaces, pode ser ainda mais fácil. O sistema é feito para lojistas.'
     },
-    {
-        id: 'trial',
-        title: '🚀 Teste Grátis',
-        keywords: ['teste', 'gratis', 'testar', 'experiencia', 'free'],
-        answer: 'Sim! Oferecemos 7 dias de acesso completo e gratuito. Você pode conectar seu WhatsApp, cadastrar carros e ver a mágica acontecer. Não pedimos cartão de crédito para começar.'
-    }
+
 ];
 
 // --- CLIENT Knowledge Base (Logged In) ---
@@ -200,7 +195,7 @@ export function SupportChatWidget() {
             } else {
                 const fallbackMsg = isAuthenticated
                     ? 'Não encontrei essa informação técnica. Por favor, tente escolher uma das opções abaixo ou use o formulário de contato para suporte especializado.'
-                    : 'Ainda estou aprendendo! Para dúvidas específicas ou suporte, recomendo criar uma conta grátis para testar ou usar o formulário de contato.';
+                    : 'Ainda estou aprendendo! Para dúvidas específicas ou suporte, recomendo usar o formulário de contato.';
 
                 addMessage(fallbackMsg, 'bot');
             }
