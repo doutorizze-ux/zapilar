@@ -17,6 +17,12 @@ export class Lead {
     @Column('text')
     lastMessage: string;
 
+    @Column({ default: false })
+    isHot: boolean;
+
+    @Column({ nullable: true })
+    interestSubject: string;
+
     @CreateDateColumn()
     createdAt: Date;
 

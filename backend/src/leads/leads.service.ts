@@ -22,14 +22,33 @@ export class LeadsService {
                 storeId,
                 phone,
                 name,
-                lastMessage: message
+                lastMessage: message,
+                isHot: this.checkHotLead(message),
+                interestSubject: undefined
             });
         } else {
             lead.lastMessage = message;
+            const isHotNow = this.checkHotLead(message);
+            if (isHotNow) lead.isHot = true; // Only upgrade to hot, never downgrade automatically
             if (name) lead.name = name;
         }
 
         return this.leadsRepository.save(lead);
+    }
+
+    private checkHotLead(message: string): boolean {
+        const keywords = ["price", "financing", "installments", "entrada", "parcelas", "trade-in", "troca", "how much", "valor"];
+        const lower = message.toLowerCase();
+        return keywords.some(k => lower.includes(k));
+    }
+
+    async setInterest(storeId: string, phone: string, interest: string) {
+        const lead = await this.leadsRepository.findOne({ where: { storeId, phone } });
+        if (lead) {
+            lead.interestSubject = interest;
+            return this.leadsRepository.save(lead);
+        }
+        return null;
     }
 
     async getStats(storeId: string) {

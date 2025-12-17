@@ -396,6 +396,14 @@ _Ex: Civic, Toro, S10_
         if (found.length > 0) {
             const limit = 3;
             const cars: any[] = found;
+
+            // Mark interest in the first car found
+            if (cars.length > 0) {
+                try {
+                    await this.leadsService.setInterest(userId, jid, `${cars[0].brand} ${cars[0].name}`);
+                } catch (e) { }
+            }
+
             for (const car of cars.slice(0, limit)) {
                 // Send Images
                 if (car.images && car.images.length > 0) {

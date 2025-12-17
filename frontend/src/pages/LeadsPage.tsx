@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { User, MessageSquare, Phone, Calendar, Plus, Trash2 } from 'lucide-react';
+import { User, MessageSquare, Phone, Calendar, Plus, Trash2, Car } from 'lucide-react';
 import { API_URL } from '../config';
 import { CreateLeadModal } from '../components/CreateLeadModal';
 
@@ -12,6 +12,8 @@ interface Lead {
     lastMessage: string;
     createdAt: string;
     updatedAt: string;
+    isHot?: boolean;
+    interestSubject?: string;
 }
 
 export function LeadsPage() {
@@ -117,19 +119,34 @@ export function LeadsPage() {
                                                 {getInitial(lead.name)}
                                             </div>
                                             <div>
-                                                <p className="font-bold text-gray-900">{lead.name || 'Desconhecido'}</p>
+                                                <div className="flex items-center gap-2">
+                                                    <p className="font-bold text-gray-900">{lead.name || 'Desconhecido'}</p>
+                                                    {lead.isHot && (
+                                                        <span className="px-2 py-0.5 bg-red-100 text-red-600 text-[10px] font-bold uppercase rounded-full border border-red-200 flex items-center gap-1">
+                                                            🔥 Hot Lead
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <p className="text-xs text-gray-500">ID: {lead.id.slice(0, 8)}</p>
                                             </div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <div className="flex items-center gap-2 max-w-xs">
-                                            <MessageSquare className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                                            <span className="truncate text-gray-600" title={lead.lastMessage}>
-                                                {lead.lastMessage && lead.lastMessage.length > 50
-                                                    ? lead.lastMessage.substring(0, 50) + '...'
-                                                    : lead.lastMessage || '-'}
-                                            </span>
+                                        <div className="flex flex-col gap-1 max-w-xs">
+                                            {lead.interestSubject && (
+                                                <div className="flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 px-2 py-1 rounded w-fit mb-1">
+                                                    <Car className="w-3 h-3" />
+                                                    {lead.interestSubject}
+                                                </div>
+                                            )}
+                                            <div className="flex items-center gap-2">
+                                                <MessageSquare className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                                <span className="truncate text-gray-600" title={lead.lastMessage}>
+                                                    {lead.lastMessage && lead.lastMessage.length > 50
+                                                        ? lead.lastMessage.substring(0, 50) + '...'
+                                                        : lead.lastMessage || '-'}
+                                                </span>
+                                            </div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
