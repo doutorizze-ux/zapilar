@@ -332,7 +332,15 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         // State Machine
         if (currentState === 'MENU') {
             if (msg === '2') {
-                await this.sendMessage(userId, jid, "Certo 👍. Um atendente foi notificado e pode te responder em até 3 minutos.\n\nCaso queira retornar para o menu, digite *Menu* ou *Voltar*.");
+                const hour = new Date().getHours();
+                const isBusinessHours = hour >= 7 && hour < 18;
+
+                if (isBusinessHours) {
+                    await this.sendMessage(userId, jid, "Certo 👍. Um atendente foi notificado e pode te responder em até 3 minutos.\n\nCaso queira retornar para o menu, digite *Menu* ou *Voltar*.");
+                } else {
+                    await this.sendMessage(userId, jid, "Nosso atendimento humano funciona das *07:00 às 18:00*. 🕒\n\nComo estamos fora do expediente, você pode deixar sua mensagem agora que responderemos assim que retornarmos.\n\nOu digite *Menu* para continuar vendo carros com nosso sistema automático 24h! 🤖");
+                }
+
                 this.userStates.set(stateKey, { mode: 'HANDOVER' });
             } else if (msg === '3') {
                 this.userStates.set(stateKey, { mode: 'WAITING_FAQ' });
