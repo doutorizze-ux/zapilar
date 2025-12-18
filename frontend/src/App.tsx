@@ -21,6 +21,9 @@ import { ConsultasPage } from './pages/ConsultasPage';
 import { SimulatorPage } from './pages/SimulatorPage';
 import { LeadsPage } from './pages/LeadsPage';
 import { PublicStorePage } from './pages/PublicStorePage';
+import { ContactsPage } from './pages/ContactsPage';
+import { FinancialPage } from './pages/FinancialPage';
+import { AgendaPage } from './pages/AgendaPage';
 
 import { useEffect } from 'react';
 import { API_URL } from './config';
@@ -57,6 +60,9 @@ function App() {
             <Route path="whatsapp" element={<WhatsappPage />} />
             <Route path="training" element={<TrainingPage />} />
             <Route path="consultas" element={<ConsultasPage />} />
+            <Route path="contacts" element={<ContactsPage />} />
+            <Route path="financial" element={<FinancialPage />} />
+            <Route path="agenda" element={<AgendaPage />} />
             <Route path="plans" element={<StorePlansPage />} />
             <Route path="simulator" element={<SimulatorPage />} />
             <Route path="settings" element={<SettingsPage />} />

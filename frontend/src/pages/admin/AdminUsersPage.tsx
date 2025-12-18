@@ -12,6 +12,7 @@ interface User {
     planId?: string;
     subscriptionId?: string;
     document?: string;
+    phone?: string;
     password?: string; // Only for updating
 }
 
@@ -68,12 +69,11 @@ export function AdminUsersPage() {
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            // If a plan is selected and it's different or new, we might want to ensure subscriptionId is set to MANUAL
+            // Keep a reference to the password being set before saving
+            const newPassword = editingUser.password;
+
             const payload = {
                 ...editingUser,
-                // Ensure subscriptionId is MANUAL if we are assigning a plan manually via admin
-                // This logic might need refinement if we want to allow Assigning Plan but KEEPING Asaas (unlikely for admin edit)
-                // For now, if admin sets a plan, we assume it's a manual/grant action.
                 subscriptionId: editingUser.planId ? 'MANUAL' : editingUser.subscriptionId
             };
 
@@ -89,6 +89,23 @@ export function AdminUsersPage() {
             if (response.ok) {
                 setIsModalOpen(false);
                 fetchUsers();
+
+                // If password was changed, offer to notify via WhatsApp
+                if (newPassword && newPassword.trim().length > 0) {
+                    const phone = editingUser.phone;
+                    const confirmMsg = phone
+                        ? `Senha atualizada! Deseja enviar a nova senha para o cliente (${phone}) via WhatsApp?`
+                        : `Senha atualizada! O cliente não tem telefone cadastrado para envio automático. Deseja abrir o WhatsApp mesmo assim?`;
+
+                    if (confirm(confirmMsg)) {
+                        const targetPhone = phone ? phone.replace(/\D/g, '') : '';
+                        const text = encodeURIComponent(`Olá! Sua senha no ZapCar foi redefinida para: *${newPassword}*\n\nAcesse abuse do seu painel!`);
+                        window.open(`https://wa.me/${targetPhone}?text=${text}`, '_blank');
+                    }
+                } else {
+                    alert('Usuário atualizado com sucesso!');
+                }
+
             } else {
                 alert('Erro ao atualizar usuário');
             }
@@ -112,7 +129,7 @@ export function AdminUsersPage() {
                         <thead className="bg-gray-50 border-b border-gray-200 font-medium text-gray-500">
                             <tr>
                                 <th className="px-6 py-4">Usuário / Loja</th>
-                                <th className="px-6 py-4">Email</th>
+                                <th className="px-6 py-4">Contato</th>
                                 <th className="px-6 py-4">Função</th>
                                 <th className="px-6 py-4">Plano</th>
                                 <th className="px-6 py-4">Data Cadastro</th>
@@ -130,7 +147,10 @@ export function AdminUsersPage() {
                                             <span className="font-medium text-gray-900">{user.storeName || 'Sem Loja'}</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-gray-600">{user.email}</td>
+                                    <td className="px-6 py-4">
+                                        <div className="text-gray-900">{user.email}</div>
+                                        {user.phone && <div className="text-xs text-green-600">{user.phone}</div>}
+                                    </td>
                                     <td className="px-6 py-4">
                                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
                                             }`}>
@@ -161,7 +181,7 @@ export function AdminUsersPage() {
                             ))}
                             {users.length === 0 && (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
                                         Nenhum usuário encontrado.
                                     </td>
                                 </tr>
@@ -173,7 +193,7 @@ export function AdminUsersPage() {
 
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl w-full max-w-md p-6">
+                    <div className="bg-white rounded-2xl w-full max-w-md p-6 overflow-y-auto max-h-[90vh]">
                         <h2 className="text-xl font-bold mb-4">Editar Usuário</h2>
                         <form onSubmit={handleSave} className="space-y-4">
                             <div>
@@ -193,6 +213,16 @@ export function AdminUsersPage() {
                                     className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100 text-gray-500"
                                 />
                             </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Whatsapp</label>
+                                <input
+                                    value={editingUser.phone || ''}
+                                    onChange={e => setEditingUser({ ...editingUser, phone: e.target.value })}
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                                    placeholder="55999999999"
+                                />
+                            </div>
+
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Função</label>
                                 <select
@@ -219,21 +249,20 @@ export function AdminUsersPage() {
                                         </option>
                                     ))}
                                 </select>
-                                <p className="text-xs text-gray-500 mt-1">Ao selecionar um plano aqui, ele será ativado como "Gratuito" (SubscriptionId = MANUAL).</p>
                             </div>
 
                             <div className="pt-4 border-t border-gray-100">
                                 <h3 className="text-sm font-bold text-gray-900 mb-3">Segurança e Dados</h3>
                                 <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Nova Senha (opcional)</label>
+                                    <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                                        <label className="block text-sm font-medium text-yellow-800 mb-1">Redefinir Senha</label>
                                         <input
                                             type="text"
-                                            placeholder="Digite para redefinir a senha"
+                                            placeholder="Nova senha..."
                                             onChange={e => setEditingUser({ ...editingUser, password: e.target.value })}
-                                            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                                            className="w-full border border-yellow-300 rounded-lg px-3 py-2 focus:ring-yellow-500 focus:border-yellow-500"
                                         />
-                                        <p className="text-xs text-yellow-600 mt-1">Deixe em branco para manter a senha atual.</p>
+                                        <p className="text-xs text-yellow-700 mt-1">Ao salvar, você poderá enviar esta senha para o WhatsApp do cliente.</p>
                                     </div>
 
                                     <div>
@@ -250,7 +279,7 @@ export function AdminUsersPage() {
 
                             <div className="flex justify-end gap-3 pt-4">
                                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancelar</button>
-                                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Salvar</button>
+                                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Salvar Alterações</button>
                             </div>
                         </form>
                     </div>

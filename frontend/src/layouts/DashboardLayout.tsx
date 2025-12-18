@@ -1,11 +1,14 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Car, Settings, LogOut, Smartphone, CreditCard, BookOpen, Menu, X, Calculator, Users, Search } from 'lucide-react';
+import { LayoutDashboard, Car, Settings, LogOut, Smartphone, CreditCard, BookOpen, Menu, X, Calculator, Users, Search, Contact, DollarSign, Calendar } from 'lucide-react';
 import { cn } from '../utils';
 import { useState, useEffect } from 'react';
 import { SupportChatWidget } from '../components/SupportChatWidget';
 
 const sidebarItems = [
     { icon: LayoutDashboard, label: 'Visão Geral', path: '/dashboard' },
+    { icon: DollarSign, label: 'Financeiro', path: '/dashboard/financial' },
+    { icon: Calendar, label: 'Agenda', path: '/dashboard/agenda' },
+    { icon: Contact, label: 'Contatos', path: '/dashboard/contacts' },
     { icon: CreditCard, label: 'Planos', path: '/dashboard/plans' },
     { icon: Car, label: 'Veículos', path: '/dashboard/vehicles' },
     { icon: Search, label: 'Consultas', path: '/dashboard/consultas' },

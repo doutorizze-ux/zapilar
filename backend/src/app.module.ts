@@ -17,6 +17,9 @@ import { FaqModule } from './faq/faq.module';
 import { LeadsModule } from './leads/leads.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { SupportModule } from './support/support.module';
+import { ContactsModule } from './contacts/contacts.module';
+import { FinancialModule } from './financial/financial.module';
+import { AgendaModule } from './agenda/agenda.module';
 
 @Module({
   imports: [
@@ -46,13 +49,14 @@ import { SupportModule } from './support/support.module';
     WhatsappModule,
     AuthModule,
     AsaasModule,
-    AsaasModule,
     SubscriptionsModule,
     FaqModule,
     LeadsModule,
-    LeadsModule,
     DashboardModule,
     SupportModule,
+    ContactsModule,
+    FinancialModule,
+    AgendaModule,
   ],
   controllers: [AppController],
   providers: [AppService],
