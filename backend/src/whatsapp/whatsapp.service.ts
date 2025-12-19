@@ -254,13 +254,42 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
             return;
         }
 
+    // --- Message Processing ---
+
+    private async processIncomingMessage(userId: string, msg: proto.IWebMessageInfo) {
+        const jid = msg.key?.remoteJid;
+        if (!jid) return;
+
+        // Filter out Status Updates (Stories), Newsletters (Channels), and Groups
+        if (jid.includes('status@broadcast') ||
+            jid.includes('@newsletter') ||
+            jid.includes('@g.us')) {
+            return;
+        }
+
         const name = msg.pushName || jid.split('@')[0];
 
-        // Handling Text Content
+        // Handling Text Content & Button Responses
         let text = '';
-        if (msg.message?.conversation) text = msg.message.conversation;
-        else if (msg.message?.extendedTextMessage?.text) text = msg.message.extendedTextMessage.text;
-        else if (msg.message?.imageMessage?.caption) text = msg.message.imageMessage.caption;
+        const m = msg.message;
+        if (!m) return;
+
+        if (m.conversation) text = m.conversation;
+        else if (m.extendedTextMessage?.text) text = m.extendedTextMessage.text;
+        else if (m.imageMessage?.caption) text = m.imageMessage.caption;
+        // Button/List Responses
+        else if (m.buttonsResponseMessage?.selectedButtonId) text = m.buttonsResponseMessage.selectedButtonId;
+        else if (m.listResponseMessage?.singleSelectReply?.selectedRowId) text = m.listResponseMessage.singleSelectReply.selectedRowId;
+        else if (m.templateButtonReplyMessage?.selectedId) text = m.templateButtonReplyMessage.selectedId;
+        else if (m.interactiveResponseMessage) {
+            const native = m.interactiveResponseMessage.nativeFlowResponseMessage;
+            if (native) {
+                try {
+                    const params = JSON.parse(native.paramsJson);
+                    text = params.id || '';
+                } catch (e) { }
+            }
+        }
 
         if (!text) return;
 
@@ -318,7 +347,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
 
         // State Machine
         if (currentState === 'MENU') {
-            if (msg === '2') {
+            if (msg === '2' || msg === 'btn_consultor') {
                 // Ensure Brazil Timezone
                 const brazilTime = new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
                 const hour = new Date(brazilTime).getHours();
@@ -332,7 +361,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
                 }
 
                 this.userStates.set(stateKey, { mode: 'HANDOVER' });
-            } else if (msg === '3') {
+            } else if (msg === '3' || msg === 'btn_faq') {
                 this.userStates.set(stateKey, { mode: 'WAITING_FAQ' });
                 await this.sendMessage(userId, jid, "Envie sua dúvida e eu responderei com base nas informações da loja 😉");
             } else {
@@ -351,25 +380,56 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
     }
 
     private async sendMainMenu(userId: string, jid: string, storeName: string) {
-        const menu = `👋 Olá! Seja bem-vindo(a) à *${storeName}*!
-🚗 _O carro dos seus sonhos está aqui._
+        const sock = this.sessions.get(userId);
+        if (!sock) return;
 
-Sou seu assistente virtual e estou pronto para te ajudar.
+        let to = jid;
+        if (!to.includes('@')) to = `${to.replace(/\D/g, '')}@s.whatsapp.net`;
 
-🔎 *Para buscar um veículo:*
-Basta enviar o *nome*, *marca* ou *modelo*.
-_Ex: "Civic", "Corolla", "Toro"_
+        const msgContent = {
+            viewOnce: true,
+            interactiveMessage: {
+                header: {
+                    title: `👋 Olá! Bem-vindo(a) à *${storeName}*`,
+                    subtitle: "Assistente Virtual",
+                    hasMediaAttachment: false
+                },
+                body: {
+                    text: "🚗 _O carro dos seus sonhos está aqui._\n\n🔎 *Como deseja prosseguir?*\n\nVocê pode digitar o *nome do carro* (ex: Civic, Gol) ou selecionar uma opção abaixo:"
+                },
+                footer: {
+                    text: "Atendimento 24h"
+                },
+                nativeFlowMessage: {
+                    buttons: [
+                        {
+                            name: "quick_reply",
+                            buttonParamsJson: JSON.stringify({
+                                display_text: "Falar com Consultor",
+                                id: "btn_consultor"
+                            })
+                        },
+                        {
+                            name: "quick_reply",
+                            buttonParamsJson: JSON.stringify({
+                                display_text: "Dúvidas Frequentes",
+                                id: "btn_faq"
+                            })
+                        }
+                    ],
+                    messageParamsJson: ""
+                }
+            }
+        };
 
-━━━━━━━━━━━━━━━━━━━━
-
-👇 *Ou digite o número da opção:*
-
-2️⃣  Falar com um Consultor
-3️⃣  Dúvidas Frequentes
-
-━━━━━━━━━━━━━━━━━━━━
-🕐 _Atendimento 24h para consulta de estoque._`;
-        await this.sendMessage(userId, jid, menu);
+        try {
+            // @ts-ignore
+            await sock.relayMessage(to, { viewOnceMessage: { message: msgContent } }, {});
+            await this.logMessage(userId, to, 'me', '[Menu Interativo Enviado]', 'Atendente', true, undefined);
+        } catch (e) {
+            this.logger.error('Failed to send interactive menu', e);
+            await this.sendMessage(userId, to, `👋 Olá! Bem-vindo(a) à *${storeName}*.\n\nDigite o nome do carro, ou:\n2 - Falar com Consultor\n3 - Dúvidas`);
+        }
     }
 
     private async handleCarSearch(userId: string, jid: string, query: string, storeName: string) {
