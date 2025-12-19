@@ -20,7 +20,6 @@ import { VehiclesService } from '../vehicles/vehicles.service';
 import { UsersService } from '../users/users.service';
 import { FaqService } from '../faq/faq.service';
 import { LeadsService } from '../leads/leads.service';
-import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 
 @Injectable()
 export class WhatsappService implements OnModuleInit, OnModuleDestroy {
@@ -29,16 +28,13 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
     private qrCodes: Map<string, string> = new Map();
     private connectionStatuses: Map<string, 'CONNECTED' | 'DISCONNECTED' | 'QR_READY' | 'CONNECTING'> = new Map();
 
-    // AI
-    private genAI: GoogleGenerativeAI;
-    private model: GenerativeModel;
-
     // State Machine for Chat
     private userStates: Map<string, { mode: 'MENU' | 'WAITING_CAR_NAME' | 'WAITING_FAQ' | 'HANDOVER' }> = new Map();
     // Pause List
     private pausedUsers: Set<string> = new Set();
 
     private readonly SESSIONS_DIR = path.join(process.cwd(), 'whatsapp_sessions');
+    private sessionStartTimes: Map<string, number> = new Map();
 
     constructor(
         @InjectRepository(ChatMessage)
@@ -55,7 +51,6 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
     }
 
     async onModuleInit() {
-        this.initializeAI();
         await this.restoreSessions();
         this.startInactivityCheck();
     }
@@ -67,19 +62,6 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
                 socket.end(undefined);
             } catch (e) {
                 // ignore
-            }
-        }
-    }
-
-    private initializeAI() {
-        const apiKey = this.configService.get<string>('GEMINI_API_KEY');
-        if (apiKey) {
-            try {
-                this.genAI = new GoogleGenerativeAI(apiKey);
-                this.model = this.genAI.getGenerativeModel({ model: "gemini-1.0-pro" });
-                this.logger.log('AI Initialized');
-            } catch (e) {
-                this.logger.error('Failed to init AI', e);
             }
         }
     }
@@ -106,6 +88,16 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
     async getSession(userId: string) {
         let status = this.connectionStatuses.get(userId) || 'DISCONNECTED';
         const socket = this.sessions.get(userId);
+
+        // Auto-recover stuck CONNECTING state (if > 30s)
+        if (status === 'CONNECTING') {
+            const startTime = this.sessionStartTimes.get(userId) || 0;
+            if (Date.now() - startTime > 30000) {
+                this.logger.warn(`Stuck in CONNECTING for user ${userId}. Resetting.`);
+                this.connectionStatuses.set(userId, 'DISCONNECTED');
+                status = 'DISCONNECTED';
+            }
+        }
 
         // If disconnected and no socket, try to initialize (user trying to connect)
         if (!socket && status === 'DISCONNECTED') {
@@ -146,9 +138,12 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
                 creds: state.creds,
                 keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' }) as any),
             },
-            browser: Browsers.macOS('Desktop'),
-            connectTimeoutMs: 60000,
+            browser: ['ZapCar Bot', 'Chrome', '1.0.0'], // More standard browser signature
+            connectTimeoutMs: 20000, // Faster timeout to fail fast and retry
             retryRequestDelayMs: 2000,
+            keepAliveIntervalMs: 30000, // Prevent timeouts
+            markOnlineOnConnect: true,
+            syncFullHistory: false // Speed up initial connection
         });
 
         this.sessions.set(userId, sock);
@@ -171,8 +166,8 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
                 if (shouldReconnect) {
                     this.connectionStatuses.set(userId, 'DISCONNECTED');
                     this.sessions.delete(userId);
-                    // Add delay before reconnect to prevent loops
-                    setTimeout(() => this.createSession(userId), 3000);
+                    // Fast retry
+                    setTimeout(() => this.createSession(userId), 1000);
                 } else {
                     this.connectionStatuses.set(userId, 'DISCONNECTED');
                     this.sessions.delete(userId);
@@ -213,22 +208,15 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         setInterval(() => {
             const now = Date.now();
             this.connectionStatuses.forEach((status, userId) => {
-                // If QR has been waiting for > 10 minutes, clean it up
-                if (status === 'QR_READY' || status === 'CONNECTING') {
-                    // We need to track when it started. For simplicity, we can check if it has a QR and how old?
-                    // Or just rely on the fact that if it's not CONNECTED in 10 mins, reset.
-                    // A robust way: Map<userId, timestamp>
-                    const started = this.sessionStartTimes.get(userId) || 0;
-                    if (now - started > 600000 && started > 0) { // 10 mins
-                        this.logger.log(`Session for ${userId} timed out (Inactive). Destroying.`);
-                        this.deleteInstance(userId);
-                    }
+                const started = this.sessionStartTimes.get(userId) || 0;
+                // If stuck in QR / Connecting for > 5 mins (reduced from 10)
+                if ((status === 'QR_READY' || status === 'CONNECTING') && now - started > 300000) {
+                    this.logger.log(`Session for ${userId} timed out (Inactive). Destroying.`);
+                    this.deleteInstance(userId);
                 }
             });
         }, 60000); // Check every minute
     }
-
-    private sessionStartTimes: Map<string, number> = new Map();
 
     async deleteInstance(userId: string) {
         const sock = this.sessions.get(userId);
@@ -274,7 +262,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         else if (msg.message?.extendedTextMessage?.text) text = msg.message.extendedTextMessage.text;
         else if (msg.message?.imageMessage?.caption) text = msg.message.imageMessage.caption;
 
-        if (!text) return; // Ignore non-text messages for now (audio, sticker, etc without caption)
+        if (!text) return;
 
         // Timestamp Check
         const msgTime = (typeof msg.messageTimestamp === 'number'
@@ -284,7 +272,6 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         const now = Date.now();
         // 2 Minutes Tolerance
         if (now - msgTime > 120000) {
-            // this.logger.debug(`Ignoring old message from ${name} (${Math.round((now - msgTime)/1000)}s ago)`);
             return;
         }
 
@@ -318,7 +305,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         const isFirstMessage = !this.userStates.has(stateKey);
 
         // Always allow breaking out of any state with 'menu'
-        if (isFirstMessage || ['menu', 'início', 'inicio', 'voltar'].includes(lowerMsg)) {
+        if (isFirstMessage || ['menu', 'início', 'inicio', 'voltar', 'oi', 'ola', 'olá'].includes(lowerMsg.replace(/[^a-z]/g, ''))) {
             this.userStates.set(stateKey, { mode: 'MENU' });
             await this.sendMainMenu(userId, jid, storeName);
             return;
@@ -385,37 +372,66 @@ _Ex: Civic, Toro, S10_
         let found: any[] = [];
 
         if (query) {
-            const q = query.toLowerCase();
-            found = allVehicles.filter(v =>
-                (v.name && v.name.toLowerCase().includes(q)) ||
-                (v.model && v.model.toLowerCase().includes(q)) ||
-                (v.brand && v.brand.toLowerCase().includes(q))
-            );
+            // Smart Token Search
+            const qNormalized = query.toLowerCase().trim();
+            const tokens = qNormalized.split(/\s+/).filter(t => t.length > 1); // Ignore single chars
+
+            const scored = allVehicles.map(v => {
+                let score = 0;
+                const vName = (v.name || '').toLowerCase();
+                const vModel = (v.model || '').toLowerCase();
+                const vBrand = (v.brand || '').toLowerCase();
+
+                // Construct a broad search string
+                // Note: We prioritize matches in Model/Brand significantly over just 'appearing' in the description
+                const searchStr = `${vName} ${vBrand} ${vModel} ${v.year || ''} ${v.color || ''}`;
+
+                for (const token of tokens) {
+                    // Broader Match in complete string
+                    if (searchStr.includes(token)) score += 1;
+
+                    // Exact Word Match (Prevents "Gol" matching "Golf" partially)
+                    const regex = new RegExp(`\\b${token}\\b`, 'i');
+                    if (regex.test(searchStr)) score += 3; // Boosted exact match
+
+                    // High value match on Model/Brand specifically
+                    if (vModel.includes(token)) score += 2;
+                    if (vBrand.includes(token)) score += 1;
+                }
+
+                return { car: v, score };
+            });
+
+            // Filter and sort
+            // Threshold: score > 1 to avoid very weak matches
+            found = scored
+                .filter(item => item.score > 1)
+                .sort((a, b) => b.score - a.score)
+                .map(item => item.car);
         }
 
         if (found.length > 0) {
             const limit = 3;
-            const cars: any[] = found;
+            // Take top 3
+            const cars: any[] = found.slice(0, limit);
 
-            // Mark interest in the first car found
-            if (cars.length > 0) {
-                try {
-                    await this.leadsService.setInterest(userId, jid, `${cars[0].brand} ${cars[0].name}`);
-                } catch (e) { }
-            }
+            // Mark interest in the top car
+            try {
+                await this.leadsService.setInterest(userId, jid, `${cars[0].brand} ${cars[0].name}`);
+            } catch (e) { }
 
-            for (const car of cars.slice(0, limit)) {
+            for (const car of cars) {
                 // Send Images
                 if (car.images && car.images.length > 0) {
                     for (const img of car.images) {
                         await this.sendImage(userId, jid, this.resolveImageUrl(img));
-                        await new Promise(r => setTimeout(r, 500));
+                        // Small delay between images
+                        await new Promise(r => setTimeout(r, 600));
                     }
                 }
 
                 // Send Details
                 const price = Number(car.price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-
                 const optionals: string[] = [];
                 if (car.trava) optionals.push('Trava');
                 if (car.alarme) optionals.push('Alarme');
@@ -429,7 +445,6 @@ _Ex: Civic, Toro, S10_
 🛣️ *KM:* ${car.km}
 🎨 *Cor:* ${car.color || 'Não inf.'}
 💰 *R$ ${price}*
-
 ⚙️ *Especificações:*
 ${car.transmission || ''} | ${car.fuel || ''}`;
 
@@ -438,12 +453,12 @@ ${car.transmission || ''} | ${car.fuel || ''}`;
                 }
 
                 await this.sendMessage(userId, jid, specs);
-                await new Promise(r => setTimeout(r, 800));
+                await new Promise(r => setTimeout(r, 1000));
             }
             // Send Menu
             await this.sendMainMenu(userId, jid, storeName);
         } else {
-            await this.sendMessage(userId, jid, "😕 Não encontrei esse modelo. Quer tentar outro nome?");
+            await this.sendMessage(userId, jid, "😕 Não encontrei nenhum carro com essas características. Tente buscar apenas pelo *modelo* ou *marca*.");
             await this.sendMainMenu(userId, jid, storeName);
         }
     }
@@ -453,7 +468,7 @@ ${car.transmission || ''} | ${car.fuel || ''}`;
     async sendMessage(userId: string, to: string, text: string) {
         const sock = this.sessions.get(userId);
         if (!sock) {
-            this.logger.warn(`Cannot send message. No session for user ${userId}`);
+            // this.logger.warn(`Cannot send message. No session for user ${userId}`);
             return;
         }
 
