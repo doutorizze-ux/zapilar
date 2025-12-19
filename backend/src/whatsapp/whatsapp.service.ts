@@ -241,20 +241,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
 
     // --- Message Processing ---
 
-    private async processIncomingMessage(userId: string, msg: proto.IWebMessageInfo) {
-        const jid = msg.key?.remoteJid;
-        if (!jid) return;
 
-        const from = jid;
-
-        // Filter out Status Updates (Stories), Newsletters (Channels), and Groups
-        if (jid.includes('status@broadcast') ||
-            jid.includes('@newsletter') ||
-            jid.includes('@g.us')) {
-            return;
-        }
-
-    // --- Message Processing ---
 
     private async processIncomingMessage(userId: string, msg: proto.IWebMessageInfo) {
         const jid = msg.key?.remoteJid;
@@ -285,7 +272,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
             const native = m.interactiveResponseMessage.nativeFlowResponseMessage;
             if (native) {
                 try {
-                    const params = JSON.parse(native.paramsJson);
+                    const params = JSON.parse(native.paramsJson || '{}');
                     text = params.id || '';
                 } catch (e) { }
             }
