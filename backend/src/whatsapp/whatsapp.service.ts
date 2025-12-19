@@ -373,49 +373,30 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         let to = jid;
         if (!to.includes('@')) to = `${to.replace(/\D/g, '')}@s.whatsapp.net`;
 
-        const msgContent = {
-            viewOnce: true,
-            interactiveMessage: {
-                header: {
-                    title: `👋 Olá! Bem-vindo(a) à *${storeName}*`,
-                    subtitle: "Assistente Virtual",
-                    hasMediaAttachment: false
-                },
-                body: {
-                    text: "🚗 _O carro dos seus sonhos está aqui._\n\n🔎 *Como deseja prosseguir?*\n\nVocê pode digitar o *nome do carro* (ex: Civic, Gol) ou selecionar uma opção abaixo:"
-                },
-                footer: {
-                    text: "Atendimento 24h"
-                },
-                nativeFlowMessage: {
-                    buttons: [
-                        {
-                            name: "quick_reply",
-                            buttonParamsJson: JSON.stringify({
-                                display_text: "Falar com Consultor",
-                                id: "btn_consultor"
-                            })
-                        },
-                        {
-                            name: "quick_reply",
-                            buttonParamsJson: JSON.stringify({
-                                display_text: "Dúvidas Frequentes",
-                                id: "btn_faq"
-                            })
-                        }
-                    ],
-                    messageParamsJson: ""
-                }
-            }
-        };
+        const menu = `👋 Olá! Bem-vindo(a) à *${storeName}*
+🚗 _Seu novo carro te espera aqui!_
+
+Sou seu assistente virtual. Para começar, você pode:
+🔎 *Digitar o nome do carro* (ex: Civic, Gol)
+
+━━━━━━━━━━━━━━━━━━━━
+🔻 *OU SELECIONE UMA OPÇÃO:*
+━━━━━━━━━━━━━━━━━━━━
+
+2️⃣  *Falar com Consultor*
+     _Atendimento humano personalizado_
+
+3️⃣  *Dúvidas Frequentes*
+     _Localização, financiamento, troca_
+
+━━━━━━━━━━━━━━━━━━━━
+🕐 _Atendimento 24h_`;
 
         try {
-            // @ts-ignore
-            await sock.relayMessage(to, { viewOnceMessage: { message: msgContent } }, {});
-            await this.logMessage(userId, to, 'me', '[Menu Interativo Enviado]', 'Atendente', true, undefined);
+            await sock.sendMessage(to, { text: menu });
+            await this.logMessage(userId, to, 'me', '[Menu Enviado]', 'Atendente', true, undefined);
         } catch (e) {
-            this.logger.error('Failed to send interactive menu', e);
-            await this.sendMessage(userId, to, `👋 Olá! Bem-vindo(a) à *${storeName}*.\n\nDigite o nome do carro, ou:\n2 - Falar com Consultor\n3 - Dúvidas`);
+            this.logger.error('Failed to send menu', e);
         }
     }
 
