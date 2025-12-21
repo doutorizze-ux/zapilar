@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Mail, Lock, ArrowRight, ChevronLeft } from 'lucide-react';
@@ -9,6 +9,20 @@ export function LoginPage() {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const [logoUrl, setLogoUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        // Fetch System Config
+        fetch(`${import.meta.env.VITE_API_URL}/users/system-config`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.logoUrl) {
+                    const url = data.logoUrl.startsWith('http') ? data.logoUrl : `${import.meta.env.VITE_API_URL}${data.logoUrl}`;
+                    setLogoUrl(url);
+                }
+            })
+            .catch(err => console.error(err));
+    }, []);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -51,7 +65,7 @@ export function LoginPage() {
 
                 <div className="relative z-10">
                     <div className="flex items-center gap-3">
-                        <img src="/logo-zapilar-white.svg" alt="Zapilar" className="h-12 w-auto" />
+                        <img src={logoUrl || "/logo-zapilar-white.svg"} alt="Zapilar" className="h-12 w-auto" />
                     </div>
                 </div>
 
@@ -83,7 +97,7 @@ export function LoginPage() {
                     <div className="mb-10">
                         {/* Mobile Logo Show */}
                         <div className="flex md:hidden items-center justify-center mb-8">
-                            <img src="/logo-zapilar.svg" alt="Zapilar" className="h-10 w-auto" />
+                            <img src={logoUrl || "/logo-zapilar.svg"} alt="Zapilar" className="h-10 w-auto" />
                         </div>
 
                         <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Bem-vindo de volta!</h2>

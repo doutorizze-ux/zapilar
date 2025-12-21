@@ -155,6 +155,27 @@ export class UsersController {
         return this.usersService.updateById(id, body);
     }
 
+    // --- System Config (Public) ---
+    @Get('system-config')
+    async getSystemConfig() {
+        // Find the admin user
+        const users = await this.usersService.findAll();
+        const admin = users.find(u => u.role === UserRole.ADMIN);
+
+        if (admin) {
+            return {
+                logoUrl: admin.logoUrl,
+                appName: admin.storeName || 'Zapilar',
+                primaryColor: admin.primaryColor
+            };
+        }
+        return {
+            logoUrl: null,
+            appName: 'Zapilar',
+            primaryColor: '#00C2CB'
+        };
+    }
+
     // TEMP: Force Reset to ensure access - Re-added for Production fix
     @Post('force-reset-admin')
     async forceReset() {

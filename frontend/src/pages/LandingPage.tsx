@@ -2,9 +2,24 @@ import { useNavigate } from 'react-router-dom';
 import { CheckCircle, TrendingUp, Smartphone, ArrowRight, Play, Home, Key, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { SupportChatWidget } from '../components/SupportChatWidget';
+import { useState, useEffect } from 'react';
+import { API_URL } from '../config';
 
 export function LandingPage() {
     const navigate = useNavigate();
+    const [logoUrl, setLogoUrl] = useState("/logo-zapilar-white.svg");
+
+    useEffect(() => {
+        fetch(`${API_URL}/users/system-config`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.logoUrl) {
+                    const url = data.logoUrl.startsWith('http') ? data.logoUrl : `${API_URL}${data.logoUrl}`;
+                    setLogoUrl(url);
+                }
+            })
+            .catch(err => console.error("Failed to load system config", err));
+    }, []);
 
     // Custom Turquoise Palette
     // Primary: #00C2CB
@@ -17,7 +32,7 @@ export function LandingPage() {
             <nav className="fixed w-full bg-[#0A1F22]/90 z-50 border-b border-white/5 h-16 md:h-20 flex items-center shadow-lg backdrop-blur-md">
                 <div className="max-w-7xl mx-auto w-full px-6 flex justify-between items-center">
                     {/* Logo - Assuming logo-zapilar-white.svg is available */}
-                    <img src="/logo-zapilar-white.svg" alt="Zapilar" className="h-10 w-auto object-contain" />
+                    <img src={logoUrl} alt="Zapilar" className="h-10 w-auto object-contain" />
 
                     <div className="flex items-center gap-6">
                         <button onClick={() => navigate('/login')} className="text-sm font-medium text-gray-300 hover:text-white transition-colors border border-transparent hover:border-white/10 px-4 py-2 rounded-full">
@@ -387,7 +402,7 @@ export function LandingPage() {
             {/* Footer */}
             < footer className="bg-[#051416] border-t border-white/5 py-12" >
                 <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
-                    <img src="/logo-zapilar-white.svg" alt="Zapilar" className="h-8 w-auto opacity-50 hover:opacity-100 transition-all" />
+                    <img src={logoUrl} alt="Zapilar" className="h-8 w-auto opacity-50 hover:opacity-100 transition-all" />
                     <p className="text-gray-600 text-sm font-medium">© 2025 Zapilar Tecnologia.</p>
                 </div>
             </footer >

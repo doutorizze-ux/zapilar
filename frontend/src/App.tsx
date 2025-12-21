@@ -16,6 +16,7 @@ import { AdminPlansPage } from './pages/admin/AdminPlansPage';
 import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 import { AdminFinancialPage } from './pages/admin/AdminFinancialPage';
 import { AdminSupportPage } from './pages/admin/AdminSupportPage';
+import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 import { StorePlansPage } from './pages/StorePlansPage';
 import { TrainingPage } from './pages/TrainingPage';
 import { ConsultasPage } from './pages/ConsultasPage';
@@ -52,6 +53,7 @@ function App() {
             <Route path="users" element={<AdminUsersPage />} />
             <Route path="financial" element={<AdminFinancialPage />} />
             <Route path="support" element={<AdminSupportPage />} />
+            <Route path="system" element={<AdminSettingsPage />} />
           </Route>
 
           {/* Dashboard Routes */}

@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Store, Mail, Lock, CheckCircle, ArrowRight, FileText } from 'lucide-react';
 import { API_URL } from '../config';
@@ -18,6 +18,20 @@ export function RegisterPage() {
     const [showTerms, setShowTerms] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
+    const [logoUrl, setLogoUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        // Fetch System Config
+        fetch(`${API_URL}/users/system-config`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.logoUrl) {
+                    const url = data.logoUrl.startsWith('http') ? data.logoUrl : `${API_URL}${data.logoUrl}`;
+                    setLogoUrl(url);
+                }
+            })
+            .catch(err => console.error(err));
+    }, []);
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -123,7 +137,7 @@ export function RegisterPage() {
             <div className="flex-1 flex flex-col justify-center p-8 sm:p-20 bg-white">
                 <div className="max-w-md mx-auto w-full">
                     <div className="flex items-center justify-between mb-10">
-                        <img src="/logo-zapilar.svg" alt="Zapilar" className="h-10 w-auto" />
+                        <img src={logoUrl || "/logo-zapilar.svg"} alt="Zapilar" className="h-10 w-auto" />
                         <button onClick={() => navigate('/')} className="text-sm font-medium text-gray-500 hover:text-cyan-600 transition-colors flex items-center gap-1">
                             Voltar para o site
                         </button>
