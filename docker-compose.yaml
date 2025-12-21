@@ -4,8 +4,8 @@ services:
   backend:
     build: ./backend
     restart: always
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     environment:
       - PORT=3000
       - DATABASE_PATH=/app/data/zapcar.db
@@ -23,8 +23,8 @@ services:
   frontend:
     build: ./frontend
     restart: always
-    ports:
-      - "8080:80"
+    expose:
+      - "80"
     depends_on:
       - backend
 
