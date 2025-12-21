@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Mail, Lock, ArrowRight, ChevronLeft } from 'lucide-react';
+import { API_URL } from '../config';
 
 export function LoginPage() {
     const { login } = useAuth();
@@ -13,11 +14,11 @@ export function LoginPage() {
 
     useEffect(() => {
         // Fetch System Config
-        fetch(`${import.meta.env.VITE_API_URL}/users/system-config`)
+        fetch(`${API_URL}/users/system-config`)
             .then(res => res.json())
             .then(data => {
                 if (data.logoUrl) {
-                    const url = data.logoUrl.startsWith('http') ? data.logoUrl : `${import.meta.env.VITE_API_URL}${data.logoUrl}`;
+                    const url = data.logoUrl.startsWith('http') ? data.logoUrl : `${API_URL}${data.logoUrl}`;
                     setLogoUrl(url);
                 }
             })
@@ -29,7 +30,7 @@ export function LoginPage() {
         setLoading(true);
 
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
+            const response = await fetch(`${API_URL}/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password }),

@@ -1,6 +1,7 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Home, Settings, LogOut, Smartphone, CreditCard, BookOpen, Menu, X, Calculator, Users, Search, Contact, DollarSign, Calendar } from 'lucide-react';
 import { cn } from '../utils';
+import { API_URL } from '../config';
 import { useState, useEffect } from 'react';
 import { SupportChatWidget } from '../components/SupportChatWidget';
 
@@ -31,7 +32,7 @@ export function DashboardLayout() {
             const token = localStorage.getItem('token');
             if (token) {
                 try {
-                    const response = await fetch(`${import.meta.env.VITE_API_URL}/users/profile`, {
+                    const response = await fetch(`${API_URL}/users/profile`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
                     if (response.ok) {
@@ -41,7 +42,7 @@ export function DashboardLayout() {
                         let subData = null;
                         if (data.subscriptionId) {
                             try {
-                                const subRes = await fetch(`${import.meta.env.VITE_API_URL}/subscriptions/my-subscription`, {
+                                const subRes = await fetch(`${API_URL}/subscriptions/my-subscription`, {
                                     headers: { 'Authorization': `Bearer ${token}` }
                                 });
                                 subData = await subRes.json();

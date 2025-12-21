@@ -342,7 +342,7 @@ export function LandingPage() {
                             const data = Object.fromEntries(formData.entries());
 
                             try {
-                                const response = await fetch(`${import.meta.env.VITE_API_URL}/support`, {
+                                const response = await fetch(`${API_URL}/support`, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify(data)
