@@ -23,12 +23,12 @@ export function TermsModal({ isOpen, onClose }: TermsModalProps) {
 
                     <section>
                         <h3 className="font-bold text-gray-900 mb-2">1. Aceitação dos Termos</h3>
-                        <p>Ao utilizar a plataforma ZapiCar, o usuário declara que leu, entendeu e concorda integralmente com estes Termos de Uso, Segurança e Privacidade. Caso não concorde, o uso da plataforma deve ser interrompido imediatamente.</p>
+                        <p>Ao utilizar a plataforma zapilar, o usuário declara que leu, entendeu e concorda integralmente com estes Termos de Uso, Segurança e Privacidade. Caso não concorde, o uso da plataforma deve ser interrompido imediatamente.</p>
                     </section>
 
                     <section>
                         <h3 className="font-bold text-gray-900 mb-2">2. Sobre a Plataforma</h3>
-                        <p>A ZapiCar é uma plataforma SaaS que fornece ferramentas de automação de atendimento via WhatsApp, permitindo que lojistas divulguem informações de seus veículos e respondam automaticamente a mensagens de clientes interessados. A plataforma não realiza vendas, não intermedia pagamentos, não participa de negociações e não garante qualquer transação comercial realizada entre lojistas e compradores.</p>
+                        <p>A zapilar é uma plataforma SaaS que fornece ferramentas de automação de atendimento via WhatsApp, permitindo que lojistas divulguem informações de seus veículos e respondam automaticamente a mensagens de clientes interessados. A plataforma não realiza vendas, não intermedia pagamentos, não participa de negociações e não garante qualquer transação comercial realizada entre lojistas e compradores.</p>
                     </section>
 
                     <section>
@@ -41,7 +41,7 @@ export function TermsModal({ isOpen, onClose }: TermsModalProps) {
                             <li>Entrega de veículos e documentação;</li>
                             <li>Cumprimento da legislação vigente.</li>
                         </ul>
-                        <p className="mt-2">A ZapiCar não se responsabiliza por fraudes, golpes, atrasos, desistências, problemas mecânicos ou qualquer prejuízo decorrente da negociação entre lojista e comprador.</p>
+                        <p className="mt-2">A zapilar não se responsabiliza por fraudes, golpes, atrasos, desistências, problemas mecânicos ou qualquer prejuízo decorrente da negociação entre lojista e comprador.</p>
                     </section>
 
                     <section>
@@ -50,7 +50,7 @@ export function TermsModal({ isOpen, onClose }: TermsModalProps) {
                             <li>A negociação ocorre diretamente com o lojista;</li>
                             <li>Devem verificar pessoalmente o veículo antes de qualquer pagamento;</li>
                             <li>Devem desconfiar de ofertas fora do padrão de mercado;</li>
-                            <li>A ZapiCar não solicita pagamentos em nome de lojistas;</li>
+                            <li>A zapilar não solicita pagamentos em nome de lojistas;</li>
                             <li>Qualquer pagamento feito sem a devida verificação é de responsabilidade exclusiva do comprador.</li>
                         </ul>
                     </section>
@@ -61,7 +61,7 @@ export function TermsModal({ isOpen, onClose }: TermsModalProps) {
                         <ul className="list-disc pl-5 mt-1 space-y-1">
                             <li>O WhatsApp é um serviço de terceiros;</li>
                             <li>Eventuais bloqueios, instabilidades ou limitações são de responsabilidade do WhatsApp;</li>
-                            <li>A ZapiCar não possui vínculo oficial com o WhatsApp ou Meta.</li>
+                            <li>A zapilar não possui vínculo oficial com o WhatsApp ou Meta.</li>
                         </ul>
                     </section>
 
@@ -80,12 +80,12 @@ export function TermsModal({ isOpen, onClose }: TermsModalProps) {
 
                     <section>
                         <h3 className="font-bold text-gray-900 mb-2">7. Limitação de Responsabilidade</h3>
-                        <p>Em nenhuma hipótese a ZapiCar será responsável por danos diretos ou indiretos, perda financeira, golpes praticados por terceiros ou problemas decorrentes de negociações mal-sucedidas. O uso da plataforma é feito por conta e risco do usuário.</p>
+                        <p>Em nenhuma hipótese a zapilar será responsável por danos diretos ou indiretos, perda financeira, golpes praticados por terceiros ou problemas decorrentes de negociações mal-sucedidas. O uso da plataforma é feito por conta e risco do usuário.</p>
                     </section>
 
                     <section>
                         <h3 className="font-bold text-gray-900 mb-2">8. Privacidade e Proteção de Dados (LGPD)</h3>
-                        <p>A ZapiCar respeita a Lei Geral de Proteção de Dados (LGPD).</p>
+                        <p>A zapilar respeita a Lei Geral de Proteção de Dados (LGPD).</p>
                         <div className="mt-2">
                             <strong>Dados coletados:</strong> Nome, telefone e mensagens trocadas no WhatsApp, informações cadastrais do lojista, dados técnicos para funcionamento da plataforma.
                         </div>
@@ -102,7 +102,7 @@ export function TermsModal({ isOpen, onClose }: TermsModalProps) {
 
                     <section>
                         <h3 className="font-bold text-gray-900 mb-2">10. Cancelamento e Suspensão</h3>
-                        <p>A ZapiCar reserva-se o direito de suspender ou encerrar contas que violem estes termos, sem aviso prévio, visando a segurança da plataforma e dos usuários.</p>
+                        <p>A zapilar reserva-se o direito de suspender ou encerrar contas que violem estes termos, sem aviso prévio, visando a segurança da plataforma e dos usuários.</p>
                     </section>
                 </div>
 
