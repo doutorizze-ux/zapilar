@@ -24,6 +24,8 @@ export function AddPropertyModal({ isOpen, onClose, onSuccess, initialData }: Ad
         type: 'Apartamento',
         price: '', // Stored as string for masking
         location: '',
+        city: '',
+        neighborhood: '',
         area: 0,
         bedrooms: 0,
         bathrooms: 0,
@@ -43,6 +45,8 @@ export function AddPropertyModal({ isOpen, onClose, onSuccess, initialData }: Ad
                 type: initialData.type || 'Apartamento',
                 price: initialData.price ? initialData.price.toString().replace('.', ',') : '',
                 location: initialData.location || '',
+                city: initialData.city || '',
+                neighborhood: initialData.neighborhood || '',
                 area: initialData.area || 0,
                 bedrooms: initialData.bedrooms || 0,
                 bathrooms: initialData.bathrooms || 0,
@@ -72,6 +76,14 @@ export function AddPropertyModal({ isOpen, onClose, onSuccess, initialData }: Ad
         value = value.replace(/\B(?=(\d{3})+(?!\d))/g, "."); // 15.000,00
         setFormData(prev => ({ ...prev, price: value }));
     };
+
+    // Auto-update location string
+    useEffect(() => {
+        if (formData.city || formData.neighborhood) {
+            const loc = [formData.neighborhood, formData.city].filter(Boolean).join(', ');
+            setFormData(prev => ({ ...prev, location: loc }));
+        }
+    }, [formData.city, formData.neighborhood]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -230,9 +242,15 @@ export function AddPropertyModal({ isOpen, onClose, onSuccess, initialData }: Ad
                             </select>
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Localização (Bairro/Cidade)</label>
-                            <input required name="location" value={formData.location} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" placeholder="Ex: Centro, São Paulo" />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Cidade</label>
+                                <input required name="city" value={formData.city} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" placeholder="Ex: São Paulo" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Bairro</label>
+                                <input required name="neighborhood" value={formData.neighborhood} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" placeholder="Ex: Centro" />
+                            </div>
                         </div>
 
                         <div>

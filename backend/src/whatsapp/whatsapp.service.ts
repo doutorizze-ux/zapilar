@@ -29,7 +29,8 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
     private connectionStatuses: Map<string, 'CONNECTED' | 'DISCONNECTED' | 'QR_READY' | 'CONNECTING'> = new Map();
 
     // State Machine for Chat
-    private userStates: Map<string, { mode: 'MENU' | 'WAITING_PROPERTY_NAME' | 'WAITING_FAQ' | 'HANDOVER' }> = new Map();
+    private userStates: Map<string, { mode: 'MENU' | 'WAITING_PROPERTY_NAME' | 'WAITING_FAQ' | 'HANDOVER' | 'WAITING_CITY' | 'WAITING_NEIGHBORHOOD' | 'WAITING_SEARCH', tempCity?: string }> = new Map();
+
     // Pause List
     private pausedUsers: Set<string> = new Set();
 
@@ -317,7 +318,8 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         const storeName = user?.storeName || "Imobiliária";
 
         const stateKey = `${userId}:${jid}`;
-        const currentState = this.userStates.get(stateKey)?.mode || 'MENU';
+        const stateData = this.userStates.get(stateKey) || { mode: 'MENU' };
+        const currentState = stateData.mode;
         const isFirstMessage = !this.userStates.has(stateKey);
 
         // Always allow breaking out of any state with 'menu'
@@ -334,7 +336,10 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
 
         // State Machine
         if (currentState === 'MENU') {
-            if (msg === '2' || msg === 'btn_consultor') {
+            if (msg === '1' || lowerMsg.includes('comprar') || lowerMsg.includes('imovel')) {
+                // Feature: Search by City
+                await this.handleCitySelection(userId, jid, storeName);
+            } else if (msg === '2' || msg === 'btn_consultor') {
                 // Ensure Brazil Timezone
                 const brazilTime = new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
                 const hour = new Date(brazilTime).getHours();
@@ -351,9 +356,25 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
             } else if (msg === '3' || msg === 'btn_faq') {
                 this.userStates.set(stateKey, { mode: 'WAITING_FAQ' });
                 await this.sendMessage(userId, jid, "Envie sua dúvida e eu responderei com base nas informações da imobiliária 😉");
+            } else if (msg === '4') {
+                // Free text search
+                this.userStates.set(stateKey, { mode: 'WAITING_SEARCH' });
+                await this.sendMessage(userId, jid, "Digite o que você procura (ex: Casa 3 quartos centro):");
             } else {
-                await this.handlePropertySearch(userId, jid, msg, storeName);
+                // Fallback attempt to search directly if text is long enough
+                if (msg.split(' ').length > 2) {
+                    await this.handlePropertySearch(userId, jid, msg, storeName);
+                } else {
+                    await this.sendMessage(userId, jid, "Não entendi sua opção. Por favor, escolha um número do menu ou digite 'Menu' para ver as opções.");
+                }
             }
+        } else if (currentState === 'WAITING_CITY') {
+            await this.handleNeighborhoodSelection(userId, jid, msg, storeName);
+        } else if (currentState === 'WAITING_NEIGHBORHOOD') {
+            await this.handlePropertySearchByLocation(userId, jid, stateData.tempCity || '', msg, storeName);
+        } else if (currentState === 'WAITING_SEARCH') {
+            await this.handlePropertySearch(userId, jid, msg, storeName);
+            this.userStates.set(stateKey, { mode: 'MENU' });
         } else if (currentState === 'WAITING_FAQ') {
             const answer = await this.faqService.findMatch(userId, msg);
             if (answer) {
@@ -366,6 +387,107 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         }
     }
 
+    private async handleCitySelection(userId: string, jid: string, storeName: string) {
+        const cities = await this.propertiesService.getCities(userId);
+
+        if (cities.length === 0) {
+            await this.sendMessage(userId, jid, "Ops! No momento não temos imóveis cadastrados em nosso sistema. Tente novamente mais tarde.");
+            await this.sendMainMenu(userId, jid, storeName);
+            return;
+        }
+
+        let msg = "📍 *Selecione a Cidade:*\n\n";
+        cities.forEach((city, index) => {
+            msg += `*${index + 1}* - ${city}\n`;
+        });
+        msg += "\nDigite o *número* ou o *nome* da cidade.";
+
+        this.userStates.set(`${userId}:${jid}`, { mode: 'WAITING_CITY' });
+        await this.sendMessage(userId, jid, msg);
+    }
+
+    private async handleNeighborhoodSelection(userId: string, jid: string, input: string, storeName: string) {
+        const cities = await this.propertiesService.getCities(userId);
+        let selectedCity = '';
+
+        // Check if input is index
+        const index = parseInt(input) - 1;
+        if (!isNaN(index) && index >= 0 && index < cities.length) {
+            selectedCity = cities[index];
+        } else {
+            // Check fuzzy match
+            const normalize = (s) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            const match = cities.find(c => normalize(c).includes(normalize(input)));
+            if (match) selectedCity = match;
+        }
+
+        if (!selectedCity) {
+            await this.sendMessage(userId, jid, "Cidade não encontrada. Por favor, tente novamente ou digite 'Menu' para voltar.");
+            return;
+        }
+
+        // Fetch Neighborhoods for this city
+        const neighborhoods = await this.propertiesService.getNeighborhoods(userId, selectedCity);
+
+        if (neighborhoods.length === 0) {
+            // If no neighborhood info (unlikely if city exists), just show all properties in city
+            await this.handlePropertySearchByLocation(userId, jid, selectedCity, null, storeName);
+            return;
+        }
+
+        let msg = `🏘️ *Bairros em ${selectedCity}:*\n\n`;
+        neighborhoods.forEach((n, index) => {
+            msg += `*${index + 1}* - ${n}\n`;
+        });
+        msg += "\nDigite o *número* ou o *nome* do bairro."; // Ou 'Todos'
+
+        this.userStates.set(`${userId}:${jid}`, { mode: 'WAITING_NEIGHBORHOOD', tempCity: selectedCity });
+        await this.sendMessage(userId, jid, msg);
+    }
+
+    private async handlePropertySearchByLocation(userId: string, jid: string, city: string, inputNeighborhood: string | null, storeName: string) {
+        let selectedNeighborhood = '';
+
+        if (inputNeighborhood) {
+            const neighborhoods = await this.propertiesService.getNeighborhoods(userId, city);
+
+            // Allow selecting all? Maybe later. For now force selection.
+
+            // Check if input is index
+            const index = parseInt(inputNeighborhood) - 1;
+            if (!isNaN(index) && index >= 0 && index < neighborhoods.length) {
+                selectedNeighborhood = neighborhoods[index];
+            } else {
+                // Check fuzzy match
+                const normalize = (s) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                const match = neighborhoods.find(n => normalize(n).includes(normalize(inputNeighborhood)));
+                if (match) selectedNeighborhood = match;
+            }
+
+            if (!selectedNeighborhood) {
+                await this.sendMessage(userId, jid, "Bairro não encontrado. Tente novamente ou digite 'Menu'.");
+                return;
+            }
+        }
+
+        // Fetch properties
+        // If neighborhood is null, we might want to fetch all in city, but current flow requires neighborhood.
+        // Assuming findByLocation handles checking. 
+        // NOTE: propertiesService.findByLocation needs to be exact.
+
+        let properties: any[] = [];
+        if (selectedNeighborhood) {
+            properties = await this.propertiesService.findByLocation(userId, city, selectedNeighborhood);
+        } else {
+            // Fallback to all in city? Not implemented in service yet but easy to do with partial match or separate method
+            // For now let's assume strict neighborhood
+            properties = [];
+        }
+
+        await this.sendPropertyResults(userId, jid, properties, storeName);
+        this.userStates.set(`${userId}:${jid}`, { mode: 'MENU' });
+    }
+
     private async sendMainMenu(userId: string, jid: string, storeName: string) {
         const sock = this.sessions.get(userId);
         if (!sock) return;
@@ -376,18 +498,19 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         const menu = `👋 Olá! Bem-vindo(a) à *${storeName}*
 🏠 _Seu novo imóvel te espera aqui!_
 
-Sou seu assistente virtual. Para começar, você pode:
-🔎 *Digitar o que procura* (ex: Apartamento Centro, Casa 3 quartos)
+Sou seu assistente virtual. Selecione uma opção:
 
-━━━━━━━━━━━━━━━━━━━━
-🔻 *OU SELECIONE UMA OPÇÃO:*
-━━━━━━━━━━━━━━━━━━━━
+1️⃣  *Comprar Imóvel*
+     _Buscar por Cidade e Bairro_
 
 2️⃣  *Falar com Corretor*
      _Atendimento humano personalizado_
 
 3️⃣  *Dúvidas Frequentes*
      _Localização, financiamento, visitas_
+
+4️⃣  *Busca Rápida*
+     _Digitar características (ex: Casa Centro)_
 
 ━━━━━━━━━━━━━━━━━━━━
 🕐 _Atendimento 24h_`;
@@ -413,11 +536,14 @@ Sou seu assistente virtual. Para começar, você pode:
                 let score = 0;
                 const pTitle = (p.title || '').toLowerCase();
                 const pType = (p.type || '').toLowerCase();
+                // Check new location fields fallback
+                const pCity = (p.city || '').toLowerCase();
+                const pNeigh = (p.neighborhood || '').toLowerCase();
                 const pLocation = (p.location || '').toLowerCase();
                 const pDesc = (p.description || '').toLowerCase();
 
                 // Construct a broad search string
-                const searchStr = `${pTitle} ${pType} ${pLocation} ${p.bedrooms} quartos ${p.area}m`;
+                const searchStr = `${pTitle} ${pType} ${pLocation} ${pCity} ${pNeigh} ${p.bedrooms} quartos ${p.area}m`;
 
                 for (const token of tokens) {
                     // Broader Match in complete string
@@ -430,8 +556,8 @@ Sou seu assistente virtual. Para começar, você pode:
                     // High value match on Type/Location
                     if (pType.includes(token)) score += 2;
                     if (pLocation.includes(token)) score += 2;
-                    // Match bedroom count (e.g. "3")
-                    if (!isNaN(Number(token)) && p.bedrooms === Number(token)) score += 2;
+                    if (pCity.includes(token)) score += 2;
+                    if (pNeigh.includes(token)) score += 2;
                 }
 
                 return { property: p, score };
@@ -444,20 +570,25 @@ Sou seu assistente virtual. Para começar, você pode:
                 .map(item => item.property);
         }
 
-        if (found.length > 0) {
-            const limit = 3;
-            // Take top 3
-            const properties: any[] = found.slice(0, limit);
+        await this.sendPropertyResults(userId, jid, found, storeName);
+    }
+
+    private async sendPropertyResults(userId: string, jid: string, properties: any[], storeName: string) {
+        if (properties.length > 0) {
+            const limit = 5; // Increased limit to 5
+            const subset = properties.slice(0, limit);
 
             // Mark interest in the top property
             try {
-                await this.leadsService.setInterest(userId, jid, `${properties[0].type} - ${properties[0].title}`);
+                await this.leadsService.setInterest(userId, jid, `${subset[0].type} - ${subset[0].title}`);
             } catch (e) { }
 
-            for (const prop of properties) {
+            for (const prop of subset) {
                 // Send Images
                 if (prop.images && prop.images.length > 0) {
-                    for (const img of prop.images) {
+                    // Limit to first 3 images to avoid spamming too much
+                    const imagesToSend = prop.images.slice(0, 3);
+                    for (const img of imagesToSend) {
                         await this.sendImage(userId, jid, this.resolveImageUrl(img));
                         // Small delay between images
                         await new Promise(r => setTimeout(r, 600));
@@ -473,7 +604,7 @@ Sou seu assistente virtual. Para começar, você pode:
                 if (prop.furnished) features.push('Mobiliado');
 
                 let specs = `🏠 *${prop.title}*
-📍 *Local:* ${prop.location || ''}
+📍 *Local:* ${prop.neighborhood ? prop.neighborhood + ', ' + prop.city : prop.location}
 📐 *Área:* ${prop.area} m²
 🛏️ *Quartos:* ${prop.bedrooms}
 🛁 *Banheiros:* ${prop.bathrooms}
@@ -492,10 +623,15 @@ Sou seu assistente virtual. Para começar, você pode:
                 await this.sendMessage(userId, jid, specs);
                 await new Promise(r => setTimeout(r, 1000));
             }
+
+            if (properties.length > limit) {
+                await this.sendMessage(userId, jid, `_Exibindo ${limit} de ${properties.length} imóveis encontrados._`);
+            }
+
             // Send Menu
             await this.sendMainMenu(userId, jid, storeName);
         } else {
-            await this.sendMessage(userId, jid, "😕 Não encontrei nenhum imóvel com essas características. Tente buscar por *bairro* ou *tipo* (ex: Casa, Apartamento).");
+            await this.sendMessage(userId, jid, "😕 Não encontrei nenhum imóvel com essas características neste bairro. Tente buscar em outra região.");
             await this.sendMainMenu(userId, jid, storeName);
         }
     }

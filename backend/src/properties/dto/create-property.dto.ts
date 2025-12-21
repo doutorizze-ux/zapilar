@@ -4,6 +4,8 @@ export class CreatePropertyDto {
     title: string;
     type: PropertyType;
     price: number;
+    city?: string;
+    neighborhood?: string;
     location: string;
     area: number;
     bedrooms: number;

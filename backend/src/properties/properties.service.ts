@@ -61,4 +61,39 @@ export class PropertiesService {
     remove(id: string) {
         return this.propertiesRepository.delete(id);
     }
+
+    async getCities(userId: string): Promise<string[]> {
+        const result = await this.propertiesRepository
+            .createQueryBuilder('property')
+            .select('DISTINCT property.city', 'city')
+            .where('property.userId = :userId', { userId })
+            .andWhere('property.city IS NOT NULL')
+            .andWhere("property.city != ''")
+            .orderBy('property.city', 'ASC')
+            .getRawMany();
+        return result.map(r => r.city);
+    }
+
+    async getNeighborhoods(userId: string, city: string): Promise<string[]> {
+        const result = await this.propertiesRepository
+            .createQueryBuilder('property')
+            .select('DISTINCT property.neighborhood', 'neighborhood')
+            .where('property.userId = :userId', { userId })
+            .andWhere('property.city = :city', { city })
+            .andWhere('property.neighborhood IS NOT NULL')
+            .andWhere("property.neighborhood != ''")
+            .orderBy('property.neighborhood', 'ASC')
+            .getRawMany();
+        return result.map(r => r.neighborhood);
+    }
+
+    async findByLocation(userId: string, city: string, neighborhood: string) {
+        return this.propertiesRepository.find({
+            where: {
+                userId,
+                city,
+                neighborhood
+            }
+        });
+    }
 }

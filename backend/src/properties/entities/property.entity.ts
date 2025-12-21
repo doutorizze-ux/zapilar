@@ -28,6 +28,12 @@ export class Property {
     @Column('decimal', { precision: 12, scale: 2 })
     price: number;
 
+    @Column({ nullable: true })
+    city: string;
+
+    @Column({ nullable: true })
+    neighborhood: string;
+
     @Column()
     location: string;
 
