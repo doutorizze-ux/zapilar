@@ -451,8 +451,6 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         if (inputNeighborhood) {
             const neighborhoods = await this.propertiesService.getNeighborhoods(userId, city);
 
-            // Allow selecting all? Maybe later. For now force selection.
-
             // Check if input is index
             const index = parseInt(inputNeighborhood) - 1;
             if (!isNaN(index) && index >= 0 && index < neighborhoods.length) {
@@ -470,19 +468,14 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
             }
         }
 
-        // Fetch properties
-        // If neighborhood is null, we might want to fetch all in city, but current flow requires neighborhood.
-        // Assuming findByLocation handles checking. 
-        // NOTE: propertiesService.findByLocation needs to be exact.
+        this.logger.log(`Searching properties for User: ${userId}, City: ${city}, Neighborhood: ${selectedNeighborhood}`);
 
         let properties: any[] = [];
         if (selectedNeighborhood) {
             properties = await this.propertiesService.findByLocation(userId, city, selectedNeighborhood);
-        } else {
-            // Fallback to all in city? Not implemented in service yet but easy to do with partial match or separate method
-            // For now let's assume strict neighborhood
-            properties = [];
         }
+
+        this.logger.log(`Found ${properties.length} properties.`);
 
         await this.sendPropertyResults(userId, jid, properties, storeName);
         this.userStates.set(`${userId}:${jid}`, { mode: 'MENU' });
