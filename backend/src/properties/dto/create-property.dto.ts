@@ -1,4 +1,4 @@
-import { PropertyType } from '../entities/vehicle.entity';
+import { PropertyType } from '../entities/property.entity';
 
 export class CreatePropertyDto {
     title: string;
