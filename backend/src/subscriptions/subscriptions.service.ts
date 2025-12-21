@@ -69,7 +69,7 @@ export class SubscriptionsService {
         // Determine frontend URL for callback (remove /api if easy, or use hardcoded if known domain)
         // Assuming VITE_API_URL or similar is backend, we want frontend.
         // Let's use a safe default or env.
-        const frontendUrl = 'https://zapicar.com.br'; // Using the domain provided in prompts
+        const frontendUrl = 'https://zapilar.com.br'; // Using the domain provided in prompts
 
         let subscription;
         const subscriptionPayload = {

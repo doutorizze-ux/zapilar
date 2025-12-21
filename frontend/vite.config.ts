@@ -12,8 +12,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['logo-z-green.png', 'logo-dark.png'],
       manifest: {
-        name: 'Zapicar',
-        short_name: 'Zapicar',
+        name: 'zapilar',
+        short_name: 'zapilar',
         description: 'Sua plataforma de gestão de veículos.',
         theme_color: '#0B2B26',
         background_color: '#0B2B26',

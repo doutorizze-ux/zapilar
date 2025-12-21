@@ -71,7 +71,35 @@ export class PropertiesService {
             .andWhere("property.city != ''")
             .orderBy('property.city', 'ASC')
             .getRawMany();
-        return result.map(r => r.city);
+
+        if (result.length > 0) {
+            return result.map(r => r.city);
+        }
+
+        // Fallback: Try to use 'location' field if 'city' is empty (Legacy Data Support)
+        const legacyResult = await this.propertiesRepository
+            .createQueryBuilder('property')
+            .select('DISTINCT property.location', 'location')
+            .where('property.userId = :userId', { userId })
+            .andWhere('property.location IS NOT NULL')
+            .andWhere("property.location != ''")
+            .getRawMany();
+
+        // extract potential cities from location strings (naive approach)
+        const cities = new Set<string>();
+        legacyResult.forEach(r => {
+            if (r.location) {
+                // assume format "Neighborhood, City" or try to just use the whole string
+                const parts = r.location.split(',');
+                if (parts.length > 1) {
+                    cities.add(parts[parts.length - 1].trim());
+                } else {
+                    cities.add(r.location.trim());
+                }
+            }
+        });
+
+        return Array.from(cities).sort();
     }
 
     async getNeighborhoods(userId: string, city: string): Promise<string[]> {
@@ -84,16 +112,54 @@ export class PropertiesService {
             .andWhere("property.neighborhood != ''")
             .orderBy('property.neighborhood', 'ASC')
             .getRawMany();
-        return result.map(r => r.neighborhood);
+
+        if (result.length > 0) {
+            return result.map(r => r.neighborhood);
+        }
+
+        // Fallback: legacy location
+        const legacyResult = await this.propertiesRepository
+            .createQueryBuilder('property')
+            .select('DISTINCT property.location', 'location')
+            .where('property.userId = :userId', { userId })
+            .andWhere('property.location LIKE :cityLike', { cityLike: `%${city}%` })
+            .getRawMany();
+
+        const neighborhoods = new Set<string>();
+        legacyResult.forEach(r => {
+            if (r.location) {
+                // Try to remove city from string to find neighborhood
+                // "Bairro, City"
+                const parts = r.location.split(',');
+                if (parts.length > 1) {
+                    neighborhoods.add(parts[0].trim());
+                } else {
+                    neighborhoods.add(r.location.trim()); // Just take the whole thing if it matches city? kinda weird but fallback
+                }
+            }
+        });
+        return Array.from(neighborhoods).sort();
     }
 
     async findByLocation(userId: string, city: string, neighborhood: string) {
-        return this.propertiesRepository.find({
+        // Try precise match first
+        const exactMatches = await this.propertiesRepository.find({
             where: {
                 userId,
                 city,
                 neighborhood
             }
         });
+
+        if (exactMatches.length > 0) return exactMatches;
+
+        // Fallback legacy
+        return this.propertiesRepository
+            .createQueryBuilder('property')
+            .where('property.userId = :userId', { userId })
+            .andWhere('(property.city IS NULL OR property.city = "")')
+            .andWhere('property.location LIKE :city', { city: `%${city}%` })
+            .andWhere('property.location LIKE :neighborhood', { neighborhood: `%${neighborhood}%` })
+            .getMany();
     }
 }

@@ -8,7 +8,7 @@ async function createAdmin() {
     const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash(password, salt);
 
-    const adminEmail = 'admin@zapicar.com.br';
+    const adminEmail = 'admin@zapilar.com.br';
     const id = 'admin-user-id-' + Date.now(); // fake uuid for simplicity in raw sql or use crypto
 
     db.serialize(() => {

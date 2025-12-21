@@ -187,7 +187,7 @@ export function ConsultasPage() {
 
                     <div className="flex-1 flex flex-col justify-between space-y-4">
                         <p className="text-sm text-gray-500">
-                            Garanta a procedência do veículo antes de comprar. Solicite desconto para lojistas Zapicar.
+                            Garanta a procedência do veículo antes de comprar. Solicite desconto para lojistas zapilar.
                         </p>
 
                         <div className="space-y-2">
@@ -216,7 +216,7 @@ export function ConsultasPage() {
                     <h4 className="text-sm font-bold text-yellow-800">Atenção sobre Regularização</h4>
                     <p className="text-sm text-yellow-700 mt-1">
                         Sempre verifique a existência de gravame ou restrições judiciais (RENAJUD) antes de fechar negócio.
-                        O Zapicar apenas facilita o acesso aos links oficiais e não se responsabiliza pelas informações dos órgãos públicos.
+                        O zapilar apenas facilita o acesso aos links oficiais e não se responsabiliza pelas informações dos órgãos públicos.
                     </p>
                 </div>
             </div>
