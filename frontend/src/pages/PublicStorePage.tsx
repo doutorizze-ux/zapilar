@@ -556,7 +556,7 @@ export function PublicStorePage() {
                     </div>
                 </div>
                 <div className="container mx-auto px-4 mt-16 pt-8 border-t border-gray-800 text-center text-gray-500 text-sm">
-                    <p>&copy; {new Date().getFullYear()} {store.name}. Todos os direitos reservados. Tecnologia <a href="https://zapicar.com.br" className="text-white hover:underline">Zapicar</a>.</p>
+                    <p>&copy; {new Date().getFullYear()} {store.name}. Todos os direitos reservados. Tecnologia <a href="https://zapilar.com.br" className="text-white hover:underline">Zapilar</a>.</p>
                 </div>
             </footer>
             {store.phone && (

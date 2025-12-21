@@ -1,7 +1,7 @@
 import { Plus, Search, Filter, Home, Bed, Maximize } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { API_URL } from '../config';
-import { PropertyManagerModal } from '../components/VehicleManagerModal';
+import { PropertyManagerModal } from '../components/PropertyManagerModal';
 
 // Interfaces matching backend entity
 interface Property {

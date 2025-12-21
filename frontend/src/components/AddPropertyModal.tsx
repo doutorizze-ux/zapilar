@@ -2,64 +2,56 @@ import { X, Upload } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
 
-const CAR_BRANDS = [
-    'Toyota', 'Honda', 'Hyundai', 'Volkswagen', 'Chevrolet', 'Ford', 'Fiat', 'Jeep', 'Renault', 'Nissan',
-    'Mitsubishi', 'BMW', 'Mercedes-Benz', 'Audi', 'Kia', 'Peugeot', 'Citroën', 'Land Rover', 'Volvo', 'Outra'
+const PROPERTY_TYPES = [
+    'Casa', 'Apartamento', 'Terreno', 'Casa em Condomínio', 'Cobertura',
+    'Flat', 'Loja', 'Sala Comercial', 'Galpão', 'Sítio/Chácara'
 ];
 
-interface AddVehicleModalProps {
+interface AddPropertyModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
     initialData?: any; // For editing
 }
 
-export function AddVehicleModal({ isOpen, onClose, onSuccess, initialData }: AddVehicleModalProps) {
+export function AddPropertyModal({ isOpen, onClose, onSuccess, initialData }: AddPropertyModalProps) {
     const [loading, setLoading] = useState(false);
     const [imageFiles, setImageFiles] = useState<File[]>([]);
 
     // Initialize form with defaults or initialData
     const [formData, setFormData] = useState({
-        brand: 'Toyota',
-        name: '',
-        model: '',
-        year: new Date().getFullYear(),
-        price: '', // Stored as string for masking "10.000,00"
-        category: 'Seminovo',
-        km: 0,
-        fuel: 'Flex',
-        transmission: 'Automático',
-        color: '',
-        description: '',
+        title: '',
+        type: 'Apartamento',
+        price: '', // Stored as string for masking
         location: '',
-        trava: false,
-        alarme: false,
-        som: false,
-        teto: false,
-        banco_couro: false,
+        area: 0,
+        bedrooms: 0,
+        bathrooms: 0,
+        parkingSpaces: 0,
+        description: '',
+        pool: false,
+        security: false,
+        elevator: false,
+        furnished: false,
     });
 
     // Update form data when initialData changes
     useEffect(() => {
         if (initialData) {
             setFormData({
-                brand: initialData.brand,
-                name: initialData.name,
-                model: initialData.model || '',
-                year: initialData.year,
+                title: initialData.title,
+                type: initialData.type || 'Apartamento',
                 price: initialData.price ? initialData.price.toString().replace('.', ',') : '',
-                category: initialData.category,
-                km: initialData.km,
-                fuel: initialData.fuel || 'Flex',
-                transmission: initialData.transmission || 'Automático',
-                color: initialData.color || '',
-                description: initialData.description || '',
                 location: initialData.location || '',
-                trava: initialData.trava || false,
-                alarme: initialData.alarme || false,
-                som: initialData.som || false,
-                teto: initialData.teto || false,
-                banco_couro: initialData.banco_couro || false,
+                area: initialData.area || 0,
+                bedrooms: initialData.bedrooms || 0,
+                bathrooms: initialData.bathrooms || 0,
+                parkingSpaces: initialData.parkingSpaces || 0,
+                description: initialData.description || '',
+                pool: initialData.pool || false,
+                security: initialData.security || false,
+                elevator: initialData.elevator || false,
+                furnished: initialData.furnished || false,
             });
         }
     }, [initialData]);
@@ -90,15 +82,17 @@ export function AddVehicleModal({ isOpen, onClose, onSuccess, initialData }: Add
             const payload = {
                 ...formData,
                 price: formatMoneyRequest(formData.price),
-                year: Number(formData.year),
-                km: Number(formData.km),
+                area: Number(formData.area),
+                bedrooms: Number(formData.bedrooms),
+                bathrooms: Number(formData.bathrooms),
+                parkingSpaces: Number(formData.parkingSpaces),
                 images: initialData?.images || [] // Keep existing images if editing
             };
 
             let response;
             if (initialData) {
                 // Edit Mode
-                response = await fetch(`${API_URL}/vehicles/${initialData.id}`, {
+                response = await fetch(`${API_URL}/properties/${initialData.id}`, { // Updated endpoint
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
@@ -108,7 +102,7 @@ export function AddVehicleModal({ isOpen, onClose, onSuccess, initialData }: Add
                 });
             } else {
                 // Create Mode
-                response = await fetch(`${API_URL}/vehicles`, {
+                response = await fetch(`${API_URL}/properties`, { // Updated endpoint
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -119,17 +113,17 @@ export function AddVehicleModal({ isOpen, onClose, onSuccess, initialData }: Add
             }
 
             if (response.ok) {
-                const vehicle = await response.json();
-                const vehicleId = initialData ? initialData.id : vehicle.id;
+                const property = await response.json();
+                const propertyId = initialData ? initialData.id : property.id;
 
                 // 2. Upload Images if selected
-                if (imageFiles.length > 0 && vehicleId) {
+                if (imageFiles.length > 0 && propertyId) {
                     const uploadData = new FormData();
                     imageFiles.forEach(file => {
                         uploadData.append('files', file);
                     });
 
-                    await fetch(`${API_URL}/vehicles/${vehicleId}/upload`, {
+                    await fetch(`${API_URL}/properties/${propertyId}/upload`, { // Updated endpoint
                         method: 'POST',
                         body: uploadData,
                     });
@@ -138,7 +132,7 @@ export function AddVehicleModal({ isOpen, onClose, onSuccess, initialData }: Add
                 onSuccess();
                 onClose();
             } else {
-                alert('Erro ao salvar veículo');
+                alert('Erro ao salvar imóvel');
             }
         } catch (error) {
             console.error(error);
@@ -175,7 +169,7 @@ export function AddVehicleModal({ isOpen, onClose, onSuccess, initialData }: Add
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between p-6 border-b border-gray-100 sticky top-0 bg-white z-10">
-                    <h3 className="text-xl font-bold text-gray-900">{initialData ? 'Editar Veículo' : 'Novo Veículo'}</h3>
+                    <h3 className="text-xl font-bold text-gray-900">{initialData ? 'Editar Imóvel' : 'Novo Imóvel'}</h3>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
                         <X className="w-6 h-6" />
                     </button>
@@ -184,7 +178,7 @@ export function AddVehicleModal({ isOpen, onClose, onSuccess, initialData }: Add
                 <form onSubmit={handleSubmit} className="p-6 space-y-6">
                     {/* Image Upload Area */}
                     <div className="w-full">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Fotos do Veículo (Máx: 5)</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Fotos do Imóvel (Máx: 5)</label>
 
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
                             {imageFiles.map((file, idx) => (
@@ -223,32 +217,22 @@ export function AddVehicleModal({ isOpen, onClose, onSuccess, initialData }: Add
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Marca</label>
-                            <select required name="brand" value={formData.brand} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none">
-                                {CAR_BRANDS.map(brand => (
-                                    <option key={brand} value={brand}>{brand}</option>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Título do Anúncio</label>
+                            <input required name="title" value={formData.title} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" placeholder="Ex: Apartamento no Centro" />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
+                            <select required name="type" value={formData.type} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none">
+                                {PROPERTY_TYPES.map(type => (
+                                    <option key={type} value={type}>{type}</option>
                                 ))}
                             </select>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Nome/Modelo</label>
-                            <input required name="name" value={formData.name} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" placeholder="Ex: Hilux" />
-                        </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Versão</label>
-                            <input required name="model" value={formData.model} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" placeholder="Ex: SRV 4x4 Diesel" />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Ano</label>
-                                <input required type="number" name="year" value={formData.year} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">KM</label>
-                                <input required type="number" name="km" value={formData.km} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" />
-                            </div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Localização (Bairro/Cidade)</label>
+                            <input required name="location" value={formData.location} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" placeholder="Ex: Centro, São Paulo" />
                         </div>
 
                         <div>
@@ -264,64 +248,54 @@ export function AddVehicleModal({ isOpen, onClose, onSuccess, initialData }: Add
                             />
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
-                            <select name="category" value={formData.category} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none">
-                                <option value="Novo">Novo</option>
-                                <option value="Seminovo">Seminovo</option>
-                            </select>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Área (m²)</label>
+                                <input required type="number" name="area" value={formData.area} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Quartos</label>
+                                <input required type="number" name="bedrooms" value={formData.bedrooms} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" />
+                            </div>
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Combustível</label>
-                            <input name="fuel" value={formData.fuel} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Câmbio</label>
-                            <input name="transmission" value={formData.transmission} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Cor</label>
-                            <input name="color" value={formData.color} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Localização</label>
-                            <input name="location" value={formData.location} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Banheiros</label>
+                                <input required type="number" name="bathrooms" value={formData.bathrooms} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Vagas</label>
+                                <input required type="number" name="parkingSpaces" value={formData.parkingSpaces} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" />
+                            </div>
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Opcionais</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Destaques</label>
                         <div className="flex flex-wrap gap-4">
                             <label className="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" name="trava" checked={formData.trava} onChange={handleCheckboxChange} className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 border-gray-300" />
-                                <span className="text-sm text-gray-700">Trava Elétrica</span>
+                                <input type="checkbox" name="pool" checked={formData.pool} onChange={handleCheckboxChange} className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 border-gray-300" />
+                                <span className="text-sm text-gray-700">Piscina</span>
                             </label>
                             <label className="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" name="alarme" checked={formData.alarme} onChange={handleCheckboxChange} className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 border-gray-300" />
-                                <span className="text-sm text-gray-700">Alarme</span>
+                                <input type="checkbox" name="security" checked={formData.security} onChange={handleCheckboxChange} className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 border-gray-300" />
+                                <span className="text-sm text-gray-700">Segurança 24h</span>
                             </label>
                             <label className="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" name="som" checked={formData.som} onChange={handleCheckboxChange} className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 border-gray-300" />
-                                <span className="text-sm text-gray-700">Som</span>
+                                <input type="checkbox" name="elevator" checked={formData.elevator} onChange={handleCheckboxChange} className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 border-gray-300" />
+                                <span className="text-sm text-gray-700">Elevador</span>
                             </label>
                             <label className="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" name="teto" checked={formData.teto} onChange={handleCheckboxChange} className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 border-gray-300" />
-                                <span className="text-sm text-gray-700">Teto Solar</span>
-                            </label>
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" name="banco_couro" checked={formData.banco_couro} onChange={handleCheckboxChange} className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 border-gray-300" />
-                                <span className="text-sm text-gray-700">Banco de Couro</span>
+                                <input type="checkbox" name="furnished" checked={formData.furnished} onChange={handleCheckboxChange} className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 border-gray-300" />
+                                <span className="text-sm text-gray-700">Mobiliado</span>
                             </label>
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
-                        <textarea name="description" value={formData.description} onChange={handleChange} rows={3} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" />
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Descrição Completa</label>
+                        <textarea name="description" value={formData.description} onChange={handleChange} rows={4} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" placeholder="Descreva os detalhes do imóvel..." />
                     </div>
 
                     <div className="flex justify-end gap-3 pt-4 border-t border-gray-50">
@@ -329,7 +303,7 @@ export function AddVehicleModal({ isOpen, onClose, onSuccess, initialData }: Add
                             Cancelar
                         </button>
                         <button type="submit" disabled={loading} className="px-5 py-2 bg-cyan-600 text-white font-medium rounded-xl hover:bg-cyan-700 transition-colors disabled:opacity-50">
-                            {loading ? 'Salvando...' : 'Salvar Veículo'}
+                            {loading ? 'Salvando...' : 'Salvar Imóvel'}
                         </button>
                     </div>
                 </form>

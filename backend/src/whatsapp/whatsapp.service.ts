@@ -138,7 +138,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
                 creds: state.creds,
                 keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' }) as any),
             },
-            browser: ['ZapImóveis Bot', 'Chrome', '1.0.0'], // More standard browser signature
+            browser: ['Zapilar Bot', 'Chrome', '1.0.0'], // More standard browser signature
             connectTimeoutMs: 20000, // Faster timeout to fail fast and retry
             retryRequestDelayMs: 2000,
             keepAliveIntervalMs: 30000, // Prevent timeouts
