@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { WhatsappService } from './whatsapp.service';
-import { VehiclesModule } from '../vehicles/vehicles.module';
+import { PropertiesModule } from '../properties/properties.module';
 import { WhatsappController } from './whatsapp.controller';
 import { UsersModule } from '../users/users.module';
 import { FaqModule } from '../faq/faq.module';
@@ -15,7 +15,7 @@ import { ChatMessage } from './entities/chat-message.entity';
 @Module({
     imports: [
         TypeOrmModule.forFeature([ChatMessage]),
-        VehiclesModule, UsersModule, FaqModule, LeadsModule
+        PropertiesModule, UsersModule, FaqModule, LeadsModule
     ],
     providers: [WhatsappService, ChatGateway],
     exports: [WhatsappService, ChatGateway],

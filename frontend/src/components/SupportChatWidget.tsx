@@ -6,21 +6,21 @@ import { motion, AnimatePresence } from 'framer-motion';
 const VISITOR_FAQ = [
     {
         id: 'whatis',
-        title: '🤔 O que é o Zapicar?',
-        keywords: ['zapicar', 'que é', 'funciona', 'sistema', 'plataforma'],
-        answer: 'O Zapicar é uma plataforma que transforma seu WhatsApp em uma máquina de vendas automática. Ele conecta seu estoque de veículos ao WhatsApp e responde clientes 24h por dia com fotos e preços.'
+        title: '🤔 O que é o Zapilar?',
+        keywords: ['zapilar', 'que é', 'funciona', 'sistema', 'plataforma'],
+        answer: 'O Zapilar é uma plataforma que transforma seu WhatsApp em uma máquina de vendas automática. Ele conecta seu estoque de imóveis ao WhatsApp e responde clientes 24h por dia com fotos e preços.'
     },
     {
         id: 'pricing',
         title: '💰 Preços e Planos',
         keywords: ['preco', 'valor', 'plano', 'custo', 'pagamento', 'assinatura'],
-        answer: 'Temos planos flexíveis para garagens de todos os tamanhos. Comece a transformar suas vendas hoje mesmo. Clique em "Planos" no menu para ver detalhes.'
+        answer: 'Temos planos flexíveis para imobiliárias de todos os tamanhos. Comece a transformar suas vendas hoje mesmo. Clique em "Planos" no menu para ver detalhes.'
     },
     {
         id: 'automation',
         title: '🤖 Automação WhatsApp',
         keywords: ['bot', 'automacao', 'responder', 'sozinho', 'whatsapp'],
-        answer: 'Nosso bot atende seus clientes instantaneamente. Quando alguém pergunta sobre um carro (ex: "tem hilux?"), o bot envia fotos, preço e ficha técnica na hora, sem você precisar digitar nada.'
+        answer: 'Nosso bot atende seus clientes instantaneamente. Quando alguém pergunta sobre um imóvel (ex: "tem apartamento no centro?"), o bot envia fotos, preço e detalhes na hora, sem você precisar digitar nada.'
     },
     {
         id: 'login',
@@ -31,8 +31,8 @@ const VISITOR_FAQ = [
     {
         id: 'stock',
         title: '🚗 Integração de Estoque',
-        keywords: ['estoque', 'integracao', 'cadastrar', 'veiculo'],
-        answer: 'Você cadastra seus carros no nosso painel simples e nós sincronizamos tudo. Se você já anuncia em marketplaces, pode ser ainda mais fácil. O sistema é feito para lojistas.'
+        keywords: ['estoque', 'integracao', 'cadastrar', 'imovel', 'propriedade'],
+        answer: 'Você cadastra seus imóveis no nosso painel simples e nós sincronizamos tudo. Se você já anuncia em portais, pode ser ainda mais fácil. O sistema é feito para corretores.'
     },
 
 ];
@@ -47,15 +47,15 @@ const CLIENT_FAQ = [
     },
     {
         id: 'estoque',
-        title: '🚗 Estoque & Veículos',
-        keywords: ['estoque', 'veiculo', 'carro', 'anuncio', 'foto', 'preco'],
-        answer: 'Acesse o menu "Veículos" no painel. Lá você pode adicionar novos carros, editar preços e fazer upload de fotos. Lembre-se de preencher todos os dados obrigatórios para o bot funcionar bem.'
+        title: '🏠 Estoque & Imóveis',
+        keywords: ['estoque', 'imovel', 'casa', 'apartamento', 'anuncio', 'foto', 'preco'],
+        answer: 'Acesse o menu "Imóveis" no painel. Lá você pode adicionar novos imóveis, editar preços e fazer upload de fotos. Lembre-se de preencher todos os dados obrigatórios para o bot funcionar bem.'
     },
     {
         id: 'bot',
         title: '🤖 WhatsApp Bot',
         keywords: ['bot', 'whatsapp', 'conectar', 'qr', 'automacao', 'responder'],
-        answer: 'Para ativar o bot, vá em "WhatsApp" no menu lateral e leia o QR Code. O bot responderá automaticamente sobre os carros do seu estoque quando o cliente perguntar. Certifique-se de que o status esteja "Conectado".'
+        answer: 'Para ativar o bot, vá em "WhatsApp" no menu lateral e leia o QR Code. O bot responderá automaticamente sobre os imóveis do seu estoque quando o cliente perguntar. Certifique-se de que o status esteja "Conectado".'
     },
     {
         id: 'planos',
@@ -73,7 +73,7 @@ const CLIENT_FAQ = [
         id: 'leads',
         title: '📈 Leads & Clientes',
         keywords: ['lead', 'cliente', 'contato', 'crm'],
-        answer: 'Todos os clientes que interagem com o bot ficam salvos na aba "Leads". Você pode ver o histórico de conversas e o carro de interesse de cada um.'
+        answer: 'Todos os clientes que interagem com o bot ficam salvos na aba "Leads". Você pode ver o histórico de conversas e o imóvel de interesse de cada um.'
     }
 ];
 
@@ -130,8 +130,8 @@ export function SupportChatWidget() {
     useEffect(() => {
         if (isOpen && messages.length === 0) {
             const greeting = isAuthenticated
-                ? 'Olá! Sou o Suporte Técnico do Zapicar. Como posso te ajudar com sua conta hoje?'
-                : 'Olá! Bem-vindo ao Zapicar. Sou seu assistente de vendas. Como posso ajudar você a conhecer nossa plataforma?';
+                ? 'Olá! Sou o Suporte Técnico do Zapilar. Como posso te ajudar com sua conta hoje?'
+                : 'Olá! Bem-vindo ao Zapilar. Sou seu assistente de vendas. Como posso ajudar você a conhecer nossa plataforma?';
 
             setMessages([
                 {
@@ -216,12 +216,12 @@ export function SupportChatWidget() {
                         <div className="bg-[#0B2B26] p-4 flex items-center justify-between border-b border-white/10">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center relative">
-                                    <img src="/logo-dark.png" className="w-6 h-6 object-contain invert brightness-0 opacity-80" alt="Bot" />
+                                    <img src="/logo-zapilar-white.svg" className="w-6 h-6 object-contain opacity-80" alt="Bot" />
                                     <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-[#0B2B26] rounded-full"></span>
                                 </div>
                                 <div>
                                     <h3 className="text-white font-bold text-sm">
-                                        {isAuthenticated ? 'Suporte Técnico' : 'Vendas Zapicar'}
+                                        {isAuthenticated ? 'Suporte Técnico' : 'Vendas Zapilar'}
                                     </h3>
                                     <p className="text-xs text-green-400 font-medium">Online Agora</p>
                                 </div>

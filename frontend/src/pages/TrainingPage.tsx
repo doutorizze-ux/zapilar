@@ -94,12 +94,10 @@ export function TrainingPage() {
 
             // Simple loop import (can be optimized with bulk endpoint later)
             for (const line of lines) {
-                // Support semicolon or comma if not quoted
-                // Simple split by ; preferred
                 const parts = line.split(';');
                 if (parts.length >= 2) {
                     const q = parts[0].trim();
-                    const a = parts.slice(1).join(';').trim(); // Join rest in case answer has semicolons
+                    const a = parts.slice(1).join(';').trim();
 
                     if (q && a) {
                         await fetch(`${API_URL}/faqs`, {
@@ -154,7 +152,7 @@ export function TrainingPage() {
                 {/* Form */}
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-fit">
                     <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <Plus className="w-5 h-5 text-green-600" />
+                        <Plus className="w-5 h-5 text-cyan-600" />
                         Nova Resposta
                     </h3>
                     <form onSubmit={handleCreate} className="space-y-4">
@@ -164,7 +162,7 @@ export function TrainingPage() {
                                 value={newQuestion}
                                 onChange={e => setNewQuestion(e.target.value)}
                                 placeholder="ex: qual o endereço, onde fica"
-                                className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none"
+                                className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none"
                             />
                             <p className="text-xs text-gray-400 mt-1">Palavras-chave separadas por vírgula ou frase.</p>
                         </div>
@@ -175,10 +173,10 @@ export function TrainingPage() {
                                 onChange={e => setNewAnswer(e.target.value)}
                                 rows={4}
                                 placeholder="ex: Estamos na Rua das Flores, 123..."
-                                className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none"
+                                className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none"
                             />
                         </div>
-                        <button type="submit" disabled={!newQuestion || !newAnswer} className="w-full py-2 bg-green-600 text-white font-medium rounded-xl hover:bg-green-700 disabled:opacity-50 transition-colors">
+                        <button type="submit" disabled={!newQuestion || !newAnswer} className="w-full py-2 bg-cyan-600 text-white font-medium rounded-xl hover:bg-cyan-700 disabled:opacity-50 transition-colors">
                             Adicionar Regra
                         </button>
                     </form>
@@ -207,10 +205,10 @@ export function TrainingPage() {
                             <div key={faq.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-start justify-between group">
                                 <div className="space-y-1">
                                     <h4 className="font-semibold text-gray-900 flex items-center gap-2">
-                                        <span className="text-green-600 text-sm bg-green-50 px-2 py-0.5 rounded-md">Gatilho:</span>
+                                        <span className="text-cyan-600 text-sm bg-cyan-50 px-2 py-0.5 rounded-md">Gatilho:</span>
                                         {faq.question}
                                     </h4>
-                                    <p className="text-gray-600 text-sm bg-gray-50 p-3 rounded-lg mt-2 border border-green-100/30">
+                                    <p className="text-gray-600 text-sm bg-gray-50 p-3 rounded-lg mt-2 border border-cyan-100/30">
                                         {faq.answer}
                                     </p>
                                 </div>

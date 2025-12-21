@@ -80,17 +80,17 @@ export function AgendaPage() {
                 key={i}
                 onClick={() => setSelectedDate(new Date(year, month, i))}
                 className={`h-24 border border-gray-100 p-2 cursor-pointer transition-colors relative group
-                    ${isSelected ? 'bg-green-50 border-green-200' : 'hover:bg-gray-50 bg-white'}
+                    ${isSelected ? 'bg-cyan-50 border-cyan-200' : 'hover:bg-gray-50 bg-white'}
                 `}
             >
                 <div className="flex justify-between items-start">
                     <span className={`text-sm font-medium w-6 h-6 flex items-center justify-center rounded-full
-                        ${isToday ? 'bg-green-600 text-white' : 'text-gray-700'}
+                        ${isToday ? 'bg-cyan-600 text-white' : 'text-gray-700'}
                     `}>
                         {i}
                     </span>
                     {dayEvents.length > 0 && (
-                        <span className="text-xs font-bold text-green-600 bg-green-100 px-1.5 py-0.5 rounded-full">
+                        <span className="text-xs font-bold text-cyan-600 bg-cyan-100 px-1.5 py-0.5 rounded-full">
                             {dayEvents.length}
                         </span>
                     )}
@@ -145,12 +145,12 @@ export function AgendaPage() {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                    <CalendarIcon className="w-6 h-6 text-green-600" />
+                    <CalendarIcon className="w-6 h-6 text-cyan-600" />
                     Agenda de Compromissos
                 </h1>
                 <button
                     onClick={openNewEventModal}
-                    className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700 shadow-sm transition-all"
+                    className="bg-cyan-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-cyan-700 shadow-sm transition-all"
                 >
                     <Plus className="w-4 h-4" /> Novo Evento
                 </button>
@@ -194,7 +194,7 @@ export function AgendaPage() {
 
                 {/* Sidebar - Selected Date Events */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-full max-h-[600px]">
-                    <div className="p-4 border-b border-gray-100 bg-green-50/50">
+                    <div className="p-4 border-b border-gray-100 bg-cyan-50/50">
                         <h3 className="font-bold text-gray-800">
                             {selectedDate.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
                         </h3>
@@ -205,7 +205,7 @@ export function AgendaPage() {
 
                     <div className="flex-1 overflow-y-auto p-4 space-y-3">
                         {selectedDateEvents.length > 0 ? selectedDateEvents.map((event: any) => (
-                            <div key={event.id} className="group flex items-start gap-3 p-3 rounded-lg border border-gray-100 hover:border-green-200 hover:bg-green-50/30 transition-all">
+                            <div key={event.id} className="group flex items-start gap-3 p-3 rounded-lg border border-gray-100 hover:border-cyan-200 hover:bg-cyan-50/30 transition-all">
                                 <div className="min-w-[50px] text-center">
                                     <span className="block text-sm font-bold text-gray-900">
                                         {new Date(event.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -238,7 +238,7 @@ export function AgendaPage() {
                             <div className="flex flex-col items-center justify-center h-full text-center p-8 text-gray-400 space-y-3">
                                 <CalendarIcon className="w-12 h-12 opacity-20" />
                                 <p className="text-sm">Nenhum compromisso para este dia.</p>
-                                <button onClick={openNewEventModal} className="text-sm text-green-600 font-medium hover:underline">
+                                <button onClick={openNewEventModal} className="text-sm text-cyan-600 font-medium hover:underline">
                                     Adicionar novo
                                 </button>
                             </div>
@@ -263,7 +263,7 @@ export function AgendaPage() {
                                 <input
                                     value={formData.title}
                                     onChange={e => setFormData({ ...formData, title: e.target.value })}
-                                    className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
+                                    className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition-all"
                                     placeholder="Ex: Visita ao Cliente"
                                     required
                                 />
@@ -275,7 +275,7 @@ export function AgendaPage() {
                                         type="datetime-local"
                                         value={formData.start}
                                         onChange={e => setFormData({ ...formData, start: e.target.value })}
-                                        className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                                        className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-cyan-500 outline-none"
                                         required
                                     />
                                 </div>
@@ -285,7 +285,7 @@ export function AgendaPage() {
                                         type="datetime-local"
                                         value={formData.end}
                                         onChange={e => setFormData({ ...formData, end: e.target.value })}
-                                        className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                                        className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-cyan-500 outline-none"
                                     />
                                 </div>
                             </div>
@@ -296,7 +296,7 @@ export function AgendaPage() {
                                     <input
                                         value={formData.location}
                                         onChange={e => setFormData({ ...formData, location: e.target.value })}
-                                        className="w-full border border-gray-300 pl-9 p-2.5 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                                        className="w-full border border-gray-300 pl-9 p-2.5 rounded-lg focus:ring-2 focus:ring-cyan-500 outline-none"
                                         placeholder="Ex: Showroom"
                                     />
                                 </div>
@@ -306,13 +306,13 @@ export function AgendaPage() {
                                 <textarea
                                     value={formData.description}
                                     onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                    className="w-full border border-gray-300 p-2.5 rounded-lg h-24 focus:ring-2 focus:ring-green-500 outline-none resize-none"
+                                    className="w-full border border-gray-300 p-2.5 rounded-lg h-24 focus:ring-2 focus:ring-cyan-500 outline-none resize-none"
                                     placeholder="Detalhes adicionais..."
                                 />
                             </div>
                             <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
                                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors">Cancelar</button>
-                                <button type="submit" className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium shadow-md hover:shadow-lg transition-all">Salvar Evento</button>
+                                <button type="submit" className="px-6 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 font-medium shadow-md hover:shadow-lg transition-all">Salvar Evento</button>
                             </div>
                         </form>
                     </div>

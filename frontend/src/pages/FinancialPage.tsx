@@ -54,7 +54,7 @@ export function FinancialPage() {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold text-gray-900">Financeiro</h1>
-                <button onClick={() => setIsModalOpen(true)} className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700">
+                <button onClick={() => setIsModalOpen(true)} className="bg-cyan-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-cyan-700">
                     <Plus className="w-4 h-4" /> Novo Lançamento
                 </button>
             </div>
@@ -62,7 +62,7 @@ export function FinancialPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white p-6 rounded-xl border border-gray-200">
                     <div className="text-gray-500 text-sm font-medium">Entradas</div>
-                    <div className="text-2xl font-bold text-green-600 mt-1">R$ {Number(summary.income).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                    <div className="text-2xl font-bold text-cyan-600 mt-1">R$ {Number(summary.income).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
                 </div>
                 <div className="bg-white p-6 rounded-xl border border-gray-200">
                     <div className="text-gray-500 text-sm font-medium">Saídas</div>
@@ -70,7 +70,7 @@ export function FinancialPage() {
                 </div>
                 <div className="bg-white p-6 rounded-xl border border-gray-200">
                     <div className="text-gray-500 text-sm font-medium">Saldo</div>
-                    <div className={`text-2xl font-bold mt-1 ${summary.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>R$ {Number(summary.balance).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                    <div className={`text-2xl font-bold mt-1 ${summary.balance >= 0 ? 'text-cyan-600' : 'text-red-600'}`}>R$ {Number(summary.balance).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
                 </div>
             </div>
 
@@ -92,7 +92,7 @@ export function FinancialPage() {
                                 <td className="px-6 py-4 font-medium text-gray-900">{t.description}</td>
                                 <td className="px-6 py-4 text-gray-500">{t.category}</td>
                                 <td className="px-6 py-4">
-                                    <span className={`font-bold ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                                    <span className={`font-bold ${t.type === 'income' ? 'text-cyan-600' : 'text-red-600'}`}>
                                         {t.type === 'income' ? '+' : '-'} R$ {Number(t.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                     </span>
                                 </td>
@@ -118,7 +118,7 @@ export function FinancialPage() {
                         <h2 className="text-xl font-bold mb-4">Novo Lançamento</h2>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="flex gap-4">
-                                <label className={`flex-1 cursor-pointer border rounded-lg p-3 text-center ${formData.type === 'income' ? 'bg-green-50 border-green-500 text-green-700' : 'border-gray-200'}`}>
+                                <label className={`flex-1 cursor-pointer border rounded-lg p-3 text-center ${formData.type === 'income' ? 'bg-cyan-50 border-cyan-500 text-cyan-700' : 'border-gray-200'}`}>
                                     <input type="radio" name="type" className="hidden" checked={formData.type === 'income'} onChange={() => setFormData({ ...formData, type: 'income' })} />
                                     <div className="flex items-center justify-center gap-2 font-medium"><ArrowUpCircle className="w-4 h-4" /> Entrada</div>
                                 </label>
@@ -159,7 +159,7 @@ export function FinancialPage() {
 
                             <div className="flex justify-end gap-2 pt-4">
                                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancelar</button>
-                                <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Salvar</button>
+                                <button type="submit" className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700">Salvar</button>
                             </div>
                         </form>
                     </div>

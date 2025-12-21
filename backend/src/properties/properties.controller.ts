@@ -1,24 +1,28 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFiles, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, UseInterceptors, UploadedFiles, ParseFilePipeBuilder, HttpStatus, BadRequestException } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
-import { VehiclesService } from './vehicles.service';
-import { CreateVehicleDto } from './dto/create-vehicle.dto';
-import { UpdateVehicleDto } from './dto/update-vehicle.dto';
+import { PropertiesService } from './properties.service';
+import { CreatePropertyDto } from './dto/create-property.dto';
+import { UpdatePropertyDto } from './dto/update-property.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PlansService } from '../plans/plans.service';
 
-@Controller('vehicles')
-export class VehiclesController {
-    constructor(private readonly vehiclesService: VehiclesService) { }
+@Controller('properties')
+export class PropertiesController {
+    constructor(
+        private readonly propertiesService: PropertiesService,
+        private readonly plansService: PlansService
+    ) { }
 
     @UseGuards(JwtAuthGuard)
     @Post()
-    create(@Body() createVehicleDto: CreateVehicleDto, @Request() req) {
-        return this.vehiclesService.create(createVehicleDto, req.user.userId);
+    create(@Body() createPropertyDto: CreatePropertyDto, @Request() req) {
+        return this.propertiesService.create(createPropertyDto, req.user.userId);
     }
 
     @Post(':id/upload')
-    @UseInterceptors(FilesInterceptor('files', 4, {
+    @UseInterceptors(FilesInterceptor('files', 10, {
         storage: diskStorage({
             destination: './uploads',
             filename: (req, file, cb) => {
@@ -30,18 +34,18 @@ export class VehiclesController {
     async uploadImages(@Param('id') id: string, @UploadedFiles() files: Array<Express.Multer.File>) {
         if (!files || files.length === 0) throw new Error('No files found');
 
-        const vehicle = await this.vehiclesService.findOne(id);
-        if (!vehicle) {
-            throw new Error('Vehicle not found');
+        const property = await this.propertiesService.findOne(id);
+        if (!property) {
+            throw new Error('Property not found');
         }
-        if (!vehicle.images) vehicle.images = [];
+        if (!property.images) property.images = [];
 
         files.forEach(file => {
             const imageUrl = `/uploads/${file.filename}`;
-            vehicle.images.push(imageUrl);
+            property.images.push(imageUrl);
         });
 
-        return this.vehiclesService.update(id, { images: vehicle.images });
+        return this.propertiesService.update(id, { images: property.images });
     }
 
     @Post(':id/upload-doc')
@@ -58,14 +62,14 @@ export class VehiclesController {
         // Ensure uploads/docs exists (In production code we'd check/create folder, but assuming it works or standard multer pattern)
         if (!files || files.length === 0) throw new Error('No files found');
 
-        const vehicle = await this.vehiclesService.findOne(id);
-        if (!vehicle) throw new Error('Vehicle not found');
+        const property = await this.propertiesService.findOne(id);
+        if (!property) throw new Error('Property not found');
 
-        if (!vehicle.documents) vehicle.documents = [];
+        if (!property.documents) property.documents = [];
 
         files.forEach(file => {
             const docUrl = `/uploads/docs/${file.filename}`;
-            vehicle.documents.push({
+            property.documents.push({
                 name: file.originalname,
                 url: docUrl,
                 type: file.mimetype,
@@ -73,27 +77,27 @@ export class VehiclesController {
             });
         });
 
-        return this.vehiclesService.update(id, { documents: vehicle.documents });
+        return this.propertiesService.update(id, { documents: property.documents });
     }
 
     @UseGuards(JwtAuthGuard)
     @Get()
     findAll(@Request() req) {
-        return this.vehiclesService.findAll(req.user.userId);
+        return this.propertiesService.findAll(req.user.userId);
     }
 
     @Get(':id')
     findOne(@Param('id') id: string) {
-        return this.vehiclesService.findOne(id);
+        return this.propertiesService.findOne(id);
     }
 
     @Patch(':id')
-    update(@Param('id') id: string, @Body() updateVehicleDto: UpdateVehicleDto) {
-        return this.vehiclesService.update(id, updateVehicleDto);
+    update(@Param('id') id: string, @Body() updatePropertyDto: UpdatePropertyDto) {
+        return this.propertiesService.update(id, updatePropertyDto);
     }
 
     @Delete(':id')
     remove(@Param('id') id: string) {
-        return this.vehiclesService.remove(id);
+        return this.propertiesService.remove(id);
     }
 }

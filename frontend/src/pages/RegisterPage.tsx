@@ -92,7 +92,7 @@ export function RegisterPage() {
         <div className="min-h-screen bg-gray-50 font-sans flex text-gray-900">
 
             {/* Left Panel - Visual */}
-            <div className="hidden lg:flex w-1/2 bg-green-600 relative overflow-hidden items-center justify-center p-12">
+            <div className="hidden lg:flex w-1/2 bg-cyan-600 relative overflow-hidden items-center justify-center p-12">
                 <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
                 <div className="relative z-10 text-white max-w-lg">
                     <h2 className="text-4xl font-bold mb-6">Comece sua jornada digital hoje.</h2>
@@ -102,8 +102,8 @@ export function RegisterPage() {
                                 <Store className="w-6 h-6" />
                             </div>
                             <div>
-                                <h3 className="font-bold text-lg">Sua Loja Online</h3>
-                                <p className="text-green-100">Gerencie estoque e receba leads 24h.</p>
+                                <h3 className="font-bold text-lg">Seu Site Imobiliário</h3>
+                                <p className="text-cyan-100">Gerencie imóveis e receba leads 24h.</p>
                             </div>
                         </div>
                         <div className="flex items-start gap-4">
@@ -112,7 +112,7 @@ export function RegisterPage() {
                             </div>
                             <div>
                                 <h3 className="font-bold text-lg">Planos Flexíveis</h3>
-                                <p className="text-green-100">Escolha o plano ideal para o seu negócio.</p>
+                                <p className="text-cyan-100">Escolha o plano ideal para o seu negócio.</p>
                             </div>
                         </div>
                     </div>
@@ -123,22 +123,22 @@ export function RegisterPage() {
             <div className="flex-1 flex flex-col justify-center p-8 sm:p-20 bg-white">
                 <div className="max-w-md mx-auto w-full">
                     <div className="flex items-center justify-between mb-10">
-                        <img src="/logo-dark.png" alt="Zapicar" className="h-10 w-auto" />
-                        <button onClick={() => navigate('/')} className="text-sm font-medium text-gray-500 hover:text-green-600 transition-colors flex items-center gap-1">
+                        <img src="/logo-zapilar.svg" alt="Zapilar" className="h-10 w-auto" />
+                        <button onClick={() => navigate('/')} className="text-sm font-medium text-gray-500 hover:text-cyan-600 transition-colors flex items-center gap-1">
                             Voltar para o site
                         </button>
                     </div>
 
                     <h1 className="text-3xl font-bold mb-2">Crie sua conta</h1>
-                    <p className="text-gray-500 mb-8">Cadastre sua loja para selecionar um plano.</p>
+                    <p className="text-gray-500 mb-8">Cadastre sua imobiliária para selecionar um plano.</p>
 
                     <form onSubmit={handleRegister} className="space-y-5">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Nome Fantasia da Loja</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Nome da Imobiliária</label>
                                 <div className="relative">
                                     <Store className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                    <input required name="storeName" value={formData.storeName} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all" placeholder="Multicar" />
+                                    <input required name="storeName" value={formData.storeName} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all" placeholder="Imobiliária Silva" />
                                 </div>
                             </div>
 
@@ -146,7 +146,7 @@ export function RegisterPage() {
                                 <label className="block text-sm font-medium text-gray-700 mb-1.5">CNPJ</label>
                                 <div className="relative">
                                     <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                    <input required name="document" value={formData.document} onChange={handleDocumentChange} maxLength={18} className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all" placeholder="00.000.000/0000-00" />
+                                    <input required name="document" value={formData.document} onChange={handleDocumentChange} maxLength={18} className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all" placeholder="00.000.000/0000-00" />
                                 </div>
                             </div>
                         </div>
@@ -155,7 +155,7 @@ export function RegisterPage() {
                             <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Profissional</label>
                             <div className="relative">
                                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                <input required type="email" name="email" value={formData.email} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all" placeholder="voce@suareveneda.com" />
+                                <input required type="email" name="email" value={formData.email} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all" placeholder="voce@imobiliaria.com" />
                             </div>
                         </div>
 
@@ -164,14 +164,14 @@ export function RegisterPage() {
                                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Senha</label>
                                 <div className="relative">
                                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                    <input required type="password" name="password" value={formData.password} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all" placeholder="******" />
+                                    <input required type="password" name="password" value={formData.password} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all" placeholder="******" />
                                 </div>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Confirmar</label>
                                 <div className="relative">
                                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                    <input required type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all" placeholder="******" />
+                                    <input required type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all" placeholder="******" />
                                 </div>
                             </div>
                         </div>
@@ -181,14 +181,14 @@ export function RegisterPage() {
                                 required
                                 type="checkbox"
                                 id="terms"
-                                className="mt-1 w-4 h-4 text-green-600 rounded border-gray-300 focus:ring-green-500"
+                                className="mt-1 w-4 h-4 text-cyan-600 rounded border-gray-300 focus:ring-cyan-500"
                             />
                             <label htmlFor="terms" className="text-sm text-gray-500">
-                                Li e concordo com os <button type="button" onClick={() => setShowTerms(true)} className="text-green-600 font-bold hover:underline">Termos de Uso, Segurança e Privacidade</button> da plataforma.
+                                Li e concordo com os <button type="button" onClick={() => setShowTerms(true)} className="text-cyan-600 font-bold hover:underline">Termos de Uso, Segurança e Privacidade</button> da plataforma.
                             </label>
                         </div>
 
-                        <button type="submit" disabled={loading} className="w-full py-3.5 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-600/20">
+                        <button type="submit" disabled={loading} className="w-full py-3.5 bg-cyan-600 text-white rounded-xl font-bold hover:bg-cyan-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/20">
                             {loading ? 'Criando conta...' : (
                                 <>
                                     Continuar para Planos
@@ -201,7 +201,7 @@ export function RegisterPage() {
                     <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
 
                     <p className="text-center mt-8 text-gray-500">
-                        Já tem uma conta? <a href="/login" className="text-green-600 font-semibold hover:underline">Fazer login</a>
+                        Já tem uma conta? <a href="/login" className="text-cyan-600 font-semibold hover:underline">Fazer login</a>
                     </p>
                 </div>
             </div>

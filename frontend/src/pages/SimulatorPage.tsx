@@ -79,7 +79,7 @@ export function SimulatorPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Form Section */}
                 <div className="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-fit">
-                    <div className="flex items-center gap-2 mb-6 text-green-700">
+                    <div className="flex items-center gap-2 mb-6 text-cyan-700">
                         <Calculator className="w-5 h-5" />
                         <h2 className="font-semibold text-lg">Dados da Simulação</h2>
                     </div>
@@ -98,7 +98,7 @@ export function SimulatorPage() {
                                     value={vehiclePrice}
                                     onChange={handlePriceChange}
                                     placeholder="R$ 0,00"
-                                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all font-medium text-gray-900"
+                                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all font-medium text-gray-900"
                                 />
                             </div>
                         </div>
@@ -116,7 +116,7 @@ export function SimulatorPage() {
                                     value={downPayment}
                                     onChange={handleDownPaymentChange}
                                     placeholder="R$ 0,00"
-                                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all font-medium text-gray-900"
+                                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all font-medium text-gray-900"
                                 />
                             </div>
                         </div>
@@ -135,7 +135,7 @@ export function SimulatorPage() {
                                         step="0.01"
                                         value={interestRate}
                                         onChange={(e) => setInterestRate(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all font-medium text-gray-900"
+                                        className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all font-medium text-gray-900"
                                     />
                                 </div>
                             </div>
@@ -150,7 +150,7 @@ export function SimulatorPage() {
                                     <select
                                         value={months}
                                         onChange={(e) => setMonths(Number(e.target.value))}
-                                        className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all font-medium text-gray-900 appearance-none bg-white"
+                                        className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all font-medium text-gray-900 appearance-none bg-white"
                                     >
                                         {[12, 24, 36, 48, 60, 72].map(m => (
                                             <option key={m} value={m}>{m}x</option>
@@ -181,12 +181,12 @@ export function SimulatorPage() {
                     {result ? (
                         <div className="space-y-6">
                             {/* Summary Card */}
-                            <div className="bg-gradient-to-br from-green-600 to-emerald-800 p-8 rounded-3xl text-white shadow-xl relative overflow-hidden">
+                            <div className="bg-gradient-to-br from-cyan-600 to-cyan-800 p-8 rounded-3xl text-white shadow-xl relative overflow-hidden">
                                 <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
 
                                 <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                                     <div>
-                                        <p className="text-green-100 font-medium mb-1">Valor da Parcela Mensal</p>
+                                        <p className="text-cyan-100 font-medium mb-1">Valor da Parcela Mensal</p>
                                         <h3 className="text-4xl md:text-5xl font-bold tracking-tight">
                                             {result.monthlyPayment.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                                         </h3>
@@ -196,11 +196,11 @@ export function SimulatorPage() {
                                     </div>
                                     <div className="space-y-4 md:border-l md:border-white/10 md:pl-8">
                                         <div>
-                                            <p className="text-green-100 text-sm">Valor Financiado</p>
+                                            <p className="text-cyan-100 text-sm">Valor Financiado</p>
                                             <p className="text-xl font-bold">{result.financedAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                                         </div>
                                         <div>
-                                            <p className="text-green-100 text-sm">Total a Pagar</p>
+                                            <p className="text-cyan-100 text-sm">Total a Pagar</p>
                                             <p className="text-xl font-bold">{result.totalAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                                         </div>
                                     </div>

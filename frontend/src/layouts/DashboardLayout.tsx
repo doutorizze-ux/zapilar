@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Car, Settings, LogOut, Smartphone, CreditCard, BookOpen, Menu, X, Calculator, Users, Search, Contact, DollarSign, Calendar } from 'lucide-react';
+import { LayoutDashboard, Home, Settings, LogOut, Smartphone, CreditCard, BookOpen, Menu, X, Calculator, Users, Search, Contact, DollarSign, Calendar } from 'lucide-react';
 import { cn } from '../utils';
 import { useState, useEffect } from 'react';
 import { SupportChatWidget } from '../components/SupportChatWidget';
@@ -10,12 +10,12 @@ const sidebarItems = [
     { icon: Calendar, label: 'Agenda', path: '/dashboard/agenda' },
     { icon: Contact, label: 'Contatos', path: '/dashboard/contacts' },
     { icon: CreditCard, label: 'Planos', path: '/dashboard/plans' },
-    { icon: Car, label: 'Veículos', path: '/dashboard/vehicles' },
+    { icon: Home, label: 'Imóveis', path: '/dashboard/properties' },
     { icon: Search, label: 'Consultas', path: '/dashboard/consultas' },
-    { icon: Calculator, label: 'Simulador', path: '/dashboard/simulator' },
     { icon: Users, label: 'Leads', path: '/dashboard/leads' },
     { icon: Smartphone, label: 'WhatsApp', path: '/dashboard/whatsapp' },
     { icon: BookOpen, label: 'Treinamento', path: '/dashboard/training' },
+    { icon: Calculator, label: 'Simulador', path: '/dashboard/simulator' },
     { icon: Settings, label: 'Configurações', path: '/dashboard/settings' },
 ];
 
@@ -60,7 +60,7 @@ export function DashboardLayout() {
                         }
 
                         setStoreInfo({
-                            name: data.storeName || 'Zapicar',
+                            name: data.storeName || 'Zapilar',
                             logoUrl: data.logoUrl || '',
                             subscriptionId: data.subscriptionId,
                             subscriptionStatus: status,
@@ -111,8 +111,8 @@ export function DashboardLayout() {
             {/* Mobile Header */}
             <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 z-30 flex items-center justify-between px-4">
                 <div className="flex items-center gap-3">
-                    <img src={storeInfo?.logoUrl || "/logo-dark.png"} alt="Logo" className="w-8 h-8 rounded-lg object-cover" />
-                    <span className="font-bold text-gray-900 truncate max-w-[150px]">{storeInfo?.name || 'Zapicar'}</span>
+                    <img src={storeInfo?.logoUrl || "/logo-zapilar.svg"} alt="Logo" className="w-8 h-8 rounded-lg object-cover" />
+                    <span className="font-bold text-gray-900 truncate max-w-[150px]">{storeInfo?.name || 'Zapilar'}</span>
                 </div>
                 <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-gray-600">
                     {isMobileMenuOpen ? <X /> : <Menu />}
@@ -121,18 +121,18 @@ export function DashboardLayout() {
 
             {/* Sidebar */}
             <aside className={cn(
-                "fixed inset-y-0 left-0 z-20 w-72 bg-[#0B2B26] border-r border-white/5 transform transition-transform duration-300 cubic-bezier(0.4, 0, 0.2, 1) md:relative md:translate-x-0 font-sans shadow-2xl",
+                "fixed inset-y-0 left-0 z-20 w-72 bg-[#0A1F22] border-r border-white/5 transform transition-transform duration-300 cubic-bezier(0.4, 0, 0.2, 1) md:relative md:translate-x-0 font-sans shadow-2xl",
                 isMobileMenuOpen ? "translate-x-0" : "-translate-x-full",
                 "flex flex-col pt-16 md:pt-0"
             )}>
                 {/* Sidebar Header with Glow */}
                 <div className="relative overflow-hidden p-6 border-b border-white/5 flex items-center justify-start h-[100px]">
-                    <div className="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 bg-green-500/20 rounded-full blur-3xl pointer-events-none"></div>
+                    <div className="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
-                    {storeInfo?.name && storeInfo.name !== 'Zapicar' ? (
+                    {storeInfo?.name && storeInfo.name !== 'Zapilar' ? (
                         <div className="flex items-center gap-4 relative z-10 w-full">
                             <div className="relative group">
-                                <div className="absolute -inset-0.5 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl opacity-75 group-hover:opacity-100 blur transition duration-200"></div>
+                                <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-teal-600 rounded-2xl opacity-75 group-hover:opacity-100 blur transition duration-200"></div>
                                 {storeInfo.logoUrl ? (
                                     <img src={storeInfo.logoUrl} alt="Logo" className="relative w-12 h-12 rounded-xl object-cover border border-white/10 shadow-lg" />
                                 ) : (
@@ -146,14 +146,14 @@ export function DashboardLayout() {
                                     {storeInfo.name}
                                 </h1>
                                 <div className="flex items-center gap-1.5 mt-1">
-                                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                                    <span className="text-xs text-green-400 font-medium tracking-wide uppercase">Loja Aberta</span>
+                                    <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
+                                    <span className="text-xs text-cyan-400 font-medium tracking-wide uppercase">Loja Aberta</span>
                                 </div>
                             </div>
                         </div>
                     ) : (
                         <div className="flex items-center gap-3">
-                            <img src="/logo-dark.png" alt="Zapicar" className="h-9 w-auto brightness-0 invert opacity-90 hover:opacity-100 transition-opacity" />
+                            <img src="/logo-zapilar-white.svg" alt="Zapilar" className="h-12 w-auto opacity-90 hover:opacity-100 transition-opacity" />
                             <span className="text-white/40 text-xs mt-1 font-medium bg-white/5 px-2 py-0.5 rounded-full border border-white/5">BETA</span>
                         </div>
                     )}
@@ -170,17 +170,17 @@ export function DashboardLayout() {
                                 className={cn(
                                     "flex items-center gap-3.5 px-4 py-3.5 rounded-2xl transition-all duration-300 group font-medium relative overflow-hidden",
                                     isActive
-                                        ? "text-white shadow-[0_4px_20px_-8px_rgba(37,211,102,0.5)]"
+                                        ? "text-white shadow-[0_4px_20px_-8px_rgba(6,182,212,0.5)]"
                                         : "text-gray-400 hover:text-white hover:bg-white/5"
                                 )}
                             >
                                 {isActive && (
-                                    <div className="absolute inset-0 bg-gradient-to-r from-[#25D366] to-[#059669] opacity-100 z-0"></div>
+                                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-cyan-800 opacity-100 z-0"></div>
                                 )}
                                 <item.icon
                                     className={cn(
                                         "w-5 h-5 relative z-10 transition-transform duration-300 group-hover:scale-110",
-                                        isActive ? "text-white" : "text-gray-500 group-hover:text-green-400"
+                                        isActive ? "text-white" : "text-gray-500 group-hover:text-cyan-400"
                                     )}
                                 />
                                 <span className={cn("relative z-10 tracking-wide text-sm font-semibold", isActive ? "text-white" : "")}>
@@ -195,14 +195,14 @@ export function DashboardLayout() {
                 <div className="p-4 space-y-4 bg-gradient-to-t from-black/20 to-transparent">
                     {/* Plan Card */}
                     <div className="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/5 rounded-2xl p-4 relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                        <div className="absolute inset-0 bg-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
                         <div className="flex items-center justify-between relative z-10 mb-2">
                             <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Seu Plano</span>
                             <span className={cn(
                                 "text-[10px] px-2 py-0.5 rounded-full font-bold uppercase",
                                 storeInfo?.subscriptionStatus === 'ACTIVE'
-                                    ? "bg-green-500/20 text-green-400 border border-green-500/20"
+                                    ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/20"
                                     : "bg-yellow-500/20 text-yellow-400 border border-yellow-500/20"
                             )}>
                                 {storeInfo?.subscriptionStatus === 'ACTIVE' ? 'Ativo' : 'Pendente'}
@@ -218,7 +218,7 @@ export function DashboardLayout() {
 
                         {/* Progress bar decoration */}
                         <div className="w-full bg-white/10 h-1 rounded-full mt-3 overflow-hidden">
-                            <div className="bg-green-500 h-full w-[70%] rounded-full"></div>
+                            <div className="bg-cyan-500 h-full w-[70%] rounded-full"></div>
                         </div>
                     </div>
 

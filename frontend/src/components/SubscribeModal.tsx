@@ -145,17 +145,17 @@ export function SubscribeModal({ plan, onClose, onSuccess }: SubscribeModalProps
 
                             <button
                                 onClick={() => setBillingType('PIX')}
-                                className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${billingType === 'PIX' ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'}`}
+                                className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${billingType === 'PIX' ? 'border-cyan-500 bg-cyan-50' : 'border-gray-200 hover:border-gray-300'}`}
                             >
                                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center border border-gray-200">
-                                    <QrCode className="w-6 h-6 text-green-600" />
+                                    <QrCode className="w-6 h-6 text-cyan-600" />
                                 </div>
                                 <div className="text-left">
                                     <span className="block font-bold text-gray-900">PIX</span>
                                     <span className="text-sm text-gray-500">Aprovação imediata</span>
                                 </div>
-                                <div className={`ml-auto w-5 h-5 rounded-full border-2 flex items-center justify-center ${billingType === 'PIX' ? 'border-green-500' : 'border-gray-300'}`}>
-                                    {billingType === 'PIX' && <div className="w-2.5 h-2.5 rounded-full bg-green-500" />}
+                                <div className={`ml-auto w-5 h-5 rounded-full border-2 flex items-center justify-center ${billingType === 'PIX' ? 'border-cyan-500' : 'border-gray-300'}`}>
+                                    {billingType === 'PIX' && <div className="w-2.5 h-2.5 rounded-full bg-cyan-500" />}
                                 </div>
                             </button>
 
@@ -223,7 +223,7 @@ export function SubscribeModal({ plan, onClose, onSuccess }: SubscribeModalProps
                                                 <CreditCard className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
                                                 <input
                                                     placeholder="0000 0000 0000 0000"
-                                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pl-10 pr-4 font-mono text-gray-700 focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pl-10 pr-4 font-mono text-gray-700 focus:bg-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 transition-all outline-none"
                                                     value={cardData.number}
                                                     onChange={e => setCardData({ ...cardData, number: e.target.value })}
                                                     maxLength={19}
@@ -235,7 +235,7 @@ export function SubscribeModal({ plan, onClose, onSuccess }: SubscribeModalProps
                                             <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1.5 ml-1">Nome do Titular</label>
                                             <input
                                                 placeholder="Como está impresso no cartão"
-                                                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 font-medium text-gray-700 focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none uppercase"
+                                                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 font-medium text-gray-700 focus:bg-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 transition-all outline-none uppercase"
                                                 value={cardData.holderName}
                                                 onChange={e => setCardData({ ...cardData, holderName: e.target.value })}
                                             />
@@ -246,7 +246,7 @@ export function SubscribeModal({ plan, onClose, onSuccess }: SubscribeModalProps
                                                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1.5 ml-1">Mês</label>
                                                 <input
                                                     placeholder="MM"
-                                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 font-mono text-center text-gray-700 focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 font-mono text-center text-gray-700 focus:bg-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 transition-all outline-none"
                                                     value={cardData.expiryMonth}
                                                     onChange={e => setCardData({ ...cardData, expiryMonth: e.target.value })}
                                                     maxLength={2}
@@ -256,7 +256,7 @@ export function SubscribeModal({ plan, onClose, onSuccess }: SubscribeModalProps
                                                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1.5 ml-1">Ano</label>
                                                 <input
                                                     placeholder="AAAA"
-                                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 font-mono text-center text-gray-700 focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 font-mono text-center text-gray-700 focus:bg-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 transition-all outline-none"
                                                     value={cardData.expiryYear}
                                                     onChange={e => setCardData({ ...cardData, expiryYear: e.target.value })}
                                                     maxLength={4}
@@ -267,7 +267,7 @@ export function SubscribeModal({ plan, onClose, onSuccess }: SubscribeModalProps
                                                 <input
                                                     placeholder="123"
                                                     type="password"
-                                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 font-mono text-center text-gray-700 focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 font-mono text-center text-gray-700 focus:bg-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 transition-all outline-none"
                                                     value={cardData.ccv}
                                                     onChange={e => setCardData({ ...cardData, ccv: e.target.value })}
                                                     maxLength={4}
@@ -284,13 +284,13 @@ export function SubscribeModal({ plan, onClose, onSuccess }: SubscribeModalProps
                                     Dados de Cobrança
                                 </h3>
                                 <div className="space-y-3">
-                                    <input placeholder="Nome Completo" className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-all" value={holderInfo.name} onChange={e => setHolderInfo({ ...holderInfo, name: e.target.value })} />
-                                    <input placeholder="CPF/CNPJ" className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-all" value={holderInfo.cpfCnpj} onChange={e => setHolderInfo({ ...holderInfo, cpfCnpj: e.target.value })} />
+                                    <input placeholder="Nome Completo" className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:bg-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all" value={holderInfo.name} onChange={e => setHolderInfo({ ...holderInfo, name: e.target.value })} />
+                                    <input placeholder="CPF/CNPJ" className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:bg-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all" value={holderInfo.cpfCnpj} onChange={e => setHolderInfo({ ...holderInfo, cpfCnpj: e.target.value })} />
                                     <div className="flex gap-3">
-                                        <input placeholder="CEP" className="w-1/2 bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-all" value={holderInfo.postalCode} onChange={e => setHolderInfo({ ...holderInfo, postalCode: e.target.value })} />
-                                        <input placeholder="Número" className="w-1/2 bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-all" value={holderInfo.addressNumber} onChange={e => setHolderInfo({ ...holderInfo, addressNumber: e.target.value })} />
+                                        <input placeholder="CEP" className="w-1/2 bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:bg-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all" value={holderInfo.postalCode} onChange={e => setHolderInfo({ ...holderInfo, postalCode: e.target.value })} />
+                                        <input placeholder="Número" className="w-1/2 bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:bg-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all" value={holderInfo.addressNumber} onChange={e => setHolderInfo({ ...holderInfo, addressNumber: e.target.value })} />
                                     </div>
-                                    <input placeholder="Telefone" className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:bg-white focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition-all" value={holderInfo.phone} onChange={e => setHolderInfo({ ...holderInfo, phone: e.target.value })} />
+                                    <input placeholder="Telefone" className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:bg-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 outline-none transition-all" value={holderInfo.phone} onChange={e => setHolderInfo({ ...holderInfo, phone: e.target.value })} />
                                 </div>
                             </div>
                         </div>
@@ -298,8 +298,8 @@ export function SubscribeModal({ plan, onClose, onSuccess }: SubscribeModalProps
 
                     {step === 3 && (
                         <div className="text-center space-y-6">
-                            <div className="bg-green-50 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto">
-                                <Check className="w-10 h-10 text-green-600" />
+                            <div className="bg-cyan-50 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto">
+                                <Check className="w-10 h-10 text-cyan-600" />
                             </div>
 
                             <div>
@@ -322,7 +322,7 @@ export function SubscribeModal({ plan, onClose, onSuccess }: SubscribeModalProps
                                         navigator.clipboard.writeText(pixCode);
                                         alert('Código copiado!');
                                     }}
-                                    className="text-green-600 font-bold text-xs whitespace-nowrap hover:underline"
+                                    className="text-cyan-600 font-bold text-xs whitespace-nowrap hover:underline"
                                 >
                                     COPIAR
                                 </button>

@@ -309,7 +309,7 @@ export function SettingsPage() {
                             value={isEditing ? editForm.name : user.name}
                             onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
                             disabled={!isEditing}
-                            className={`w-full px-4 py-2 border rounded-xl transition-colors ${isEditing ? 'bg-white border-green-500 ring-2 ring-green-500/20' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
+                            className={`w-full px-4 py-2 border rounded-xl transition-colors ${isEditing ? 'bg-white border-cyan-500 ring-2 ring-cyan-500/20' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
                         />
                     </div>
                     <div>
@@ -318,7 +318,7 @@ export function SettingsPage() {
                             value={isEditing ? editForm.phone : user.phone}
                             onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
                             disabled={!isEditing}
-                            className={`w-full px-4 py-2 border rounded-xl transition-colors ${isEditing ? 'bg-white border-green-500 ring-2 ring-green-500/20' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
+                            className={`w-full px-4 py-2 border rounded-xl transition-colors ${isEditing ? 'bg-white border-cyan-500 ring-2 ring-cyan-500/20' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
                         />
                     </div>
                     <div>
@@ -328,7 +328,7 @@ export function SettingsPage() {
                             onChange={(e) => setEditForm(prev => ({ ...prev, address: e.target.value }))}
                             disabled={!isEditing}
                             placeholder="Rua Exemplo, 123 - Centro"
-                            className={`w-full px-4 py-2 border rounded-xl transition-colors ${isEditing ? 'bg-white border-green-500 ring-2 ring-green-500/20' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
+                            className={`w-full px-4 py-2 border rounded-xl transition-colors ${isEditing ? 'bg-white border-cyan-500 ring-2 ring-cyan-500/20' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
                         />
                     </div>
                     <div className="md:col-span-2">
@@ -339,7 +339,7 @@ export function SettingsPage() {
                             disabled={!isEditing}
                             rows={2}
                             placeholder="Seu próximo carro está aqui. Qualidade, confiança e procedência."
-                            className={`w-full px-4 py-2 border rounded-xl transition-colors ${isEditing ? 'bg-white border-green-500 ring-2 ring-green-500/20' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
+                            className={`w-full px-4 py-2 border rounded-xl transition-colors ${isEditing ? 'bg-white border-cyan-500 ring-2 ring-cyan-500/20' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
                         />
                     </div>
                     <div>
@@ -364,7 +364,7 @@ export function SettingsPage() {
                                             onChange={(e) => setEditForm(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
                                             disabled={!isEditing}
                                             placeholder="minhaloja"
-                                            className={`flex-1 px-4 py-2 border rounded-xl lowercase transition-colors ${isEditing ? 'bg-white border-green-500 ring-2 ring-green-500/20' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
+                                            className={`flex-1 px-4 py-2 border rounded-xl lowercase transition-colors ${isEditing ? 'bg-white border-cyan-500 ring-2 ring-cyan-500/20' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
                                         />
                                         {!(isEditing) && (user as any).slug && (
                                             <a
@@ -405,7 +405,7 @@ export function SettingsPage() {
                             <button
                                 onClick={handleSaveProfile}
                                 disabled={isSaving}
-                                className="w-full py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full py-2 bg-cyan-600 text-white rounded-xl hover:bg-cyan-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isSaving ? 'Salvando...' : (
                                     <>
@@ -414,7 +414,7 @@ export function SettingsPage() {
                                 )}
                             </button>
                         ) : (
-                            <button onClick={() => setIsEditing(true)} className="w-full py-2 text-gray-600 bg-gray-50 hover:bg-gray-100 hover:text-green-600 border border-gray-200 rounded-xl transition-colors flex items-center justify-center gap-2">
+                            <button onClick={() => setIsEditing(true)} className="w-full py-2 text-gray-600 bg-gray-50 hover:bg-gray-100 hover:text-cyan-600 border border-gray-200 rounded-xl transition-colors flex items-center justify-center gap-2">
                                 <Pencil className="w-5 h-5" /> Editar Perfil
                             </button>
                         )}
@@ -426,7 +426,7 @@ export function SettingsPage() {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="p-6 border-b border-gray-100 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
+                        <div className="w-12 h-12 bg-cyan-100 text-cyan-600 rounded-full flex items-center justify-center">
                             <CreditCard className="w-6 h-6" />
                         </div>
                         <div>
@@ -434,7 +434,7 @@ export function SettingsPage() {
                             <p className="text-sm text-gray-500">Detalhes do seu plano atual</p>
                         </div>
                     </div>
-                    <span className={`px-3 py-1 text-sm font-bold rounded-full ${(user as any).status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                    <span className={`px-3 py-1 text-sm font-bold rounded-full ${(user as any).status === 'ACTIVE' ? 'bg-cyan-100 text-cyan-700' : 'bg-yellow-100 text-yellow-700'}`}>
                         {(user as any).status === 'ACTIVE' ? 'Ativo' : 'Pendente / Inativo'}
                     </span>
                 </div>
@@ -444,12 +444,10 @@ export function SettingsPage() {
                             <p className="font-bold text-gray-900">{user.plan}</p>
                             <p className="text-sm text-gray-500">Próxima renovação em {(user as any).nextBilling || '-'}</p>
                         </div>
-                        <button onClick={() => navigate('/dashboard/plans')} className="text-green-600 font-medium hover:underline text-sm">Gerenciar Plano</button>
+                        <button onClick={() => navigate('/dashboard/plans')} className="text-cyan-600 font-medium hover:underline text-sm">Gerenciar Plano</button>
                     </div>
                 </div>
             </div>
-
-
 
             <div className="pt-4 border-t border-gray-200">
                 <button onClick={handleLogout} className="flex items-center gap-2 text-red-600 font-medium hover:bg-red-50 px-4 py-2 rounded-lg transition-colors">

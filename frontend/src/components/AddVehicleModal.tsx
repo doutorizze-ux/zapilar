@@ -202,7 +202,7 @@ export function AddVehicleModal({ isOpen, onClose, onSuccess, initialData }: Add
 
                             {imageFiles.length < 5 && (
                                 <div className="border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center text-center aspect-square hover:bg-gray-50 transition-colors relative">
-                                    <div className="w-8 h-8 bg-green-50 text-green-600 rounded-full flex items-center justify-center mb-2">
+                                    <div className="w-8 h-8 bg-cyan-50 text-cyan-600 rounded-full flex items-center justify-center mb-2">
                                         <Upload className="w-4 h-4" />
                                     </div>
                                     <span className="text-xs text-gray-500 font-medium">+ Adicionar</span>
@@ -224,7 +224,7 @@ export function AddVehicleModal({ isOpen, onClose, onSuccess, initialData }: Add
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Marca</label>
-                            <select required name="brand" value={formData.brand} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none">
+                            <select required name="brand" value={formData.brand} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none">
                                 {CAR_BRANDS.map(brand => (
                                     <option key={brand} value={brand}>{brand}</option>
                                 ))}
@@ -232,22 +232,22 @@ export function AddVehicleModal({ isOpen, onClose, onSuccess, initialData }: Add
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Nome/Modelo</label>
-                            <input required name="name" value={formData.name} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none" placeholder="Ex: Hilux" />
+                            <input required name="name" value={formData.name} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" placeholder="Ex: Hilux" />
                         </div>
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Versão</label>
-                            <input required name="model" value={formData.model} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none" placeholder="Ex: SRV 4x4 Diesel" />
+                            <input required name="model" value={formData.model} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" placeholder="Ex: SRV 4x4 Diesel" />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Ano</label>
-                                <input required type="number" name="year" value={formData.year} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none" />
+                                <input required type="number" name="year" value={formData.year} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">KM</label>
-                                <input required type="number" name="km" value={formData.km} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none" />
+                                <input required type="number" name="km" value={formData.km} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" />
                             </div>
                         </div>
 
@@ -259,14 +259,14 @@ export function AddVehicleModal({ isOpen, onClose, onSuccess, initialData }: Add
                                 name="price"
                                 value={formData.price}
                                 onChange={handlePriceChange}
-                                className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none"
+                                className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none"
                                 placeholder="0,00"
                             />
                         </div>
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
-                            <select name="category" value={formData.category} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none">
+                            <select name="category" value={formData.category} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none">
                                 <option value="Novo">Novo</option>
                                 <option value="Seminovo">Seminovo</option>
                             </select>
@@ -274,22 +274,22 @@ export function AddVehicleModal({ isOpen, onClose, onSuccess, initialData }: Add
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Combustível</label>
-                            <input name="fuel" value={formData.fuel} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none" />
+                            <input name="fuel" value={formData.fuel} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" />
                         </div>
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Câmbio</label>
-                            <input name="transmission" value={formData.transmission} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none" />
+                            <input name="transmission" value={formData.transmission} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" />
                         </div>
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Cor</label>
-                            <input name="color" value={formData.color} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none" />
+                            <input name="color" value={formData.color} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" />
                         </div>
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Localização</label>
-                            <input name="location" value={formData.location} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none" />
+                            <input name="location" value={formData.location} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" />
                         </div>
                     </div>
 
@@ -297,23 +297,23 @@ export function AddVehicleModal({ isOpen, onClose, onSuccess, initialData }: Add
                         <label className="block text-sm font-medium text-gray-700 mb-2">Opcionais</label>
                         <div className="flex flex-wrap gap-4">
                             <label className="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" name="trava" checked={formData.trava} onChange={handleCheckboxChange} className="w-4 h-4 rounded text-green-600 focus:ring-green-500 border-gray-300" />
+                                <input type="checkbox" name="trava" checked={formData.trava} onChange={handleCheckboxChange} className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 border-gray-300" />
                                 <span className="text-sm text-gray-700">Trava Elétrica</span>
                             </label>
                             <label className="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" name="alarme" checked={formData.alarme} onChange={handleCheckboxChange} className="w-4 h-4 rounded text-green-600 focus:ring-green-500 border-gray-300" />
+                                <input type="checkbox" name="alarme" checked={formData.alarme} onChange={handleCheckboxChange} className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 border-gray-300" />
                                 <span className="text-sm text-gray-700">Alarme</span>
                             </label>
                             <label className="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" name="som" checked={formData.som} onChange={handleCheckboxChange} className="w-4 h-4 rounded text-green-600 focus:ring-green-500 border-gray-300" />
+                                <input type="checkbox" name="som" checked={formData.som} onChange={handleCheckboxChange} className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 border-gray-300" />
                                 <span className="text-sm text-gray-700">Som</span>
                             </label>
                             <label className="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" name="teto" checked={formData.teto} onChange={handleCheckboxChange} className="w-4 h-4 rounded text-green-600 focus:ring-green-500 border-gray-300" />
+                                <input type="checkbox" name="teto" checked={formData.teto} onChange={handleCheckboxChange} className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 border-gray-300" />
                                 <span className="text-sm text-gray-700">Teto Solar</span>
                             </label>
                             <label className="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" name="banco_couro" checked={formData.banco_couro} onChange={handleCheckboxChange} className="w-4 h-4 rounded text-green-600 focus:ring-green-500 border-gray-300" />
+                                <input type="checkbox" name="banco_couro" checked={formData.banco_couro} onChange={handleCheckboxChange} className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 border-gray-300" />
                                 <span className="text-sm text-gray-700">Banco de Couro</span>
                             </label>
                         </div>
@@ -321,14 +321,14 @@ export function AddVehicleModal({ isOpen, onClose, onSuccess, initialData }: Add
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
-                        <textarea name="description" value={formData.description} onChange={handleChange} rows={3} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none" />
+                        <textarea name="description" value={formData.description} onChange={handleChange} rows={3} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" />
                     </div>
 
                     <div className="flex justify-end gap-3 pt-4 border-t border-gray-50">
                         <button type="button" onClick={onClose} className="px-5 py-2 text-gray-700 font-medium hover:bg-gray-50 rounded-xl transition-colors">
                             Cancelar
                         </button>
-                        <button type="submit" disabled={loading} className="px-5 py-2 bg-green-600 text-white font-medium rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50">
+                        <button type="submit" disabled={loading} className="px-5 py-2 bg-cyan-600 text-white font-medium rounded-xl hover:bg-cyan-700 transition-colors disabled:opacity-50">
                             {loading ? 'Salvando...' : 'Salvar Veículo'}
                         </button>
                     </div>

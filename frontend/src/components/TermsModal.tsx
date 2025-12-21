@@ -92,7 +92,7 @@ export function TermsModal({ isOpen, onClose }: TermsModalProps) {
                         <div className="mt-2">
                             <strong>Uso dos dados:</strong> Exclusivamente para funcionamento do sistema, atendimento ao cliente, segurança e melhoria da plataforma.
                         </div>
-                        <p className="mt-2 font-bold text-green-700">❌ Nunca vendemos ou compartilhamos dados pessoais com terceiros, exceto quando exigido por lei.</p>
+                        <p className="mt-2 font-bold text-cyan-700">❌ Nunca vendemos ou compartilhamos dados pessoais com terceiros, exceto quando exigido por lei.</p>
                     </section>
 
                     <section>
@@ -107,7 +107,7 @@ export function TermsModal({ isOpen, onClose }: TermsModalProps) {
                 </div>
 
                 <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-end">
-                    <button onClick={onClose} className="px-6 py-2.5 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-colors">
+                    <button onClick={onClose} className="px-6 py-2.5 bg-cyan-600 text-white font-bold rounded-xl hover:bg-cyan-700 transition-colors">
                         Entendi e Concordo
                     </button>
                 </div>

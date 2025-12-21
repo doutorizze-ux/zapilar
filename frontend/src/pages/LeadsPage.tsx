@@ -90,7 +90,7 @@ export function LeadsPage() {
                     </div>
                     <button
                         onClick={() => setIsCreateModalOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white font-medium rounded-lg hover:bg-cyan-700 transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         Novo Lead
@@ -115,7 +115,7 @@ export function LeadsPage() {
                                 <tr key={lead.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-bold shadow-sm">
+                                            <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-full flex items-center justify-center text-white font-bold shadow-sm">
                                                 {getInitial(lead.name)}
                                             </div>
                                             <div>
@@ -134,7 +134,7 @@ export function LeadsPage() {
                                     <td className="px-6 py-4">
                                         <div className="flex flex-col gap-1 max-w-xs">
                                             {lead.interestSubject && (
-                                                <div className="flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 px-2 py-1 rounded w-fit mb-1">
+                                                <div className="flex items-center gap-1.5 text-xs font-semibold text-cyan-700 bg-cyan-50 px-2 py-1 rounded w-fit mb-1">
                                                     <Car className="w-3 h-3" />
                                                     {lead.interestSubject}
                                                 </div>

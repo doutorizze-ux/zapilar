@@ -1,7 +1,9 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { DashboardHome } from './pages/DashboardHome';
-import { VehiclesPage } from './pages/VehiclesPage';
+import { PropertiesPage } from './pages/PropertiesPage';
+// ... imports
+// (Note: I need to replace the import line separately or matching context)
 import { LoginPage } from './pages/LoginPage';
 import { WhatsappPage } from './pages/WhatsappPage';
 import { LandingPage } from './pages/LandingPage';
@@ -55,7 +57,7 @@ function App() {
           {/* Dashboard Routes */}
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<DashboardHome />} />
-            <Route path="vehicles" element={<VehiclesPage />} />
+            <Route path="properties" element={<PropertiesPage />} />
             <Route path="leads" element={<LeadsPage />} />
             <Route path="whatsapp" element={<WhatsappPage />} />
             <Route path="training" element={<TrainingPage />} />

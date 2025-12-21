@@ -60,7 +60,7 @@ export function ConsultasPage() {
                 {/* 1. Consulta FIPE Inteligente */}
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="p-3 bg-purple-100 text-purple-600 rounded-xl">
+                        <div className="p-3 bg-cyan-100 text-cyan-600 rounded-xl">
                             <Search className="w-6 h-6" />
                         </div>
                         <h3 className="font-bold text-gray-900">Consulta FIPE</h3>
@@ -117,18 +117,18 @@ export function ConsultasPage() {
                             </select>
                         </div>
 
-                        <button disabled={loadingFipe} type="submit" className="w-full py-2 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 transition-colors mt-2">
+                        <button disabled={loadingFipe} type="submit" className="w-full py-2 bg-cyan-600 text-white font-bold rounded-lg hover:bg-cyan-700 transition-colors mt-2">
                             {loadingFipe ? 'Consultando...' : 'Consultar Valor'}
                         </button>
                     </form>
 
                     {fipeResult && (
-                        <div className="mt-4 p-3 bg-purple-50 rounded-lg border border-purple-100 animate-fade-in-up">
-                            <p className="text-xs text-purple-600 font-bold uppercase mb-1">Preço Médio ({fipeResult.anoModelo})</p>
+                        <div className="mt-4 p-3 bg-cyan-50 rounded-lg border border-cyan-100 animate-fade-in-up">
+                            <p className="text-xs text-cyan-600 font-bold uppercase mb-1">Preço Médio ({fipeResult.anoModelo})</p>
                             <p className="text-2xl font-bold text-gray-900">{fipeResult.valor}</p>
                             <p className="text-xs text-gray-500 mt-1">Ref: {fipeResult.mesReferencia}</p>
 
-                            <div className="mt-3 pt-3 border-t border-purple-100 flex justify-between text-xs text-gray-500">
+                            <div className="mt-3 pt-3 border-t border-cyan-100 flex justify-between text-xs text-gray-500">
                                 <span>Cód. Fipe: {fipeResult.codigoFipe}</span>
                                 <span>{fipeResult.combustivel}</span>
                             </div>
@@ -139,7 +139,7 @@ export function ConsultasPage() {
                 {/* 2. Hub de Débitos (Detran) */}
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="p-3 bg-blue-100 text-blue-600 rounded-xl">
+                        <div className="p-3 bg-teal-100 text-teal-600 rounded-xl">
                             <Car className="w-6 h-6" />
                         </div>
                         <h3 className="font-bold text-gray-900">Consulta de Débitos</h3>
@@ -165,7 +165,7 @@ export function ConsultasPage() {
                             href={(DETRAN_LINKS as any)[selectedState]}
                             target="_blank"
                             rel="noreferrer"
-                            className="flex items-center justify-center gap-2 w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20"
+                            className="flex items-center justify-center gap-2 w-full py-3 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 transition-colors shadow-lg shadow-teal-600/20"
                         >
                             <ExternalLink className="w-4 h-4" />
                             Acessar Detran {selectedState}
@@ -179,7 +179,7 @@ export function ConsultasPage() {
                         Parceiro
                     </div>
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="p-3 bg-green-100 text-green-600 rounded-xl">
+                        <div className="p-3 bg-cyan-100 text-cyan-600 rounded-xl">
                             <ShieldCheck className="w-6 h-6" />
                         </div>
                         <h3 className="font-bold text-gray-900">Vistoria Cautelar</h3>
@@ -192,17 +192,17 @@ export function ConsultasPage() {
 
                         <div className="space-y-2">
                             <div className="flex items-center gap-2 text-sm text-gray-600">
-                                <CheckCircle className="w-4 h-4 text-green-500" /> Análise Estrutural
+                                <CheckCircle className="w-4 h-4 text-cyan-500" /> Análise Estrutural
                             </div>
                             <div className="flex items-center gap-2 text-sm text-gray-600">
-                                <CheckCircle className="w-4 h-4 text-green-500" /> Histórico de Leilão
+                                <CheckCircle className="w-4 h-4 text-cyan-500" /> Histórico de Leilão
                             </div>
                             <div className="flex items-center gap-2 text-sm text-gray-600">
-                                <CheckCircle className="w-4 h-4 text-green-500" /> Identificação de Motor
+                                <CheckCircle className="w-4 h-4 text-cyan-500" /> Identificação de Motor
                             </div>
                         </div>
 
-                        <button className="w-full py-2 border border-green-600 text-green-700 font-bold rounded-lg hover:bg-green-50 transition-colors">
+                        <button className="w-full py-2 border border-cyan-600 text-cyan-700 font-bold rounded-lg hover:bg-cyan-50 transition-colors">
                             Solicitar Vistoria
                         </button>
                     </div>

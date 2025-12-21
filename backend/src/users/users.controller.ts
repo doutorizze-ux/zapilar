@@ -5,7 +5,7 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from './users.service';
-import { VehiclesService } from '../vehicles/vehicles.service';
+import { PropertiesService } from '../properties/properties.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -17,7 +17,7 @@ import { PlansService } from '../plans/plans.service';
 export class UsersController {
     constructor(
         private readonly usersService: UsersService,
-        private readonly vehiclesService: VehiclesService,
+        private readonly propertiesService: PropertiesService,
         private readonly plansService: PlansService
     ) { }
 
@@ -110,12 +110,11 @@ export class UsersController {
             }
         }
 
-        // Allow Admin bypass or specific debug scenarios if needed, but per request:
         if (!allowSite) {
             throw new Error('Store website not active for this plan.');
         }
 
-        const vehicles = await this.vehiclesService.findAll(user.id);
+        const properties = await this.propertiesService.findAll(user.id);
 
         return {
             store: {
@@ -128,7 +127,7 @@ export class UsersController {
                 address: user.address,
                 description: user.storeDescription,
             },
-            vehicles: vehicles
+            properties: properties
         };
     }
 

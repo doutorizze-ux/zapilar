@@ -69,7 +69,7 @@ export function CreateLeadModal({ isOpen, onClose, onSuccess }: CreateLeadModalP
                             name="name"
                             value={formData.name}
                             onChange={handleChange}
-                            className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none"
+                            className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none"
                             placeholder="Ex: João Silva"
                         />
                     </div>
@@ -81,7 +81,7 @@ export function CreateLeadModal({ isOpen, onClose, onSuccess }: CreateLeadModalP
                             name="phone"
                             value={formData.phone}
                             onChange={handleChange}
-                            className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none"
+                            className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none"
                             placeholder="Ex: 5511999999999"
                         />
                         <p className="text-xs text-gray-400 mt-1">Digite apenas números com DDD (ex: 55629...)</p>
@@ -94,8 +94,8 @@ export function CreateLeadModal({ isOpen, onClose, onSuccess }: CreateLeadModalP
                             value={formData.description}
                             onChange={handleChange}
                             rows={3}
-                            className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none"
-                            placeholder="Interesse em Corolla 2023..."
+                            className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none"
+                            placeholder="Interesse em Apartamento Centro..."
                         />
                     </div>
 
@@ -103,7 +103,7 @@ export function CreateLeadModal({ isOpen, onClose, onSuccess }: CreateLeadModalP
                         <button type="button" onClick={onClose} className="px-5 py-2 text-gray-700 font-medium hover:bg-gray-50 rounded-xl transition-colors">
                             Cancelar
                         </button>
-                        <button type="submit" disabled={loading} className="px-5 py-2 bg-green-600 text-white font-medium rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50">
+                        <button type="submit" disabled={loading} className="px-5 py-2 bg-cyan-600 text-white font-medium rounded-xl hover:bg-cyan-700 transition-colors disabled:opacity-50">
                             {loading ? 'Salvando...' : 'Criar Lead'}
                         </button>
                     </div>

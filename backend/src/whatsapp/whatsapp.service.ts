@@ -16,7 +16,7 @@ import makeWASocket, {
 import pino from 'pino';
 
 import { ChatMessage } from './entities/chat-message.entity';
-import { VehiclesService } from '../vehicles/vehicles.service';
+import { PropertiesService } from '../properties/properties.service';
 import { UsersService } from '../users/users.service';
 import { FaqService } from '../faq/faq.service';
 import { LeadsService } from '../leads/leads.service';
@@ -29,7 +29,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
     private connectionStatuses: Map<string, 'CONNECTED' | 'DISCONNECTED' | 'QR_READY' | 'CONNECTING'> = new Map();
 
     // State Machine for Chat
-    private userStates: Map<string, { mode: 'MENU' | 'WAITING_CAR_NAME' | 'WAITING_FAQ' | 'HANDOVER' }> = new Map();
+    private userStates: Map<string, { mode: 'MENU' | 'WAITING_PROPERTY_NAME' | 'WAITING_FAQ' | 'HANDOVER' }> = new Map();
     // Pause List
     private pausedUsers: Set<string> = new Set();
 
@@ -39,7 +39,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
     constructor(
         @InjectRepository(ChatMessage)
         private chatRepository: Repository<ChatMessage>,
-        private vehiclesService: VehiclesService,
+        private propertiesService: PropertiesService,
         private configService: ConfigService,
         private usersService: UsersService,
         private faqService: FaqService,
@@ -138,7 +138,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
                 creds: state.creds,
                 keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' }) as any),
             },
-            browser: ['ZapCar Bot', 'Chrome', '1.0.0'], // More standard browser signature
+            browser: ['ZapImóveis Bot', 'Chrome', '1.0.0'], // More standard browser signature
             connectTimeoutMs: 20000, // Faster timeout to fail fast and retry
             retryRequestDelayMs: 2000,
             keepAliveIntervalMs: 30000, // Prevent timeouts
@@ -314,7 +314,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
 
         // Retrieve Store Name
         const user = await this.usersService.findById(userId);
-        const storeName = user?.storeName || "Loja";
+        const storeName = user?.storeName || "Imobiliária";
 
         const stateKey = `${userId}:${jid}`;
         const currentState = this.userStates.get(stateKey)?.mode || 'MENU';
@@ -342,17 +342,17 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
                 const isBusinessHours = hour >= 7 && hour < 18;
 
                 if (isBusinessHours) {
-                    await this.sendMessage(userId, jid, "Certo 👍. Um atendente foi notificado e pode te responder em até 3 minutos.\n\nCaso queira retornar para o menu, digite *Menu* ou *Voltar*.");
+                    await this.sendMessage(userId, jid, "Certo 👍. Um corretor foi notificado e pode te responder em até 3 minutos.\n\nCaso queira retornar para o menu, digite *Menu* ou *Voltar*.");
                 } else {
-                    await this.sendMessage(userId, jid, "Nosso atendimento humano funciona das *07:00 às 18:00*. 🕒\n\nComo estamos fora do expediente, você pode deixar sua mensagem agora que responderemos assim que retornarmos.\n\nOu digite *Menu* para continuar vendo carros com nosso sistema automático 24h! 🤖");
+                    await this.sendMessage(userId, jid, "Nosso atendimento humano funciona das *07:00 às 18:00*. 🕒\n\nComo estamos fora do expediente, você pode deixar sua mensagem agora que responderemos assim que retornarmos.\n\nOu digite *Menu* para continuar vendo imóveis com nosso sistema automático 24h! 🤖");
                 }
 
                 this.userStates.set(stateKey, { mode: 'HANDOVER' });
             } else if (msg === '3' || msg === 'btn_faq') {
                 this.userStates.set(stateKey, { mode: 'WAITING_FAQ' });
-                await this.sendMessage(userId, jid, "Envie sua dúvida e eu responderei com base nas informações da loja 😉");
+                await this.sendMessage(userId, jid, "Envie sua dúvida e eu responderei com base nas informações da imobiliária 😉");
             } else {
-                await this.handleCarSearch(userId, jid, msg, storeName);
+                await this.handlePropertySearch(userId, jid, msg, storeName);
             }
         } else if (currentState === 'WAITING_FAQ') {
             const answer = await this.faqService.findMatch(userId, msg);
@@ -374,20 +374,20 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         if (!to.includes('@')) to = `${to.replace(/\D/g, '')}@s.whatsapp.net`;
 
         const menu = `👋 Olá! Bem-vindo(a) à *${storeName}*
-🚗 _Seu novo carro te espera aqui!_
+🏠 _Seu novo imóvel te espera aqui!_
 
 Sou seu assistente virtual. Para começar, você pode:
-🔎 *Digitar o nome do carro* (ex: Civic, Gol)
+🔎 *Digitar o que procura* (ex: Apartamento Centro, Casa 3 quartos)
 
 ━━━━━━━━━━━━━━━━━━━━
 🔻 *OU SELECIONE UMA OPÇÃO:*
 ━━━━━━━━━━━━━━━━━━━━
 
-2️⃣  *Falar com Consultor*
+2️⃣  *Falar com Corretor*
      _Atendimento humano personalizado_
 
 3️⃣  *Dúvidas Frequentes*
-     _Localização, financiamento, troca_
+     _Localização, financiamento, visitas_
 
 ━━━━━━━━━━━━━━━━━━━━
 🕐 _Atendimento 24h_`;
@@ -400,8 +400,8 @@ Sou seu assistente virtual. Para começar, você pode:
         }
     }
 
-    private async handleCarSearch(userId: string, jid: string, query: string, storeName: string) {
-        const allVehicles = await this.vehiclesService.findAll(userId);
+    private async handlePropertySearch(userId: string, jid: string, query: string, storeName: string) {
+        const allProperties = await this.propertiesService.findAll(userId);
         let found: any[] = [];
 
         if (query) {
@@ -409,54 +409,55 @@ Sou seu assistente virtual. Para começar, você pode:
             const qNormalized = query.toLowerCase().trim();
             const tokens = qNormalized.split(/\s+/).filter(t => t.length > 1); // Ignore single chars
 
-            const scored = allVehicles.map(v => {
+            const scored = allProperties.map(p => {
                 let score = 0;
-                const vName = (v.name || '').toLowerCase();
-                const vModel = (v.model || '').toLowerCase();
-                const vBrand = (v.brand || '').toLowerCase();
+                const pTitle = (p.title || '').toLowerCase();
+                const pType = (p.type || '').toLowerCase();
+                const pLocation = (p.location || '').toLowerCase();
+                const pDesc = (p.description || '').toLowerCase();
 
                 // Construct a broad search string
-                // Note: We prioritize matches in Model/Brand significantly over just 'appearing' in the description
-                const searchStr = `${vName} ${vBrand} ${vModel} ${v.year || ''} ${v.color || ''}`;
+                const searchStr = `${pTitle} ${pType} ${pLocation} ${p.bedrooms} quartos ${p.area}m`;
 
                 for (const token of tokens) {
                     // Broader Match in complete string
                     if (searchStr.includes(token)) score += 1;
 
-                    // Exact Word Match (Prevents "Gol" matching "Golf" partially)
+                    // Exact Word Match
                     const regex = new RegExp(`\\b${token}\\b`, 'i');
-                    if (regex.test(searchStr)) score += 3; // Boosted exact match
+                    if (regex.test(searchStr)) score += 3;
 
-                    // High value match on Model/Brand specifically
-                    if (vModel.includes(token)) score += 2;
-                    if (vBrand.includes(token)) score += 1;
+                    // High value match on Type/Location
+                    if (pType.includes(token)) score += 2;
+                    if (pLocation.includes(token)) score += 2;
+                    // Match bedroom count (e.g. "3")
+                    if (!isNaN(Number(token)) && p.bedrooms === Number(token)) score += 2;
                 }
 
-                return { car: v, score };
+                return { property: p, score };
             });
 
             // Filter and sort
-            // Threshold: score > 1 to avoid very weak matches
             found = scored
-                .filter(item => item.score > 1)
+                .filter(item => item.score > 0) // Allows lower threshold for properties
                 .sort((a, b) => b.score - a.score)
-                .map(item => item.car);
+                .map(item => item.property);
         }
 
         if (found.length > 0) {
             const limit = 3;
             // Take top 3
-            const cars: any[] = found.slice(0, limit);
+            const properties: any[] = found.slice(0, limit);
 
-            // Mark interest in the top car
+            // Mark interest in the top property
             try {
-                await this.leadsService.setInterest(userId, jid, `${cars[0].brand} ${cars[0].name}`);
+                await this.leadsService.setInterest(userId, jid, `${properties[0].type} - ${properties[0].title}`);
             } catch (e) { }
 
-            for (const car of cars) {
+            for (const prop of properties) {
                 // Send Images
-                if (car.images && car.images.length > 0) {
-                    for (const img of car.images) {
+                if (prop.images && prop.images.length > 0) {
+                    for (const img of prop.images) {
                         await this.sendImage(userId, jid, this.resolveImageUrl(img));
                         // Small delay between images
                         await new Promise(r => setTimeout(r, 600));
@@ -464,25 +465,28 @@ Sou seu assistente virtual. Para começar, você pode:
                 }
 
                 // Send Details
-                const price = Number(car.price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                const optionals: string[] = [];
-                if (car.trava) optionals.push('Trava');
-                if (car.alarme) optionals.push('Alarme');
-                if (car.som) optionals.push('Som');
-                if (car.teto) optionals.push('Teto Solar');
-                if (car.banco_couro) optionals.push('Banco de Couro');
+                const price = Number(prop.price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                const features: string[] = [];
+                if (prop.pool) features.push('Piscina');
+                if (prop.security) features.push('Segurança 24h');
+                if (prop.elevator) features.push('Elevador');
+                if (prop.furnished) features.push('Mobiliado');
 
-                let specs = `🚘 *${car.brand} ${car.name}*
-📝 *Versão:* ${car.model || ''}
-📅 *Ano:* ${car.year}
-🛣️ *KM:* ${car.km}
-🎨 *Cor:* ${car.color || 'Não inf.'}
-💰 *R$ ${price}*
-⚙️ *Especificações:*
-${car.transmission || ''} | ${car.fuel || ''}`;
+                let specs = `🏠 *${prop.title}*
+📍 *Local:* ${prop.location || ''}
+📐 *Área:* ${prop.area} m²
+🛏️ *Quartos:* ${prop.bedrooms}
+🛁 *Banheiros:* ${prop.bathrooms}
+🚗 *Vagas:* ${prop.parkingSpaces}
+💰 *R$ ${price}*`;
 
-                if (optionals.length > 0) {
-                    specs += `\n\n✨ *Opcionais:* \n${optionals.join(' | ')}`;
+                if (features.length > 0) {
+                    specs += `\n\n✨ *Destaques:* \n${features.join(' | ')}`;
+                }
+
+                if (prop.description) {
+                    const shortDesc = prop.description.length > 100 ? prop.description.substring(0, 100) + '...' : prop.description;
+                    specs += `\n\n📝 ${shortDesc}`;
                 }
 
                 await this.sendMessage(userId, jid, specs);
@@ -491,7 +495,7 @@ ${car.transmission || ''} | ${car.fuel || ''}`;
             // Send Menu
             await this.sendMainMenu(userId, jid, storeName);
         } else {
-            await this.sendMessage(userId, jid, "😕 Não encontrei nenhum carro com essas características. Tente buscar apenas pelo *modelo* ou *marca*.");
+            await this.sendMessage(userId, jid, "😕 Não encontrei nenhum imóvel com essas características. Tente buscar por *bairro* ou *tipo* (ex: Casa, Apartamento).");
             await this.sendMainMenu(userId, jid, storeName);
         }
     }

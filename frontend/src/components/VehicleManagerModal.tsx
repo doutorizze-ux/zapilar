@@ -1,13 +1,12 @@
-import { X, Upload, FileText, Share2, Copy, Check, Instagram, Car, FileCheck } from 'lucide-react';
+import { X, Upload, FileText, Share2, Copy, Check, Instagram, Home, FileCheck, Bed, Bath, Car as CarIcon, Maximize } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
 
-const CAR_BRANDS = [
-    'Toyota', 'Honda', 'Hyundai', 'Volkswagen', 'Chevrolet', 'Ford', 'Fiat', 'Jeep', 'Renault', 'Nissan',
-    'Mitsubishi', 'BMW', 'Mercedes-Benz', 'Audi', 'Kia', 'Peugeot', 'Citroën', 'Land Rover', 'Volvo', 'Outra'
+const PROPERTY_TYPES = [
+    'Casa', 'Apartamento', 'Terreno', 'Fazenda', 'Comercial', 'Outro'
 ];
 
-interface VehicleManagerModalProps {
+interface PropertyManagerModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
@@ -16,7 +15,7 @@ interface VehicleManagerModalProps {
 
 type Tab = 'details' | 'documents' | 'marketing';
 
-export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }: VehicleManagerModalProps) {
+export function PropertyManagerModal({ isOpen, onClose, onSuccess, initialData }: PropertyManagerModalProps) {
     const [activeTab, setActiveTab] = useState<Tab>('details');
     const [loading, setLoading] = useState(false);
 
@@ -25,10 +24,19 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
     const [existingImages, setExistingImages] = useState<string[]>([]);
     const [docFiles, setDocFiles] = useState<File[]>([]);
     const [formData, setFormData] = useState({
-        brand: 'Toyota', name: '', model: '', year: new Date().getFullYear(),
-        price: '', category: 'Seminovo', km: 0, fuel: 'Flex',
-        transmission: 'Automático', color: '', description: '', location: '',
-        trava: false, alarme: false, som: false, teto: false, banco_couro: false,
+        title: '',
+        type: 'Casa',
+        price: '',
+        description: '',
+        location: '',
+        area: 0,
+        bedrooms: 0,
+        bathrooms: 0,
+        parkingSpaces: 0,
+        pool: false,
+        security: false,
+        elevator: false,
+        furnished: false,
     });
 
     // Marketing Data
@@ -39,23 +47,19 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
     useEffect(() => {
         if (initialData) {
             setFormData({
-                brand: initialData.brand,
-                name: initialData.name,
-                model: initialData.model || '',
-                year: initialData.year,
+                title: initialData.title || initialData.name || '', // handling potential migration or old field
+                type: initialData.type || 'Casa',
                 price: initialData.price ? initialData.price.toString().replace('.', ',') : '',
-                category: initialData.category,
-                km: initialData.km,
-                fuel: initialData.fuel || 'Flex',
-                transmission: initialData.transmission || 'Automático',
-                color: initialData.color || '',
                 description: initialData.description || '',
                 location: initialData.location || '',
-                trava: initialData.trava || false,
-                alarme: initialData.alarme || false,
-                som: initialData.som || false,
-                teto: initialData.teto || false,
-                banco_couro: initialData.banco_couro || false,
+                area: initialData.area || 0,
+                bedrooms: initialData.bedrooms || 0,
+                bathrooms: initialData.bathrooms || 0,
+                parkingSpaces: initialData.parkingSpaces || 0,
+                pool: initialData.pool || false,
+                security: initialData.security || false,
+                elevator: initialData.elevator || false,
+                furnished: initialData.furnished || false,
             });
             setExistingImages(initialData.images || []);
             setDocFiles([]); // Reset pending docs
@@ -63,10 +67,9 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
             generateMarketingText();
         } else {
             setFormData({
-                brand: 'Toyota', name: '', model: '', year: new Date().getFullYear(),
-                price: '', category: 'Seminovo', km: 0, fuel: 'Flex',
-                transmission: 'Automático', color: '', description: '', location: '',
-                trava: false, alarme: false, som: false, teto: false, banco_couro: false,
+                title: '', type: 'Casa', price: '', description: '', location: '',
+                area: 0, bedrooms: 0, bathrooms: 0, parkingSpaces: 0,
+                pool: false, security: false, elevator: false, furnished: false,
             });
             setExistingImages([]);
             setDocFiles([]);
@@ -101,7 +104,7 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             const currentCount = existingImages.length + imageFiles.length;
-            const remainingSlots = 5 - currentCount;
+            const remainingSlots = 10 - currentCount; // Increased to 10 for properties
 
             if (remainingSlots <= 0) return;
 
@@ -136,7 +139,7 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
         try {
             const uploadData = new FormData();
             docFiles.forEach(file => uploadData.append('files', file));
-            const res = await fetch(`${API_URL}/vehicles/${initialData.id}/upload-doc`, {
+            const res = await fetch(`${API_URL}/properties/${initialData.id}/upload-doc`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` },
                 body: uploadData
@@ -165,42 +168,44 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
             const payload = {
                 ...formData,
                 price: formatMoneyRequest(formData.price),
-                year: Number(formData.year),
-                km: Number(formData.km),
-                images: initialData ? existingImages : [] // Use modified list if editing
+                area: Number(formData.area),
+                bedrooms: Number(formData.bedrooms),
+                bathrooms: Number(formData.bathrooms),
+                parkingSpaces: Number(formData.parkingSpaces),
+                images: initialData ? existingImages : []
             };
 
             let response;
-            let vehicleId;
+            let propertyId;
 
             if (initialData) {
-                response = await fetch(`${API_URL}/vehicles/${initialData.id}`, {
+                response = await fetch(`${API_URL}/properties/${initialData.id}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify(payload),
                 });
-                vehicleId = initialData.id;
+                propertyId = initialData.id;
             } else {
-                response = await fetch(`${API_URL}/vehicles`, {
+                response = await fetch(`${API_URL}/properties`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify(payload),
                 });
                 const data = await response.json();
-                vehicleId = data.id;
+                propertyId = data.id;
             }
 
-            if (response.ok && vehicleId) {
+            if (response.ok && propertyId) {
                 if (imageFiles.length > 0) {
                     const uploadData = new FormData();
                     imageFiles.forEach(file => uploadData.append('files', file));
-                    await fetch(`${API_URL}/vehicles/${vehicleId}/upload`, { method: 'POST', body: uploadData });
+                    await fetch(`${API_URL}/properties/${propertyId}/upload`, { method: 'POST', body: uploadData });
                 }
                 onSuccess();
-                if (!initialData) onClose(); // Close on create, stay on edit
-                else alert('Veículo atualizado!');
+                if (!initialData) onClose();
+                else alert('Imóvel atualizado!');
             } else {
-                alert('Erro ao salvar veículo');
+                alert('Erro ao salvar imóvel');
             }
         } catch (error) {
             console.error(error);
@@ -212,24 +217,25 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
 
     // --- Marketing Generator ---
     const generateMarketingText = () => {
-        if (!initialData && !formData.name) return;
+        if (!initialData && !formData.title) return;
         const data = initialData || formData;
-        const text = `🔥 ${data.brand} ${data.name} ${data.model} - Oportunidade!
+        const text = `🏡 ${data.title} - ${data.type}
+        
+📍 ${data.location}
 
-📅 Ano: ${data.year}
-⚙️ Motor: ${data.fuel}
-🕹 Câmbio: ${data.transmission || 'Automático'}
-🎨 Cor: ${data.color || 'Não informada'}
-🛣 KM: ${data.km}km
+📐 Área: ${data.area}m²
+🛏 Quartos: ${data.bedrooms}
+🚿 Banheiros: ${data.bathrooms}
+🚗 Vagas: ${data.parkingSpaces}
 
-✅ Completo e Revisado!
-${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}${data.som ? '✅ Som Multimídia\n' : ''}${data.banco_couro ? '✅ Bancos de Couro\n' : ''}
+✨ Destaques:
+${data.pool ? '✅ Piscina\n' : ''}${data.security ? '✅ Segurança 24h\n' : ''}${data.elevator ? '✅ Elevador\n' : ''}${data.furnished ? '✅ Mobiliado\n' : ''}
 💰 VALOR: R$ ${data.price}
 
-📍 Venha conferir pessoalmente! 
-📲 Mande uma mensagem agora pra saber mais.
+Aproveite essa oportunidade! 
+📲 Mande uma mensagem para mais informações.
 
-#${data.brand.toLowerCase()} #${data.name.toLowerCase().replace(/\s/g, '')} #carros #seminovos #oportunidade #vendas`;
+#imoveis #venda #casa #apartamento #oportunidade #${data.location.split(',')[0].trim().toLowerCase().replace(' ', '')}`;
         setMarketingText(text);
     };
 
@@ -249,12 +255,12 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-white z-10">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-green-100 rounded-lg text-green-600">
-                            <Car className="w-6 h-6" />
+                        <div className="p-2 bg-cyan-100 rounded-lg text-cyan-600">
+                            <Home className="w-6 h-6" />
                         </div>
                         <div>
-                            <h3 className="text-xl font-bold text-gray-900">{initialData ? formData.name : 'Novo Veículo'}</h3>
-                            <p className="text-xs text-gray-500 font-medium tracking-wide uppercase">Gerenciador Inteligente</p>
+                            <h3 className="text-xl font-bold text-gray-900">{initialData ? formData.title : 'Novo Imóvel'}</h3>
+                            <p className="text-xs text-gray-500 font-medium tracking-wide uppercase">Gerenciador Imobiliário</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
@@ -266,21 +272,21 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                 <div className="flex border-b border-gray-100 px-6 gap-6 bg-gray-50/50">
                     <button
                         onClick={() => setActiveTab('details')}
-                        className={`py-4 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${activeTab === 'details' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                        className={`py-4 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${activeTab === 'details' ? 'border-cyan-500 text-cyan-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                     >
-                        <Car className="w-4 h-4" /> Detalhes do Veículo
+                        <Home className="w-4 h-4" /> Detalhes
                     </button>
                     <button
                         onClick={() => setActiveTab('documents')}
-                        className={`py-4 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${activeTab === 'documents' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                        className={`py-4 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${activeTab === 'documents' ? 'border-teal-500 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                     >
-                        <FileCheck className="w-4 h-4" /> Documentação <span className="text-[10px] bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded ml-1">Beta</span>
+                        <FileCheck className="w-4 h-4" /> Documentação
                     </button>
                     <button
                         onClick={() => { setActiveTab('marketing'); generateMarketingText(); }}
-                        className={`py-4 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${activeTab === 'marketing' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                        className={`py-4 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${activeTab === 'marketing' ? 'border-purple-500 text-purple-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                     >
-                        <Share2 className="w-4 h-4" /> Marketing & Anúncios
+                        <Share2 className="w-4 h-4" /> Marketing
                     </button>
                 </div>
 
@@ -292,7 +298,7 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                         <form onSubmit={handleSubmit} className="space-y-6">
                             {/* Image Upload Area */}
                             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                                <h4 className="font-bold text-gray-800 mb-4 flex items-center gap-2"><Upload className="w-4 h-4" /> Fotos da Galeria</h4>
+                                <h4 className="font-bold text-gray-800 mb-4 flex items-center gap-2"><Upload className="w-4 h-4" /> Galeria de Fotos</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                                     {/* Existing Images */}
                                     {existingImages.map((img: string, idx: number) => (
@@ -303,13 +309,13 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                     ))}
 
                                     {imageFiles.map((file, idx) => (
-                                        <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-green-200 ring-2 ring-green-100 group">
+                                        <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-cyan-200 ring-2 ring-cyan-100 group">
                                             <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" />
                                             <button type="button" onClick={() => removeFile(idx)} className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-3 h-3" /></button>
                                         </div>
                                     ))}
 
-                                    {(existingImages.length + imageFiles.length) < 5 && (
+                                    {(existingImages.length + imageFiles.length) < 10 && (
                                         <label className="border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center text-center aspect-square hover:bg-gray-50 cursor-pointer transition-colors relative">
                                             <Upload className="w-6 h-6 text-gray-400 mb-2" />
                                             <span className="text-xs text-gray-500 font-medium">Adicionar Foto</span>
@@ -318,44 +324,55 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                     )}
                                 </div>
                                 <p className="text-xs text-gray-400 mt-2 text-right">
-                                    {existingImages.length + imageFiles.length} / 5 fotos
+                                    {existingImages.length + imageFiles.length} / 10 fotos
                                 </p>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-4">
                                     <h4 className="font-bold text-gray-800 border-b pb-2">Dados Principais</h4>
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Título do Anúncio</label>
+                                        <input required name="title" value={formData.title} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg" placeholder="Ex: Casa Linda no Centro" />
+                                    </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="text-xs font-bold text-gray-500 uppercase">Marca</label>
-                                            <select name="brand" value={formData.brand} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg"><option value="Toyota">Toyota</option>{CAR_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}</select>
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Tipo</label>
+                                            <select name="type" value={formData.type} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg">
+                                                {PROPERTY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                                            </select>
                                         </div>
                                         <div>
-                                            <label className="text-xs font-bold text-gray-500 uppercase">Modelo/Versão</label>
-                                            <input name="name" value={formData.name} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg" placeholder="Ex: Corolla XEi" />
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Preço (R$)</label>
+                                            <input name="price" value={formData.price} onChange={handlePriceChange} className="w-full mt-1 p-2 border rounded-lg font-bold text-cyan-700" placeholder="0,00" />
                                         </div>
                                     </div>
-                                    <div className="grid grid-cols-3 gap-4">
-                                        <div><label className="text-xs font-bold text-gray-500 uppercase">Ano</label><input type="number" name="year" value={formData.year} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg" /></div>
-                                        <div><label className="text-xs font-bold text-gray-500 uppercase">KM</label><input type="number" name="km" value={formData.km} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg" /></div>
-                                        <div><label className="text-xs font-bold text-gray-500 uppercase">Cor</label><input name="color" value={formData.color} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg" /></div>
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Localização</label>
+                                        <input name="location" value={formData.location} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg" placeholder="Endereço, Bairro..." />
                                     </div>
-                                    <div><label className="text-xs font-bold text-gray-500 uppercase">Preço (R$)</label><input name="price" value={formData.price} onChange={handlePriceChange} className="w-full mt-1 p-2 border rounded-lg font-bold text-green-700" placeholder="0,00" /></div>
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Descrição</label>
+                                        <textarea name="description" value={formData.description} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg" rows={3} />
+                                    </div>
                                 </div>
 
                                 <div className="space-y-4">
-                                    <h4 className="font-bold text-gray-800 border-b pb-2">Especificações</h4>
+                                    <h4 className="font-bold text-gray-800 border-b pb-2">Características</h4>
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div><label className="text-xs font-bold text-gray-500 uppercase">Câmbio</label><input name="transmission" value={formData.transmission} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg" /></div>
-                                        <div><label className="text-xs font-bold text-gray-500 uppercase">Combustível</label><input name="fuel" value={formData.fuel} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg" /></div>
+                                        <div><label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1"><Maximize className="w-3 h-3" /> Área (m²)</label><input type="number" name="area" value={formData.area} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg" /></div>
+                                        <div><label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1"><Bed className="w-3 h-3" /> Quartos</label><input type="number" name="bedrooms" value={formData.bedrooms} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg" /></div>
+                                        <div><label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1"><Bath className="w-3 h-3" /> Banheiros</label><input type="number" name="bathrooms" value={formData.bathrooms} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg" /></div>
+                                        <div><label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1"><CarIcon className="w-3 h-3" /> Vagas</label><input type="number" name="parkingSpaces" value={formData.parkingSpaces} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg" /></div>
                                     </div>
-                                    <div><label className="text-xs font-bold text-gray-500 uppercase">Opcionais</label>
+
+                                    <div><label className="text-xs font-bold text-gray-500 uppercase">Comodidades</label>
                                         <div className="flex flex-wrap gap-3 mt-2">
                                             {[
-                                                { k: 'trava', l: 'Trava' }, { k: 'alarme', l: 'Alarme' },
-                                                { k: 'som', l: 'Som' }, { k: 'teto', l: 'Teto Solar' }, { k: 'banco_couro', l: 'Couro' }
+                                                { k: 'pool', l: 'Piscina' }, { k: 'security', l: 'Segurança/Portaria' },
+                                                { k: 'elevator', l: 'Elevador' }, { k: 'furnished', l: 'Mobiliado' }
                                             ].map(opt => (
-                                                <label key={opt.k} className="flex items-center gap-1.5 cursor-pointer bg-white border px-2 py-1 rounded-md hover:bg-gray-50"><input type="checkbox" name={opt.k} checked={(formData as any)[opt.k]} onChange={handleCheckboxChange} className="rounded text-green-600" /><span className="text-xs">{opt.l}</span></label>
+                                                <label key={opt.k} className="flex items-center gap-1.5 cursor-pointer bg-white border px-2 py-1 rounded-md hover:bg-gray-50"><input type="checkbox" name={opt.k} checked={(formData as any)[opt.k]} onChange={handleCheckboxChange} className="rounded text-cyan-600" /><span className="text-xs">{opt.l}</span></label>
                                             ))}
                                         </div>
                                     </div>
@@ -364,24 +381,22 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
 
                             <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
                                 <button type="button" onClick={onClose} className="px-6 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition-colors">Cancelar</button>
-                                <button type="submit" disabled={loading} className="px-6 py-2 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-colors shadow-lg shadow-green-600/20">{loading ? 'Salvando...' : 'Salvar Alterações'}</button>
+                                <button type="submit" disabled={loading} className="px-6 py-2 bg-cyan-600 text-white font-bold rounded-xl hover:bg-cyan-700 transition-colors shadow-lg shadow-cyan-600/20">{loading ? 'Salvando...' : 'Salvar Imóvel'}</button>
                             </div>
                         </form>
                     )}
 
-                    {/* --- DETAILS TAB --- */}
+                    {/* --- DOCUMENTS TAB --- */}
                     {activeTab === 'documents' && (
                         <div className="space-y-6">
-                            {/* Header / Intro */}
-                            <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6 flex items-start gap-4">
-                                <div className="p-3 bg-blue-100 text-blue-600 rounded-xl">
+                            <div className="bg-teal-50 border border-teal-100 rounded-2xl p-6 flex items-start gap-4">
+                                <div className="p-3 bg-teal-100 text-teal-600 rounded-xl">
                                     <FileText className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-blue-900 text-lg">Central de Documentos</h3>
-                                    <p className="text-blue-700/80 text-sm mt-1">
-                                        Armazene aqui contratos, CRLV, laudos e manuais deste veículo.
-                                        Arquivos suportados: PDF e Imagens.
+                                    <h3 className="font-bold text-teal-900 text-lg">Documentação do Imóvel</h3>
+                                    <p className="text-teal-700/80 text-sm mt-1">
+                                        Armazene escrituras, contratos, IPTU e plantas.
                                     </p>
                                 </div>
                             </div>
@@ -399,7 +414,7 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                                     </div>
                                                     <div>
                                                         <p className="font-medium text-gray-900 line-clamp-1">{doc.name}</p>
-                                                        <p className="text-xs text-gray-500">{new Date(doc.date).toLocaleDateString()} • {doc.type?.split('/')[1]?.toUpperCase() || 'ARQUIVO'}</p>
+                                                        <p className="text-xs text-gray-500">{new Date(doc.date).toLocaleDateString()}</p>
                                                     </div>
                                                 </div>
                                                 <a
@@ -407,7 +422,7 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     download={doc.name}
-                                                    className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                                                    className="px-4 py-2 text-sm font-medium text-teal-600 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors"
                                                 >
                                                     Baixar
                                                 </a>
@@ -419,34 +434,30 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
 
                             {/* Upload New Documents */}
                             <div className="border-t border-gray-100 pt-6">
-                                <h4 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Adicionar Novos Documentos</h4>
-
+                                <h4 className="font-bold text-gray-800 mb-3 text-sm uppercase tracking-wide">Adicionar Documentos</h4>
                                 {docFiles.length > 0 && (
                                     <div className="grid gap-2 mb-4">
                                         {docFiles.map((file, i) => (
-                                            <div key={i} className="flex items-center justify-between p-3 bg-green-50 border border-green-100 rounded-lg">
-                                                <span className="text-sm text-green-800 font-medium truncate">{file.name}</span>
+                                            <div key={i} className="flex items-center justify-between p-3 bg-cyan-50 border border-cyan-100 rounded-lg">
+                                                <span className="text-sm text-cyan-800 font-medium truncate">{file.name}</span>
                                                 <button onClick={() => removeDocFile(i)} className="text-red-500 hover:text-red-700 p-1"><X className="w-4 h-4" /></button>
                                             </div>
                                         ))}
                                     </div>
                                 )}
-
                                 <div className="flex gap-4">
-                                    <label className="flex-1 border-2 border-dashed border-gray-300 hover:border-blue-400 hover:bg-blue-50 transition-colors rounded-xl h-32 flex flex-col items-center justify-center cursor-pointer group">
-                                        <Upload className="w-8 h-8 text-gray-400 group-hover:text-blue-500 mb-2 transition-colors" />
-                                        <span className="text-gray-500 font-medium group-hover:text-blue-600">Clique para selecionar arquivos</span>
-                                        <span className="text-xs text-gray-400 mt-1">PDF, JPG, PNG (Max 10MB)</span>
+                                    <label className="flex-1 border-2 border-dashed border-gray-300 hover:border-teal-400 hover:bg-teal-50 transition-colors rounded-xl h-32 flex flex-col items-center justify-center cursor-pointer group">
+                                        <Upload className="w-8 h-8 text-gray-400 group-hover:text-teal-500 mb-2 transition-colors" />
+                                        <span className="text-gray-500 font-medium group-hover:text-teal-600">Clique para selecionar arquivos</span>
                                         <input type="file" multiple onChange={handleDocFileChange} className="hidden" accept=".pdf,image/*" />
                                     </label>
                                 </div>
-
                                 {docFiles.length > 0 && (
                                     <div className="mt-4 flex justify-end">
                                         <button
                                             onClick={handleUploadDocs}
                                             disabled={loading}
-                                            className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20 flex items-center gap-2"
+                                            className="px-6 py-3 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 transition-colors shadow-lg shadow-teal-600/20 flex items-center gap-2"
                                         >
                                             {loading ? 'Enviando...' : `Enviar ${docFiles.length} Arquivo(s)`}
                                             <Upload className="w-4 h-4" />
@@ -464,12 +475,11 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                 <div className="flex items-center gap-4 mb-4">
                                     <Instagram className="w-8 h-8" />
                                     <div>
-                                        <h3 className="font-bold text-xl">Gerador de Legenda inteligente</h3>
-                                        <p className="text-white/80 text-sm">Copie o texto abaixo e cole no Instagram ou Facebook.</p>
+                                        <h3 className="font-bold text-xl">Legenda para Redes Sociais</h3>
+                                        <p className="text-white/80 text-sm">Texto gerado automaticamente para seu post.</p>
                                     </div>
                                 </div>
                             </div>
-
                             <div className="relative">
                                 <textarea
                                     value={marketingText}
@@ -481,13 +491,9 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                     className="absolute bottom-4 right-4 bg-gray-900 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-black transition-colors shadow-xl"
                                 >
                                     {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                                    {copied ? 'Copiado!' : 'Copiar Texto'}
+                                    {copied ? 'Copiado!' : 'Copiar'}
                                 </button>
                             </div>
-
-                            <p className="text-center text-xs text-gray-400">
-                                * A imagem oficial para o post será gerada automaticamente na próxima atualização.
-                            </p>
                         </div>
                     )}
 

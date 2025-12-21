@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 60">
+  <!-- Chat Bubble -->
+  <path d="M10,30 C10,10 25,5 55,5 C85,5 100,10 100,30 C100,50 85,55 55,55 C45,55 40,53 35,50 L15,55 L20,45 C12,40 10,35 10,30 Z" fill="#00C2CB" />
+  
+  <!-- House Icon -->
+  <path d="M35,32 L55,15 L75,32 V43 H63 V33 H47 V43 H35 Z" fill="white" stroke="white" stroke-width="2" stroke-linejoin="round" />
+
+  <!-- Text -->
+  <text x="110" y="42" font-family="Arial, sans-serif" font-weight="bold" font-size="38" fill="#333333">zapilar</text>
+</svg>

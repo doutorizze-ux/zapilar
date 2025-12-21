@@ -64,7 +64,7 @@ export function ContactsPage() {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold text-gray-900">Contatos Pessoais</h1>
-                <button onClick={() => openModal()} className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700">
+                <button onClick={() => openModal()} className="bg-cyan-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-cyan-700">
                     <Plus className="w-4 h-4" /> Novo Contato
                 </button>
             </div>
@@ -75,13 +75,13 @@ export function ContactsPage() {
                         <div className="flex justify-between items-start mb-4">
                             <h3 className="font-bold text-lg text-gray-900">{contact.name}</h3>
                             <div className="flex gap-2">
-                                <button onClick={() => openModal(contact)} className="p-1 px-2 text-blue-600 hover:bg-blue-50 rounded-lg"><Edit2 className="w-4 h-4" /></button>
+                                <button onClick={() => openModal(contact)} className="p-1 px-2 text-cyan-600 hover:bg-cyan-50 rounded-lg"><Edit2 className="w-4 h-4" /></button>
                                 <button onClick={() => handleDelete(contact.id)} className="p-1 px-2 text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
                             </div>
                         </div>
                         <div className="space-y-3 text-sm text-gray-600">
-                            {contact.phone && <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-green-600" /> {contact.phone}</div>}
-                            {contact.email && <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-blue-600" /> {contact.email}</div>}
+                            {contact.phone && <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-cyan-600" /> {contact.phone}</div>}
+                            {contact.email && <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-gray-500" /> {contact.email}</div>}
                             {contact.notes && <p className="mt-4 pt-4 border-t border-gray-100 text-gray-500 italic text-xs">{contact.notes}</p>}
                         </div>
                     </div>
@@ -116,7 +116,7 @@ export function ContactsPage() {
                             </div>
                             <div className="flex justify-end gap-2 pt-4">
                                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancelar</button>
-                                <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Salvar</button>
+                                <button type="submit" className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700">Salvar</button>
                             </div>
                         </form>
                     </div>

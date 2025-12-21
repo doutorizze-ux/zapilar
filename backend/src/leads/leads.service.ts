@@ -37,7 +37,7 @@ export class LeadsService {
     }
 
     private checkHotLead(message: string): boolean {
-        const keywords = ["price", "financing", "installments", "entrada", "parcelas", "trade-in", "troca", "how much", "valor"];
+        const keywords = ["price", "financing", "installments", "entrada", "parcelas", "permuta", "troca", "financiamento", "visita", "valor", "preço"];
         const lower = message.toLowerCase();
         return keywords.some(k => lower.includes(k));
     }

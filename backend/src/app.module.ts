@@ -7,7 +7,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { StoresModule } from './stores/stores.module';
-import { VehiclesModule } from './vehicles/vehicles.module';
+import { PropertiesModule } from './properties/properties.module';
 import { PlansModule } from './plans/plans.module';
 import { WhatsappModule } from './whatsapp/whatsapp.module';
 import { AuthModule } from './auth/auth.module';
@@ -44,7 +44,7 @@ import { AgendaModule } from './agenda/agenda.module';
 
     UsersModule,
     StoresModule,
-    VehiclesModule,
+    PropertiesModule,
     PlansModule,
     WhatsappModule,
     AuthModule,
