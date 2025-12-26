@@ -102,28 +102,64 @@ export class PropertiesService {
         return Array.from(cities).sort();
     }
 
-    async getNeighborhoods(userId: string, city: string): Promise<string[]> {
+    async getPropertyTypes(userId: string, city: string): Promise<string[]> {
         const result = await this.propertiesRepository
+            .createQueryBuilder('property')
+            .select('DISTINCT property.type', 'type')
+            .where('property.userId = :userId', { userId })
+            .andWhere('property.city = :city', { city })
+            .andWhere('property.type IS NOT NULL')
+            .orderBy('property.type', 'ASC')
+            .getRawMany();
+
+        if (result.length > 0) {
+            return result.map(r => r.type);
+        }
+
+        // Fallback for legacy data (try to guess type from legacy location?? No, Type is usually set properly)
+        // If Type is set but City is not (legacy fallback)
+        const legacyResult = await this.propertiesRepository
+            .createQueryBuilder('property')
+            .select('DISTINCT property.type', 'type')
+            .where('property.userId = :userId', { userId })
+            .andWhere('property.location LIKE :cityLike', { cityLike: `%${city}%` })
+            .andWhere('property.type IS NOT NULL')
+            .getRawMany();
+
+        return legacyResult.map(r => r.type).sort();
+    }
+
+    async getNeighborhoods(userId: string, city: string, type?: string): Promise<string[]> {
+        const query = this.propertiesRepository
             .createQueryBuilder('property')
             .select('DISTINCT property.neighborhood', 'neighborhood')
             .where('property.userId = :userId', { userId })
             .andWhere('property.city = :city', { city })
             .andWhere('property.neighborhood IS NOT NULL')
-            .andWhere("property.neighborhood != ''")
-            .orderBy('property.neighborhood', 'ASC')
-            .getRawMany();
+            .andWhere("property.neighborhood != ''");
+
+        if (type) {
+            query.andWhere('property.type = :type', { type });
+        }
+
+        const result = await query.orderBy('property.neighborhood', 'ASC').getRawMany();
 
         if (result.length > 0) {
             return result.map(r => r.neighborhood);
         }
 
         // Fallback: legacy location
-        const legacyResult = await this.propertiesRepository
+        const legacyQuery = this.propertiesRepository
             .createQueryBuilder('property')
             .select('DISTINCT property.location', 'location')
             .where('property.userId = :userId', { userId })
-            .andWhere('property.location LIKE :cityLike', { cityLike: `%${city}%` })
-            .getRawMany();
+            .andWhere('property.location LIKE :cityLike', { cityLike: `%${city}%` });
+
+        if (type) {
+            legacyQuery.andWhere('property.type = :type', { type });
+        }
+
+        const legacyResult = await legacyQuery.getRawMany();
 
         const neighborhoods = new Set<string>();
         legacyResult.forEach(r => {
@@ -141,25 +177,31 @@ export class PropertiesService {
         return Array.from(neighborhoods).sort();
     }
 
-    async findByLocation(userId: string, city: string, neighborhood: string) {
+    async findByLocation(userId: string, city: string, neighborhood: string, type?: string) {
         // Try precise match first
-        const exactMatches = await this.propertiesRepository.find({
-            where: {
-                userId,
-                city,
-                neighborhood
-            }
-        });
+        const where: any = {
+            userId,
+            city,
+            neighborhood
+        };
+        if (type) where.type = type;
+
+        const exactMatches = await this.propertiesRepository.find({ where });
 
         if (exactMatches.length > 0) return exactMatches;
 
         // Fallback legacy
-        return this.propertiesRepository
+        const query = this.propertiesRepository
             .createQueryBuilder('property')
             .where('property.userId = :userId', { userId })
             .andWhere('(property.city IS NULL OR property.city = "")')
             .andWhere('property.location LIKE :city', { city: `%${city}%` })
-            .andWhere('property.location LIKE :neighborhood', { neighborhood: `%${neighborhood}%` })
-            .getMany();
+            .andWhere('property.location LIKE :neighborhood', { neighborhood: `%${neighborhood}%` });
+
+        if (type) {
+            query.andWhere('property.type = :type', { type });
+        }
+
+        return query.getMany();
     }
 }

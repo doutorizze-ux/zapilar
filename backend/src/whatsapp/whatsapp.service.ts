@@ -29,7 +29,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
     private connectionStatuses: Map<string, 'CONNECTED' | 'DISCONNECTED' | 'QR_READY' | 'CONNECTING'> = new Map();
 
     // State Machine for Chat
-    private userStates: Map<string, { mode: 'MENU' | 'WAITING_PROPERTY_NAME' | 'WAITING_FAQ' | 'HANDOVER' | 'WAITING_CITY' | 'WAITING_NEIGHBORHOOD' | 'WAITING_SEARCH', tempCity?: string }> = new Map();
+    private userStates: Map<string, { mode: 'MENU' | 'WAITING_PROPERTY_NAME' | 'WAITING_FAQ' | 'HANDOVER' | 'WAITING_CITY' | 'WAITING_TYPE' | 'WAITING_NEIGHBORHOOD' | 'WAITING_SEARCH', tempCity?: string, tempType?: string }> = new Map();
 
     // Pause List
     private pausedUsers: Set<string> = new Set();
@@ -242,8 +242,6 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
 
     // --- Message Processing ---
 
-
-
     private async processIncomingMessage(userId: string, msg: proto.IWebMessageInfo) {
         const jid = msg.key?.remoteJid;
         if (!jid) return;
@@ -369,9 +367,11 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
                 }
             }
         } else if (currentState === 'WAITING_CITY') {
-            await this.handleNeighborhoodSelection(userId, jid, msg, storeName);
+            await this.handleTypeSelection(userId, jid, msg, storeName);
+        } else if (currentState === 'WAITING_TYPE') {
+            await this.handleNeighborhoodSelection(userId, jid, msg, storeName, stateData.tempCity || '');
         } else if (currentState === 'WAITING_NEIGHBORHOOD') {
-            await this.handlePropertySearchByLocation(userId, jid, stateData.tempCity || '', msg, storeName);
+            await this.handlePropertySearchByLocation(userId, jid, stateData.tempCity || '', stateData.tempType || '', msg, storeName);
         } else if (currentState === 'WAITING_SEARCH') {
             await this.handlePropertySearch(userId, jid, msg, storeName);
             this.userStates.set(stateKey, { mode: 'MENU' });
@@ -406,7 +406,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         await this.sendMessage(userId, jid, msg);
     }
 
-    private async handleNeighborhoodSelection(userId: string, jid: string, input: string, storeName: string) {
+    private async handleTypeSelection(userId: string, jid: string, input: string, storeName: string) {
         const cities = await this.propertiesService.getCities(userId);
         let selectedCity = '';
 
@@ -426,30 +426,67 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
             return;
         }
 
-        // Fetch Neighborhoods for this city
-        const neighborhoods = await this.propertiesService.getNeighborhoods(userId, selectedCity);
+        const types = await this.propertiesService.getPropertyTypes(userId, selectedCity);
 
-        if (neighborhoods.length === 0) {
-            // If no neighborhood info (unlikely if city exists), just show all properties in city
-            await this.handlePropertySearchByLocation(userId, jid, selectedCity, null, storeName);
+        if (types.length === 0) {
+            // Should not happen if city exists, but fallback
+            await this.sendMessage(userId, jid, "Não encontrei tipos de imóveis para esta cidade.");
             return;
         }
 
-        let msg = `🏘️ *Bairros em ${selectedCity}:*\n\n`;
-        neighborhoods.forEach((n, index) => {
-            msg += `*${index + 1}* - ${n}\n`;
+        let msg = `🏠 *O que você busca em ${selectedCity}?*\n\n`;
+        types.forEach((t, index) => {
+            msg += `*${index + 1}* - ${t}\n`;
         });
-        msg += "\nDigite o *número* ou o *nome* do bairro."; // Ou 'Todos'
+        msg += "\nDigite o *número* ou o *tipo* (ex: Casa).";
 
-        this.userStates.set(`${userId}:${jid}`, { mode: 'WAITING_NEIGHBORHOOD', tempCity: selectedCity });
+        this.userStates.set(`${userId}:${jid}`, { mode: 'WAITING_TYPE', tempCity: selectedCity });
         await this.sendMessage(userId, jid, msg);
     }
 
-    private async handlePropertySearchByLocation(userId: string, jid: string, city: string, inputNeighborhood: string | null, storeName: string) {
+    private async handleNeighborhoodSelection(userId: string, jid: string, input: string, storeName: string, selectedCity: string) {
+        const types = await this.propertiesService.getPropertyTypes(userId, selectedCity);
+        let selectedType = '';
+
+        // Check if input is index
+        const index = parseInt(input) - 1;
+        if (!isNaN(index) && index >= 0 && index < types.length) {
+            selectedType = types[index];
+        } else {
+            const normalize = (s) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            const match = types.find(t => normalize(t).includes(normalize(input)));
+            if (match) selectedType = match;
+        }
+
+        if (!selectedType) {
+            await this.sendMessage(userId, jid, "Tipo de imóvel não encontrado. Tente novamente.");
+            return;
+        }
+
+        // Fetch Neighborhoods for this city AND type
+        const neighborhoods = await this.propertiesService.getNeighborhoods(userId, selectedCity, selectedType);
+
+        if (neighborhoods.length === 0) {
+            // Direct search if no neighborhood info
+            await this.handlePropertySearchByLocation(userId, jid, selectedCity, selectedType, null, storeName);
+            return;
+        }
+
+        let msg = `🏘️ *Bairros com ${selectedType} em ${selectedCity}:*\n\n`;
+        neighborhoods.forEach((n, index) => {
+            msg += `*${index + 1}* - ${n}\n`;
+        });
+        msg += "\nDigite o *número* ou o *nome* do bairro.";
+
+        this.userStates.set(`${userId}:${jid}`, { mode: 'WAITING_NEIGHBORHOOD', tempCity: selectedCity, tempType: selectedType });
+        await this.sendMessage(userId, jid, msg);
+    }
+
+    private async handlePropertySearchByLocation(userId: string, jid: string, city: string, type: string, inputNeighborhood: string | null, storeName: string) {
         let selectedNeighborhood = '';
 
         if (inputNeighborhood) {
-            const neighborhoods = await this.propertiesService.getNeighborhoods(userId, city);
+            const neighborhoods = await this.propertiesService.getNeighborhoods(userId, city, type);
 
             // Check if input is index
             const index = parseInt(inputNeighborhood) - 1;
@@ -468,11 +505,11 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
             }
         }
 
-        this.logger.log(`Searching properties for User: ${userId}, City: ${city}, Neighborhood: ${selectedNeighborhood}`);
+        this.logger.log(`Searching properties for User: ${userId}, City: ${city}, Type: ${type}, Neighborhood: ${selectedNeighborhood}`);
 
         let properties: any[] = [];
         if (selectedNeighborhood) {
-            properties = await this.propertiesService.findByLocation(userId, city, selectedNeighborhood);
+            properties = await this.propertiesService.findByLocation(userId, city, selectedNeighborhood, type);
         }
 
         this.logger.log(`Found ${properties.length} properties.`);
