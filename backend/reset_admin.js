@@ -1,7 +1,7 @@
 const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcrypt'); // We need bcrypt to hash the password manually if we insert via raw SQL
 
-const db = new sqlite3.Database('./zapcar_v3.db');
+const db = new sqlite3.Database('./zapilar_v3.db');
 
 async function createAdmin() {
     const password = 'admin'; // Let's set a simple password 'admin' for now

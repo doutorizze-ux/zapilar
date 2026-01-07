@@ -31,7 +31,7 @@ import { AgendaModule } from './agenda/agenda.module';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         type: 'sqlite',
-        database: process.env.DATABASE_PATH || 'zapcar_v3.db',
+        database: process.env.DATABASE_PATH || 'zapilar_v3.db',
         autoLoadEntities: true,
         synchronize: true, // Use carefully in production
       }),

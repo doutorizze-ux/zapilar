@@ -8,7 +8,7 @@ services:
       - "3000"
     environment:
       - PORT=3000
-      - DATABASE_PATH=/app/data/zapcar.db
+      - DATABASE_PATH=/app/data/zapilar.db
       - JWT_SECRET=${JWT_SECRET:-super-secret-key-change-this}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       # - ASAAS_API_KEY=$ASAAS_API_KEY # Injected by Coolify runtime
@@ -16,9 +16,9 @@ services:
       - ASAAS_API_URL=${ASAAS_API_URL}
       # WhatsApp now native
     volumes:
-      - zapcar_data:/app/data
-      - zapcar_uploads:/app/uploads
-      - zapcar_whatsapp_sessions:/app/whatsapp_sessions
+      - zapilar_data:/app/data
+      - zapilar_uploads:/app/uploads
+      - zapilar_whatsapp_sessions:/app/whatsapp_sessions
 
   frontend:
     build: ./frontend
@@ -29,6 +29,6 @@ services:
       - backend
 
 volumes:
-  zapcar_data:
-  zapcar_uploads:
-  zapcar_whatsapp_sessions:
+  zapilar_data:
+  zapilar_uploads:
+  zapilar_whatsapp_sessions:

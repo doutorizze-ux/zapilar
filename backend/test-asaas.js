@@ -1,5 +1,5 @@
 
-require('dotenv').config({ path: 'c:\\Users\\User\\Documents\\zapcar\\backend\\.env' });
+require('dotenv').config({ path: './.env' });
 const axios = require('axios');
 
 async function testAsaas() {
