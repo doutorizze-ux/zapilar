@@ -199,7 +199,7 @@ export function AdminPlansPage() {
                                         }
                                         onChange={e => {
                                             const isChecked = e.target.checked;
-                                            const featureName = "Site Personalizado (zapilar.com.br/nome-loja)";
+                                            const featureName = "Site Personalizado (zapilar.online/nome-loja)";
                                             let currentFeatures = Array.isArray(editingPlan.features)
                                                 ? [...editingPlan.features]
                                                 : (editingPlan.features ? String(editingPlan.features).split(',').map(s => s.trim()) : []);

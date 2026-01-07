@@ -355,7 +355,7 @@ export function SettingsPage() {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Link da Loja (Apelido)
-                                    <span className="text-xs text-gray-400 font-normal ml-2">ex: zapilar.com.br/<b>minhaloja</b></span>
+                                    <span className="text-xs text-gray-400 font-normal ml-2">ex: zapilar.online/<b>minhaloja</b></span>
                                 </label>
                                 {hasWebsiteFeature ? (
                                     <div className="flex gap-2">

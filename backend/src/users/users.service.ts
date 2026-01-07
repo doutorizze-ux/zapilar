@@ -17,7 +17,7 @@ export class UsersService implements OnModuleInit {
     }
 
     async seedAdmin(force = false) {
-        const adminEmail = 'admin@zapilar.com.br';
+        const adminEmail = 'admin@zapilar.online';
         const adminUser = await this.usersRepository.findOne({ where: { email: adminEmail } });
 
         if (!adminUser) {

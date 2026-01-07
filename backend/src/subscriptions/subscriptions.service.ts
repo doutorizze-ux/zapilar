@@ -1,5 +1,6 @@
 
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
 import { PlansService } from '../plans/plans.service';
 import { AsaasService } from '../integrations/asaas/asaas.service';
@@ -10,6 +11,7 @@ export class SubscriptionsService {
         private usersService: UsersService,
         private plansService: PlansService,
         private asaasService: AsaasService,
+        private configService: ConfigService,
     ) { }
 
     async createSubscription(userId: string, data: any) {
@@ -66,10 +68,8 @@ export class SubscriptionsService {
             }
         }
 
-        // Determine frontend URL for callback (remove /api if easy, or use hardcoded if known domain)
-        // Assuming VITE_API_URL or similar is backend, we want frontend.
-        // Let's use a safe default or env.
-        const frontendUrl = 'https://zapilar.com.br'; // Using the domain provided in prompts
+        // Determine frontend URL for callback
+        const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'https://zapilar.online');
 
         let subscription;
         const subscriptionPayload = {
