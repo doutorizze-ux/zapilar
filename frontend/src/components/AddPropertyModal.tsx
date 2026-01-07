@@ -166,10 +166,12 @@ export function AddPropertyModal({ isOpen, onClose, onSuccess, initialData }: Ad
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
-            const filesArray = Array.from(e.target.files);
-            // Limit to 5 images
-            const totalFiles = [...imageFiles, ...filesArray].slice(0, 5);
-            setImageFiles(totalFiles);
+            const currentTotal = (initialData?.images?.length || 0) + imageFiles.length;
+            const remaining = 5 - currentTotal;
+            if (remaining <= 0) return;
+
+            const filesArray = Array.from(e.target.files).slice(0, remaining);
+            setImageFiles(prev => [...prev, ...filesArray]);
         }
     };
 
@@ -193,6 +195,16 @@ export function AddPropertyModal({ isOpen, onClose, onSuccess, initialData }: Ad
                         <label className="block text-sm font-medium text-gray-700 mb-2">Fotos do Imóvel (Máx: 5)</label>
 
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
+                            {/* Existing Images */}
+                            {initialData?.images?.map((img: string, idx: number) => (
+                                <div key={`exist-${idx}`} className="relative aspect-square rounded-xl overflow-hidden border border-gray-100 group opacity-70">
+                                    <img src={img.startsWith('http') ? img : `${API_URL}${img}`} className="w-full h-full object-cover" />
+                                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                                        <span className="text-[10px] text-white font-bold bg-black/50 px-2 py-0.5 rounded">Salva</span>
+                                    </div>
+                                </div>
+                            ))}
+
                             {imageFiles.map((file, idx) => (
                                 <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-gray-100 group">
                                     <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" />
@@ -206,7 +218,7 @@ export function AddPropertyModal({ isOpen, onClose, onSuccess, initialData }: Ad
                                 </div>
                             ))}
 
-                            {imageFiles.length < 5 && (
+                            {(imageFiles.length + (initialData?.images?.length || 0)) < 5 && (
                                 <div className="border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center text-center aspect-square hover:bg-gray-50 transition-colors relative">
                                     <div className="w-8 h-8 bg-cyan-50 text-cyan-600 rounded-full flex items-center justify-center mb-2">
                                         <Upload className="w-4 h-4" />

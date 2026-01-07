@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Calculator, DollarSign, Calendar, Percent, RefreshCw, Car } from 'lucide-react';
+import { Calculator, DollarSign, Calendar, Percent, RefreshCw, Home } from 'lucide-react';
 
 export function SimulatorPage() {
-    const [vehiclePrice, setVehiclePrice] = useState<string>('');
+    const [propertyPrice, setPropertyPrice] = useState<string>('');
     const [downPayment, setDownPayment] = useState<string>('');
-    const [interestRate, setInterestRate] = useState<string>('1.99');
-    const [months, setMonths] = useState<number>(48);
+    const [interestRate, setInterestRate] = useState<string>('0.99');
+    const [months, setMonths] = useState<number>(360);
     const [result, setResult] = useState<{
         monthlyPayment: number;
         totalAmount: number;
@@ -14,7 +14,7 @@ export function SimulatorPage() {
     } | null>(null);
 
     const calculateFinancing = () => {
-        const price = parseFloat(vehiclePrice.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+        const price = parseFloat(propertyPrice.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
         const entry = parseFloat(downPayment.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
         const rate = parseFloat(interestRate.replace(',', '.')) / 100;
 
@@ -51,8 +51,8 @@ export function SimulatorPage() {
 
     const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
-        if (value === '') setVehiclePrice('');
-        else setVehiclePrice(formatCurrency(value));
+        if (value === '') setPropertyPrice('');
+        else setPropertyPrice(formatCurrency(value));
     };
 
     const handleDownPaymentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,24 +62,24 @@ export function SimulatorPage() {
     };
 
     useEffect(() => {
-        if (vehiclePrice) {
+        if (propertyPrice) {
             calculateFinancing();
         } else {
             setResult(null);
         }
-    }, [vehiclePrice, downPayment, interestRate, months]);
+    }, [propertyPrice, downPayment, interestRate, months]);
 
     return (
         <div className="space-y-6 animate-fade-in-up">
             <div>
-                <h1 className="text-2xl font-bold text-gray-900">Simulador de Financiamento</h1>
-                <p className="text-gray-500 mt-1">Calcule as parcelas e juros para seus clientes em tempo real.</p>
+                <h1 className="text-2xl font-bold text-gray-900">Simulador de Financiamento Imobiliário</h1>
+                <p className="text-gray-500 mt-1">Simule o crédito e as parcelas para compra de imóveis em tempo real.</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Form Section */}
                 <div className="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-fit">
-                    <div className="flex items-center gap-2 mb-6 text-cyan-700">
+                    <div className="flex items-center gap-2 mb-6 text-blue-700">
                         <Calculator className="w-5 h-5" />
                         <h2 className="font-semibold text-lg">Dados da Simulação</h2>
                     </div>
@@ -87,18 +87,18 @@ export function SimulatorPage() {
                     <div className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Valor do Veículo
+                                Valor do Imóvel
                             </label>
                             <div className="relative">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                                    <Car className="w-4 h-4" />
+                                    <Home className="w-4 h-4" />
                                 </span>
                                 <input
                                     type="text"
-                                    value={vehiclePrice}
+                                    value={propertyPrice}
                                     onChange={handlePriceChange}
                                     placeholder="R$ 0,00"
-                                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all font-medium text-gray-900"
+                                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-gray-900"
                                 />
                             </div>
                         </div>
@@ -116,7 +116,7 @@ export function SimulatorPage() {
                                     value={downPayment}
                                     onChange={handleDownPaymentChange}
                                     placeholder="R$ 0,00"
-                                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all font-medium text-gray-900"
+                                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-gray-900"
                                 />
                             </div>
                         </div>
@@ -135,7 +135,7 @@ export function SimulatorPage() {
                                         step="0.01"
                                         value={interestRate}
                                         onChange={(e) => setInterestRate(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all font-medium text-gray-900"
+                                        className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-gray-900"
                                     />
                                 </div>
                             </div>
@@ -150,10 +150,10 @@ export function SimulatorPage() {
                                     <select
                                         value={months}
                                         onChange={(e) => setMonths(Number(e.target.value))}
-                                        className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all font-medium text-gray-900 appearance-none bg-white"
+                                        className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-gray-900 appearance-none bg-white"
                                     >
-                                        {[12, 24, 36, 48, 60, 72].map(m => (
-                                            <option key={m} value={m}>{m}x</option>
+                                        {[60, 120, 180, 240, 300, 360, 420].map(m => (
+                                            <option key={m} value={m}>{m}x ({m / 12} anos)</option>
                                         ))}
                                     </select>
                                 </div>
@@ -162,10 +162,10 @@ export function SimulatorPage() {
 
                         <button
                             onClick={() => {
-                                setVehiclePrice('');
+                                setPropertyPrice('');
                                 setDownPayment('');
-                                setInterestRate('1.99');
-                                setMonths(48);
+                                setInterestRate('0.99');
+                                setMonths(360);
                                 setResult(null);
                             }}
                             className="w-full flex items-center justify-center gap-2 mt-4 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors border border-gray-200"
@@ -181,27 +181,27 @@ export function SimulatorPage() {
                     {result ? (
                         <div className="space-y-6">
                             {/* Summary Card */}
-                            <div className="bg-gradient-to-br from-cyan-600 to-cyan-800 p-8 rounded-3xl text-white shadow-xl relative overflow-hidden">
+                            <div className="bg-gradient-to-br from-blue-600 to-blue-800 p-8 rounded-3xl text-white shadow-xl relative overflow-hidden">
                                 <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
 
                                 <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                                     <div>
-                                        <p className="text-cyan-100 font-medium mb-1">Valor da Parcela Mensal</p>
+                                        <p className="text-blue-100 font-medium mb-1">Parcela Mensal (Tabela Price)</p>
                                         <h3 className="text-4xl md:text-5xl font-bold tracking-tight">
                                             {result.monthlyPayment.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                                         </h3>
                                         <span className="inline-block mt-2 px-3 py-1 bg-white/20 rounded-full text-sm font-medium backdrop-blur-sm border border-white/10">
-                                            Em {months}x fixas
+                                            Em {months}x ({months / 12} anos)
                                         </span>
                                     </div>
                                     <div className="space-y-4 md:border-l md:border-white/10 md:pl-8">
                                         <div>
-                                            <p className="text-cyan-100 text-sm">Valor Financiado</p>
+                                            <p className="text-blue-100 text-sm">Valor Financiado</p>
                                             <p className="text-xl font-bold">{result.financedAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                                         </div>
                                         <div>
-                                            <p className="text-cyan-100 text-sm">Total a Pagar</p>
-                                            <p className="text-xl font-bold">{result.totalAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                                            <p className="text-blue-100 text-sm">Custo Total do Imóvel</p>
+                                            <p className="text-xl font-bold">{(result.totalAmount + (parseFloat(downPayment.replace(/[^\d,]/g, '').replace(',', '.')) || 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -212,8 +212,8 @@ export function SimulatorPage() {
                                 <h3 className="font-semibold text-gray-900 mb-4">Detalhamento da Simulação</h3>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                     <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                                        <p className="text-sm text-gray-500 mb-1">Valor do Veículo</p>
-                                        <p className="font-semibold text-gray-900">{vehiclePrice}</p>
+                                        <p className="text-sm text-gray-500 mb-1">Valor do Imóvel</p>
+                                        <p className="font-semibold text-gray-900">{propertyPrice}</p>
                                     </div>
                                     <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                                         <p className="text-sm text-gray-500 mb-1">Entrada</p>
@@ -239,7 +239,7 @@ export function SimulatorPage() {
                             </div>
                             <h3 className="text-lg font-semibold text-gray-900 mb-2">Realize uma Simulação</h3>
                             <p className="text-gray-500 max-w-sm">
-                                Preencha os dados do veículo e do financiamento ao lado para ver o resultado detalhado.
+                                Preencha os dados do imóvel e do financiamento ao lado para ver o resultado detalhado.
                             </p>
                         </div>
                     )}

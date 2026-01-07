@@ -8,7 +8,7 @@ interface Plan {
     name: string;
     price: number;
     interval: string;
-    vehicleLimit?: number;
+    propertyLimit?: number;
     features: string[];
     isActive: boolean;
 }
@@ -49,7 +49,7 @@ export function AdminPlansPage() {
         const payload = {
             ...editingPlan,
             price: Number(editingPlan.price),
-            vehicleLimit: editingPlan.vehicleLimit ? Number(editingPlan.vehicleLimit) : 50,
+            propertyLimit: editingPlan.propertyLimit ? Number(editingPlan.propertyLimit) : 50,
             features: Array.isArray(editingPlan.features) ? editingPlan.features : String(editingPlan.features).split(',').map(s => s.trim())
         };
 
@@ -120,7 +120,7 @@ export function AdminPlansPage() {
                         </div>
 
                         <div className="mt-2 text-sm text-gray-500 bg-gray-50 p-2 rounded">
-                            Limite: <strong>{plan.vehicleLimit || '∞'}</strong> carros
+                            Limite: <strong>{plan.propertyLimit || '∞'}</strong> imóveis
                         </div>
 
                         <div className="mt-6 space-y-3">
@@ -162,11 +162,11 @@ export function AdminPlansPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Qtd. Veículos</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Qtd. Imóveis</label>
                                     <input
                                         type="number"
-                                        value={editingPlan.vehicleLimit || ''}
-                                        onChange={e => setEditingPlan({ ...editingPlan, vehicleLimit: Number(e.target.value) })}
+                                        value={editingPlan.propertyLimit || ''}
+                                        onChange={e => setEditingPlan({ ...editingPlan, propertyLimit: Number(e.target.value) })}
                                         className="w-full border border-gray-300 rounded-lg px-3 py-2"
                                         placeholder="50"
                                     />
@@ -227,7 +227,7 @@ export function AdminPlansPage() {
                                     value={Array.isArray(editingPlan.features) ? editingPlan.features.join(', ') : editingPlan.features || ''}
                                     onChange={e => setEditingPlan({ ...editingPlan, features: e.target.value.split(',') })}
                                     className="w-full border border-gray-300 rounded-lg px-3 py-2 h-24"
-                                    placeholder="Ex: 50 Carros, WhatsApp Ilimitado, Suporte 24h..."
+                                    placeholder="Ex: 50 Imóveis, WhatsApp Ilimitado, Suporte 24h..."
                                 />
                             </div>
 

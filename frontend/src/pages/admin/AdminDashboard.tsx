@@ -1,5 +1,5 @@
 
-import { Users, DollarSign, Package, Car, TrendingUp, ArrowRight, Shield, CreditCard, Settings } from 'lucide-react';
+import { Users, DollarSign, Package, Home, TrendingUp, ArrowRight, Shield, CreditCard, Settings } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { API_URL } from '../../config';
@@ -8,7 +8,7 @@ interface AdminStats {
     totalUsers: number;
     activePlansCount: number;
     monthlyRevenue: number;
-    totalVehicles: number;
+    totalProperties: number;
     recentUsers: any[];
 }
 
@@ -17,7 +17,7 @@ export function AdminDashboard() {
         totalUsers: 0,
         activePlansCount: 0,
         monthlyRevenue: 0,
-        totalVehicles: 0,
+        totalProperties: 0,
         recentUsers: []
     });
 
@@ -57,12 +57,12 @@ export function AdminDashboard() {
             trend: 'Faturamento estimado'
         },
         {
-            label: 'Veículos na Base',
-            value: stats.totalVehicles,
-            icon: Car,
+            label: 'Imóveis na Base',
+            value: stats.totalProperties,
+            icon: Home,
             color: 'text-purple-600',
             bg: 'bg-purple-50',
-            trend: 'Em todas as lojas'
+            trend: 'Em todas as imobiliárias'
         },
         {
             label: 'Taxa de Assinatura',
@@ -81,7 +81,7 @@ export function AdminDashboard() {
                 <div className="relative z-10">
                     <h1 className="text-3xl font-bold mb-2">Painel Master Admin 🚀</h1>
                     <p className="text-gray-300 max-w-xl">
-                        Visão geral de todo o ecossistema ZapCar. Gerencie lojas, planos e acompanhe o crescimento da plataforma.
+                        Visão geral de todo o ecossistema Zapilar. Gerencie imobiliárias, planos e acompanhe o crescimento da plataforma.
                     </p>
                 </div>
                 <div className="absolute right-0 top-0 h-full w-1/3 opacity-5 pointer-events-none">

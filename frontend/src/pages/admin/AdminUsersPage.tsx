@@ -99,7 +99,7 @@ export function AdminUsersPage() {
 
                     if (confirm(confirmMsg)) {
                         const targetPhone = phone ? phone.replace(/\D/g, '') : '';
-                        const text = encodeURIComponent(`Olá! Sua senha no ZapCar foi redefinida para: *${newPassword}*\n\nAcesse abuse do seu painel!`);
+                        const text = encodeURIComponent(`Olá! Sua senha no Zapilar foi redefinida para: *${newPassword}*\n\nAcesse seu painel!`);
                         window.open(`https://wa.me/${targetPhone}?text=${text}`, '_blank');
                     }
                 } else {

@@ -22,7 +22,7 @@ export class PropertiesController {
     }
 
     @Post(':id/upload')
-    @UseInterceptors(FilesInterceptor('files', 10, {
+    @UseInterceptors(FilesInterceptor('files', 5, {
         storage: diskStorage({
             destination: './uploads',
             filename: (req, file, cb) => {
@@ -41,8 +41,10 @@ export class PropertiesController {
         if (!property.images) property.images = [];
 
         files.forEach(file => {
-            const imageUrl = `/uploads/${file.filename}`;
-            property.images.push(imageUrl);
+            if (property.images.length < 5) {
+                const imageUrl = `/uploads/${file.filename}`;
+                property.images.push(imageUrl);
+            }
         });
 
         return this.propertiesService.update(id, { images: property.images });

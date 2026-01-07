@@ -33,7 +33,7 @@ import { API_URL } from './config';
 
 function App() {
   useEffect(() => {
-    console.log('🚀 ZapCar Application Started');
+    console.log('🚀 Zapilar Application Started');
     console.log('📡 Connected to Backend API:', API_URL);
   }, []);
 

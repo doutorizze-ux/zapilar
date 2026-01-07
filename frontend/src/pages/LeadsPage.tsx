@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { User, MessageSquare, Phone, Calendar, Plus, Trash2, Car } from 'lucide-react';
+import { User, MessageSquare, Phone, Calendar, Plus, Trash2, Home } from 'lucide-react';
 import { API_URL } from '../config';
 import { CreateLeadModal } from '../components/CreateLeadModal';
 
@@ -135,7 +135,7 @@ export function LeadsPage() {
                                         <div className="flex flex-col gap-1 max-w-xs">
                                             {lead.interestSubject && (
                                                 <div className="flex items-center gap-1.5 text-xs font-semibold text-cyan-700 bg-cyan-50 px-2 py-1 rounded w-fit mb-1">
-                                                    <Car className="w-3 h-3" />
+                                                    <Home className="w-3 h-3" />
                                                     {lead.interestSubject}
                                                 </div>
                                             )}

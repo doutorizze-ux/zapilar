@@ -104,7 +104,7 @@ export function PropertyManagerModal({ isOpen, onClose, onSuccess, initialData }
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             const currentCount = existingImages.length + imageFiles.length;
-            const remainingSlots = 10 - currentCount; // Increased to 10 for properties
+            const remainingSlots = 5 - currentCount; // Limited to 5 images as requested
 
             if (remainingSlots <= 0) return;
 
@@ -315,7 +315,7 @@ Aproveite essa oportunidade!
                                         </div>
                                     ))}
 
-                                    {(existingImages.length + imageFiles.length) < 10 && (
+                                    {(existingImages.length + imageFiles.length) < 5 && (
                                         <label className="border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center text-center aspect-square hover:bg-gray-50 cursor-pointer transition-colors relative">
                                             <Upload className="w-6 h-6 text-gray-400 mb-2" />
                                             <span className="text-xs text-gray-500 font-medium">Adicionar Foto</span>
@@ -324,7 +324,7 @@ Aproveite essa oportunidade!
                                     )}
                                 </div>
                                 <p className="text-xs text-gray-400 mt-2 text-right">
-                                    {existingImages.length + imageFiles.length} / 10 fotos
+                                    {existingImages.length + imageFiles.length} / 5 fotos
                                 </p>
                             </div>
 
