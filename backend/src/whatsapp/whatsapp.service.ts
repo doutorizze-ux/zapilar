@@ -42,15 +42,15 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
     string,
     {
       mode:
-        | 'MENU'
-        | 'WAITING_PROPERTY_NAME'
-        | 'WAITING_FAQ'
-        | 'HANDOVER'
-        | 'WAITING_CITY'
-        | 'WAITING_TYPE'
-        | 'WAITING_NEIGHBORHOOD'
-        | 'WAITING_SEARCH'
-        | 'WAITING_QUALIFICATION';
+      | 'MENU'
+      | 'WAITING_PROPERTY_NAME'
+      | 'WAITING_FAQ'
+      | 'HANDOVER'
+      | 'WAITING_CITY'
+      | 'WAITING_TYPE'
+      | 'WAITING_NEIGHBORHOOD'
+      | 'WAITING_SEARCH'
+      | 'WAITING_QUALIFICATION';
       tempCity?: string;
       tempType?: string;
     }
@@ -326,7 +326,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         try {
           const params = JSON.parse(native.paramsJson || '{}');
           text = params.id || '';
-        } catch (e) {}
+        } catch (e) { }
       }
     }
 
@@ -386,21 +386,29 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
     const stateData = this.userStates.get(stateKey) || { mode: 'MENU' };
     const currentState = stateData.mode;
     const isFirstMessage = !this.userStates.has(stateKey);
+    const normalizedMsg = lowerMsg.replace(/[^a-z]/g, '');
 
-    // Always allow breaking out of any state with 'menu'
+    // Se estiver em modo HANDOVER (atendimento humano), o bot fica em silêncio
+    // a menos que o cliente queira explicitamente voltar para o menu automático.
+    if (currentState === 'HANDOVER') {
+      if (['menu', 'voltar', 'inicio', 'início'].includes(normalizedMsg)) {
+        this.userStates.set(stateKey, { mode: 'MENU' });
+        await this.sendMainMenu(userId, jid, storeName);
+        return;
+      }
+      // Se não for comando de retorno, ignoramos para deixar o humano falar
+      return;
+    }
+
+    // Lógica padrão de boas-vindas e reset de menu
     if (
       isFirstMessage ||
       ['menu', 'início', 'inicio', 'voltar', 'oi', 'ola', 'olá'].includes(
-        lowerMsg.replace(/[^a-z]/g, ''),
+        normalizedMsg,
       )
     ) {
       this.userStates.set(stateKey, { mode: 'MENU' });
       await this.sendMainMenu(userId, jid, storeName);
-      return;
-    }
-
-    // If in HANDOVER mode, ignore everything (silence) unless it was the 'menu' command handled above
-    if (currentState === 'HANDOVER') {
       return;
     }
 
@@ -979,7 +987,7 @@ _Ex: "Procuro uma casa com piscina no centro"_
           jid,
           `${subset[0].type} - ${subset[0].title}`,
         );
-      } catch (e) {}
+      } catch (e) { }
 
       const frontendUrl =
         this.configService.get('FRONTEND_URL') || 'https://zapilar.online';
