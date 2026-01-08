@@ -14,12 +14,16 @@ import { ChatMessage } from './entities/chat-message.entity';
 import { AiModule } from '../integrations/ai/ai.module';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([ChatMessage]),
-        PropertiesModule, UsersModule, FaqModule, LeadsModule, AiModule
-    ],
-    providers: [WhatsappService, ChatGateway],
-    exports: [WhatsappService, ChatGateway],
-    controllers: [WhatsappController],
+  imports: [
+    TypeOrmModule.forFeature([ChatMessage]),
+    PropertiesModule,
+    UsersModule,
+    FaqModule,
+    LeadsModule,
+    AiModule,
+  ],
+  providers: [WhatsappService, ChatGateway],
+  exports: [WhatsappService, ChatGateway],
+  controllers: [WhatsappController],
 })
-export class WhatsappModule { }
+export class WhatsappModule {}

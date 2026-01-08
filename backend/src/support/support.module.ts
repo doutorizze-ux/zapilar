@@ -5,8 +5,8 @@ import { SupportController } from './support.controller';
 import { SupportTicket } from './entities/support-ticket.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([SupportTicket])],
-    controllers: [SupportController],
-    providers: [SupportService],
+  imports: [TypeOrmModule.forFeature([SupportTicket])],
+  controllers: [SupportController],
+  providers: [SupportService],
 })
-export class SupportModule { }
+export class SupportModule {}

@@ -5,8 +5,8 @@ import { AgendaController } from './agenda.controller';
 import { AgendaService } from './agenda.service';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Event])],
-    controllers: [AgendaController],
-    providers: [AgendaService],
+  imports: [TypeOrmModule.forFeature([Event])],
+  controllers: [AgendaController],
+  providers: [AgendaService],
 })
-export class AgendaModule { }
+export class AgendaModule {}

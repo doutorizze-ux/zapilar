@@ -1,4 +1,3 @@
-
 import { Module } from '@nestjs/common';
 import { SubscriptionsService } from './subscriptions.service';
 import { SubscriptionsController } from './subscriptions.controller';
@@ -8,8 +7,8 @@ import { PlansModule } from '../plans/plans.module';
 import { AsaasModule } from '../integrations/asaas/asaas.module';
 
 @Module({
-    imports: [UsersModule, PlansModule, AsaasModule],
-    controllers: [SubscriptionsController, SubscriptionsWebhookController],
-    providers: [SubscriptionsService],
+  imports: [UsersModule, PlansModule, AsaasModule],
+  controllers: [SubscriptionsController, SubscriptionsWebhookController],
+  providers: [SubscriptionsService],
 })
-export class SubscriptionsModule { }
+export class SubscriptionsModule {}

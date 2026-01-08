@@ -6,7 +6,7 @@ import { UsersModule } from '../users/users.module';
 import { PlansModule } from '../plans/plans.module';
 
 @Module({
-    imports: [LeadsModule, PropertiesModule, UsersModule, PlansModule],
-    controllers: [DashboardController]
+  imports: [LeadsModule, PropertiesModule, UsersModule, PlansModule],
+  controllers: [DashboardController],
 })
-export class DashboardModule { }
+export class DashboardModule {}

@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Store } from './entities/store.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Store])],
-    exports: [TypeOrmModule],
+  imports: [TypeOrmModule.forFeature([Store])],
+  exports: [TypeOrmModule],
 })
-export class StoresModule { }
+export class StoresModule {}

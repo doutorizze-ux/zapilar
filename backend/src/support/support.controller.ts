@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
 import { SupportService } from './support.service';
 import { CreateSupportTicketDto } from './dto/create-support-ticket.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -9,33 +18,33 @@ import { UserRole } from '../users/entities/user.entity';
 
 @Controller('support')
 export class SupportController {
-    constructor(private readonly supportService: SupportService) { }
+  constructor(private readonly supportService: SupportService) {}
 
-    // Public endpoint for submitting tickets
-    @Post()
-    create(@Body() dto: CreateSupportTicketDto) {
-        return this.supportService.create(dto);
-    }
+  // Public endpoint for submitting tickets
+  @Post()
+  create(@Body() dto: CreateSupportTicketDto) {
+    return this.supportService.create(dto);
+  }
 
-    // Admin endpoints
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.ADMIN)
-    @Get()
-    findAll() {
-        return this.supportService.findAll();
-    }
+  // Admin endpoints
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get()
+  findAll() {
+    return this.supportService.findAll();
+  }
 
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.ADMIN)
-    @Patch(':id/status')
-    updateStatus(@Param('id') id: string, @Body('status') status: TicketStatus) {
-        return this.supportService.updateStatus(id, status);
-    }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Patch(':id/status')
+  updateStatus(@Param('id') id: string, @Body('status') status: TicketStatus) {
+    return this.supportService.updateStatus(id, status);
+  }
 
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.ADMIN)
-    @Delete(':id')
-    remove(@Param('id') id: string) {
-        return this.supportService.remove(id);
-    }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.supportService.remove(id);
+  }
 }

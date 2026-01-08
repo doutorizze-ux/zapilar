@@ -5,9 +5,9 @@ import { FaqController } from './faq.controller';
 import { Faq } from './entities/faq.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Faq])],
-    controllers: [FaqController],
-    providers: [FaqService],
-    exports: [FaqService] // Export so WhatsappModule can use it
+  imports: [TypeOrmModule.forFeature([Faq])],
+  controllers: [FaqController],
+  providers: [FaqService],
+  exports: [FaqService], // Export so WhatsappModule can use it
 })
-export class FaqModule { }
+export class FaqModule {}

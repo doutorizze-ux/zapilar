@@ -5,9 +5,9 @@ import { LeadsService } from './leads.service';
 import { LeadsController } from './leads.controller';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Lead])],
-    controllers: [LeadsController],
-    providers: [LeadsService],
-    exports: [LeadsService]
+  imports: [TypeOrmModule.forFeature([Lead])],
+  controllers: [LeadsController],
+  providers: [LeadsService],
+  exports: [LeadsService],
 })
-export class LeadsModule { }
+export class LeadsModule {}

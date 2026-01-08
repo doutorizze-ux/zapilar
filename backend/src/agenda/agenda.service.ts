@@ -6,28 +6,28 @@ import { CreateEventDto } from './dto/create-event.dto';
 
 @Injectable()
 export class AgendaService {
-    constructor(
-        @InjectRepository(Event)
-        private repo: Repository<Event>,
-    ) { }
+  constructor(
+    @InjectRepository(Event)
+    private repo: Repository<Event>,
+  ) {}
 
-    create(userId: string, dto: CreateEventDto) {
-        const event = this.repo.create({ ...dto, userId });
-        return this.repo.save(event);
-    }
+  create(userId: string, dto: CreateEventDto) {
+    const event = this.repo.create({ ...dto, userId });
+    return this.repo.save(event);
+  }
 
-    findAll(userId: string) {
-        return this.repo.find({
-            where: { userId },
-            order: { start: 'ASC' }
-        });
-    }
+  findAll(userId: string) {
+    return this.repo.find({
+      where: { userId },
+      order: { start: 'ASC' },
+    });
+  }
 
-    update(id: string, userId: string, dto: CreateEventDto) {
-        return this.repo.update({ id, userId }, dto);
-    }
+  update(id: string, userId: string, dto: CreateEventDto) {
+    return this.repo.update({ id, userId }, dto);
+  }
 
-    remove(id: string, userId: string) {
-        return this.repo.delete({ id, userId });
-    }
+  remove(id: string, userId: string) {
+    return this.repo.delete({ id, userId });
+  }
 }

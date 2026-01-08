@@ -8,9 +8,13 @@ import { UsersModule } from '../users/users.module';
 import { PlansModule } from '../plans/plans.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Property]), forwardRef(() => UsersModule), PlansModule],
+  imports: [
+    TypeOrmModule.forFeature([Property]),
+    forwardRef(() => UsersModule),
+    PlansModule,
+  ],
   controllers: [PropertiesController],
   providers: [PropertiesService],
   exports: [PropertiesService],
 })
-export class PropertiesModule { }
+export class PropertiesModule {}

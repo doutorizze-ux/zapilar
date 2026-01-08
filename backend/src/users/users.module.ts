@@ -7,9 +7,13 @@ import { PropertiesModule } from '../properties/properties.module';
 import { PlansModule } from '../plans/plans.module';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([User]), forwardRef(() => PropertiesModule), PlansModule],
-    controllers: [UsersController],
-    providers: [UsersService],
-    exports: [UsersService],
+  imports: [
+    TypeOrmModule.forFeature([User]),
+    forwardRef(() => PropertiesModule),
+    PlansModule,
+  ],
+  controllers: [UsersController],
+  providers: [UsersService],
+  exports: [UsersService],
 })
-export class UsersModule { }
+export class UsersModule {}
