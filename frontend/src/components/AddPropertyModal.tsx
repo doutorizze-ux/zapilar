@@ -191,6 +191,23 @@ export function AddPropertyModal({ isOpen, onClose, onSuccess, initialData }: Ad
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-6">
                     {/* Image Upload Area */}
+                    <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-4">
+                        <div className="flex gap-2 items-start">
+                            <div className="mt-0.5 min-w-[16px]">💡</div>
+                            <p className="text-xs text-blue-700">
+                                <b>Dica para o Robô (WhatsApp):</b> O sistema organiza seus imóveis automaticamente.
+                                <br />
+                                1. O cliente escolhe a <b>Cidade</b> (Menu 1).
+                                <br />
+                                2. Depois escolhe o <b>Tipo</b> (Casa, Ap, etc).
+                                <br />
+                                3. Por fim escolhe o <b>Bairro</b> (Menu 3).
+                                <br />
+                                Preencha esses campos com atenção para o robô funcionar perfeitamente!
+                            </p>
+                        </div>
+                    </div>
+
                     <div className="w-full">
                         <label className="block text-sm font-medium text-gray-700 mb-2">Fotos do Imóvel (Máx: 5)</label>
 
@@ -256,11 +273,15 @@ export function AddPropertyModal({ isOpen, onClose, onSuccess, initialData }: Ad
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Cidade</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Cidade <span className="text-[10px] text-cyan-600 font-bold uppercase tracking-wide bg-cyan-50 px-1.5 py-0.5 rounded border border-cyan-100 ml-1">Menu 1</span>
+                                </label>
                                 <input required name="city" value={formData.city} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" placeholder="Ex: São Paulo" />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Bairro</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Bairro <span className="text-[10px] text-indigo-600 font-bold uppercase tracking-wide bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100 ml-1">Menu 3</span>
+                                </label>
                                 <input required name="neighborhood" value={formData.neighborhood} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none" placeholder="Ex: Centro" />
                             </div>
                         </div>
