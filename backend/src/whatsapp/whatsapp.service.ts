@@ -414,20 +414,30 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         } else {
             // Use Gemini for intelligent FAQ
             const storeContext = await this.faqService.findAll(userId);
-            const contextText = storeContext.map(f => `Q: ${f.question}\nA: ${f.answer}`).join('\n\n');
+            let contextText = "";
+            let roleInstruction = "";
+
+            if (storeContext.length > 0) {
+                contextText = storeContext.map(f => `Q: ${f.question}\nA: ${f.answer}`).join('\n\n');
+                roleInstruction = `Responda às dúvidas do cliente com base no seguinte contexto de perguntas frequentes da imobiliária. Se a resposta não estiver no contexto, use seu conhecimento geral de mercado imobiliário brasileiro, mas avise que as condições específicas dependem da imobiliária.`;
+            } else {
+                roleInstruction = `Você é um assistente virtual especialista em mercado imobiliário. 
+                A imobiliária ainda não cadastrou regras específicas, então responda dúvidas gerais (como financiamento, documentos, aluguel) com base nas leis e práticas do Brasil.
+                SEMPRE finalize dizendo que "Para valores exatos e condições desta imobiliária, por favor fale com um de nossos corretores".`;
+            }
 
             const systemPrompt = `Você é um assistente virtual da imobiliária ${storeName}. 
-            Responda às dúvidas do cliente com base no seguinte contexto de perguntas frequentes. 
-            Se não souber a resposta, peça para ele falar com um corretor. 
-            Seja cordial, profissional e use emojis moderadamente.
+            ${roleInstruction}
+            Seja cordial, profissional, use emojis moderadamente e fale sempre em Português do Brasil.
             
-            CONTEXTO:
+            CONTEXTO ESPECÍFICO (Se houver):
             ${contextText}`;
 
             const aiResponse = await this.aiService.generateResponse(systemPrompt, msg);
             if (aiResponse) {
                 await this.sendMessage(userId, jid, aiResponse);
             } else {
+                // Fallback only if AI fails completely (network error etc)
                 await this.sendMessage(userId, jid, "Ainda não tenho uma resposta para isso 😅. Digite *menu* para voltar ou pergunte outra coisa.");
                 return;
             }
