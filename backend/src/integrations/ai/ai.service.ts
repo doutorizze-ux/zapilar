@@ -71,8 +71,18 @@ export class AiService {
 
         const prompt = `
             Extract lead qualification data from the following message.
-            Identify: budget (string), financing (Yes/No/Unsure), motivation (Living/Investment), urgency (Immediate/Soon/Researching), notes (brief summary).
-            Respond ONLY with a JSON object.
+            The user might answer briefly (e.g., just "morar", "investir", "200 mil").
+            Infer context if possible.
+            
+            Identify: 
+            - budget (e.g. "500k", "2000", "unknown")
+            - financing (Yes/No/Unsure)
+            - motivation (Living/Investment) - map "morar", "casa", "familia" to Living. Map "renda", "aluguel", "investir" to Investment.
+            - urgency (Immediate/Soon/Researching)
+            - notes (brief summary in Portuguese)
+
+            If a field is missing, set it to null.
+            Respond ONLY with a valid JSON object.
             
             Message: "${message}"
         `;
