@@ -61,7 +61,7 @@ export function LandingPage() {
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00C2CB] opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-3 w-3 bg-[#00C2CB]"></span>
                             </span>
-                            Novo: Site Personalizado Grátis
+                            Profissionalize sua Imobiliária hoje
                         </div>
 
                         <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.1]">
@@ -91,12 +91,12 @@ export function LandingPage() {
                                 className="px-8 py-4 bg-[#00C2CB] text-white rounded-full font-bold text-lg hover:bg-[#00A8B0] transition-all shadow-xl shadow-[#00C2CB]/20 flex items-center justify-center gap-3 transform hover:scale-105"
                             >
                                 <Home className="w-6 h-6" />
-                                Criar Conta Grátis
+                                Escolher meu Plano
                             </button>
                         </div>
 
                         <div className="flex items-center gap-6 text-sm font-medium text-gray-500 pt-4 justify-center lg:justify-start">
-                            <span className="text-gray-500">Sem cartão de crédito • Teste grátis hoje</span>
+                            <span className="text-gray-500">Tecnologia de ponta para corretores 2.0</span>
                         </div>
                     </div>
 
@@ -237,7 +237,7 @@ export function LandingPage() {
                             alt="Site Preview"
                         />
                         <div className="absolute -bottom-6 -left-6 bg-[#00C2CB] p-4 rounded-xl shadow-lg">
-                            <p className="text-white font-bold text-lg">Grátis no Plano Pro</p>
+                            <p className="text-white font-bold text-lg">Incluso nos Planos</p>
                         </div>
                     </div>
                 </div>
@@ -278,9 +278,9 @@ export function LandingPage() {
                         onClick={() => navigate('/register')}
                         className="px-12 py-5 bg-[#00C2CB] text-white rounded-full font-bold text-lg hover:bg-[#00A8B0] transition-all shadow-xl shadow-[#00C2CB]/20 transform hover:scale-105"
                     >
-                        TESTAR GRATUITAMENTE
+                        POTENCIALIZAR MINHAS VENDAS
                     </button>
-                    <p className="mt-4 text-sm text-gray-500">Sem fidelidade. Cancele quando quiser.</p>
+                    <p className="mt-4 text-sm text-gray-500">Transforme sua forma de vender imóveis.</p>
                 </div>
             </section >
 
