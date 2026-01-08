@@ -382,7 +382,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
             await this.handlePropertySearchByLocation(userId, jid, stateData.tempCity || '', stateData.tempType || '', msg, storeName);
         } else if (currentState === 'WAITING_SEARCH') {
             await this.handlePropertySearch(userId, jid, msg, storeName);
-            this.userStates.set(stateKey, { mode: 'MENU' });
+            // Do NOT reset to MENU here, sendPropertyResults handles it
         } else if (currentState === 'WAITING_FAQ') {
             await this.handleAiFaq(userId, jid, msg, storeName);
         } else if (currentState === 'WAITING_QUALIFICATION') {
@@ -596,7 +596,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         const slug = user?.slug || userId;
 
         await this.sendPropertyResults(userId, jid, properties, storeName, slug);
-        this.userStates.set(`${userId}:${jid}`, { mode: 'MENU' });
+        // Do NOT reset to MENU here, qualification starts inside sendPropertyResults
     }
 
     private async sendMainMenu(userId: string, jid: string, storeName: string) {
@@ -731,6 +731,7 @@ _Ex: "Procuro uma casa com piscina no centro"_
         } else {
             await this.sendMessage(userId, jid, "😕 Não encontrei nenhum imóvel com essas características. Tente buscar em outra região ou diga o que você procura.");
             await this.sendMainMenu(userId, jid, storeName);
+            this.userStates.set(`${userId}:${jid}`, { mode: 'MENU' });
         }
     }
 
