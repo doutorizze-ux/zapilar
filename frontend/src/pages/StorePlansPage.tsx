@@ -90,6 +90,33 @@ export function StorePlansPage() {
                 <p className="text-gray-500">Escolha o melhor plano para sua loja</p>
             </div>
 
+            {currentSubscription && currentSubscription.planId && !(currentSubscription.latestPaymentStatus === 'RECEIVED' || currentSubscription.latestPaymentStatus === 'CONFIRMED' || currentSubscription.latestPaymentStatus === 'COMPLETED') && (
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 animate-pulse-subtle">
+                    <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <Check className="w-6 h-6 text-amber-600 rotate-45" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-amber-900 text-lg">Pagamento em processamento</h3>
+                            <p className="text-amber-700 text-sm max-w-xl">
+                                Identificamos sua solicitação de assinatura. Se você já realizou o pagamento via PIX ou Cartão e o acesso ainda não foi liberado, você pode enviar o comprovante para agilizar o processo.
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => {
+                            const message = `Olá! Acabei de realizar o pagamento do plano no Zapilar e gostaria de enviar o comprovante para liberação.\n\nE-mail da conta: ${currentSubscription.email || 'Usuário Logado'}\nPlano: ${currentSubscription.planName || 'Assinatura'}`;
+                            const whatsappUrl = `https://wa.me/5562995347257?text=${encodeURIComponent(message)}`;
+                            window.open(whatsappUrl, '_blank');
+                        }}
+                        className="whitespace-nowrap bg-green-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-600/20 flex items-center gap-2"
+                    >
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" className="w-5 h-5 brightness-0 invert" alt="WA" />
+                        ENVIAR COMPROVANTE
+                    </button>
+                </div>
+            )}
+
             <div className="flex flex-wrap justify-center gap-8">
                 {Object.keys(groupedPlans).map(planName => (
                     <PlanCardGroup
