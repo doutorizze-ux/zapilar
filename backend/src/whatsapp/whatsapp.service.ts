@@ -592,7 +592,10 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
 
         this.logger.log(`Found ${properties.length} properties.`);
 
-        await this.sendPropertyResults(userId, jid, properties, storeName);
+        const user = await this.usersService.findById(userId);
+        const slug = user?.slug || userId;
+
+        await this.sendPropertyResults(userId, jid, properties, storeName, slug);
         this.userStates.set(`${userId}:${jid}`, { mode: 'MENU' });
     }
 

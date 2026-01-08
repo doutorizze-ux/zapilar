@@ -68,12 +68,12 @@ export function LeadsPage() {
     if (loading) return <div>Carregando...</div>;
 
     const formatPhone = (phone: string) => {
-        // Simple formatter, can be improved lib later
+        const cleaned = phone.replace(/\D/g, '');
         // 5511999999999 -> (11) 99999-9999
-        if (phone.length < 10) return phone;
-        const ddd = phone.substring(2, 4);
-        const prefix = phone.substring(4, 9);
-        const suffix = phone.substring(9);
+        if (cleaned.length < 12) return cleaned;
+        const ddd = cleaned.substring(2, 4);
+        const prefix = cleaned.substring(4, 9);
+        const suffix = cleaned.substring(9);
         return `(${ddd}) ${prefix}-${suffix}`;
     };
 
@@ -194,7 +194,7 @@ export function LeadsPage() {
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex gap-2 justify-end">
                                             <a
-                                                href={`https://wa.me/${lead.phone}`}
+                                                href={`https://wa.me/${lead.phone.replace(/\D/g, '')}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="text-green-600 hover:text-green-800 font-bold text-[10px] uppercase border border-green-200 bg-green-50 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-colors inline-block"
