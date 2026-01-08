@@ -8,6 +8,10 @@ interface DashboardStats {
     leads: number;
     interactions: number;
     recentLeads: any[];
+    plan?: {
+        name: string;
+        price: number | string;
+    } | null;
 }
 
 export function DashboardHome() {
@@ -135,8 +139,19 @@ export function DashboardHome() {
                                 <span className="text-gray-500">Plano Atual</span>
                                 <Link to="/dashboard/plans" className="text-cyan-600 font-medium text-xs hover:underline">Gerenciar</Link>
                             </div>
-                            <div className="p-3 bg-purple-50 text-purple-700 rounded-lg font-bold text-center border border-purple-100">
-                                Visualizar Planos
+                            <div className="p-4 bg-gradient-to-br from-purple-50 to-white text-purple-700 rounded-xl border border-purple-100 shadow-sm">
+                                {statsData.plan ? (
+                                    <div className="text-center">
+                                        <div className="text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-1">Plano Atual</div>
+                                        <div className="text-xl font-black text-purple-900">{statsData.plan.name}</div>
+                                        <div className="text-sm font-semibold mt-1 text-purple-600">
+                                            {Number(statsData.plan.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                            <span className="text-[10px] font-medium text-purple-400 ml-1">/mês</span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="font-bold text-center py-2">Visualizar Planos</div>
+                                )}
                             </div>
                         </div>
 

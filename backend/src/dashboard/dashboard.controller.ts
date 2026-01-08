@@ -15,13 +15,31 @@ export class DashboardController {
     private propertiesService: PropertiesService,
     private usersService: UsersService,
     private plansService: PlansService,
-  ) {}
+  ) { }
 
   @UseGuards(JwtAuthGuard)
   @Get('stats')
   async getStats(@Request() req) {
-    const leadsStats = await this.leadsService.getStats(req.user.userId);
-    const properties = await this.propertiesService.findAll(req.user.userId);
+    const userId = req.user.userId;
+    const leadsStats = await this.leadsService.getStats(userId);
+    const properties = await this.propertiesService.findAll(userId);
+
+    // Busca segura do plano
+    let planInfo: { name: string; price: number | string } | null = null;
+    try {
+      const user = await this.usersService.findById(userId);
+      if (user && user.planId) {
+        const plan = await this.plansService.findOne(user.planId);
+        if (plan) {
+          planInfo = {
+            name: plan.name,
+            price: plan.price,
+          };
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao buscar plano no dashboard stats:', error);
+    }
 
     return {
       activeProperties: properties.length,
@@ -29,6 +47,7 @@ export class DashboardController {
       recentLeads: leadsStats.recentLeads,
       // Mock interaction count (e.g. leads * 5) or use another table later
       interactions: leadsStats.totalLeads * 5,
+      plan: planInfo,
     };
   }
 
