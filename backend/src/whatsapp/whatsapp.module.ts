@@ -11,11 +11,12 @@ import { ChatGateway } from './chat.gateway';
 
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChatMessage } from './entities/chat-message.entity';
+import { AiModule } from '../integrations/ai/ai.module';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([ChatMessage]),
-        PropertiesModule, UsersModule, FaqModule, LeadsModule
+        PropertiesModule, UsersModule, FaqModule, LeadsModule, AiModule
     ],
     providers: [WhatsappService, ChatGateway],
     exports: [WhatsappService, ChatGateway],

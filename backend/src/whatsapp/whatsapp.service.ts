@@ -20,6 +20,7 @@ import { PropertiesService } from '../properties/properties.service';
 import { UsersService } from '../users/users.service';
 import { FaqService } from '../faq/faq.service';
 import { LeadsService } from '../leads/leads.service';
+import { AiService } from '../integrations/ai/ai.service';
 
 @Injectable()
 export class WhatsappService implements OnModuleInit, OnModuleDestroy {
@@ -44,7 +45,8 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         private configService: ConfigService,
         private usersService: UsersService,
         private faqService: FaqService,
-        private leadsService: LeadsService
+        private leadsService: LeadsService,
+        private aiService: AiService
     ) {
         if (!fs.existsSync(this.SESSIONS_DIR)) {
             fs.mkdirSync(this.SESSIONS_DIR, { recursive: true });
@@ -334,23 +336,13 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
 
         // State Machine
         if (currentState === 'MENU') {
+            const isCommand = ['1', '2', '3', '4'].includes(msg) || msg.startsWith('btn_');
+
             if (msg === '1' || lowerMsg.includes('comprar') || lowerMsg.includes('imovel')) {
                 // Feature: Search by City
                 await this.handleCitySelection(userId, jid, storeName);
             } else if (msg === '2' || msg === 'btn_consultor') {
-                // Ensure Brazil Timezone
-                const brazilTime = new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
-                const hour = new Date(brazilTime).getHours();
-
-                const isBusinessHours = hour >= 7 && hour < 18;
-
-                if (isBusinessHours) {
-                    await this.sendMessage(userId, jid, "Certo 👍. Um corretor foi notificado e pode te responder em até 3 minutos.\n\nCaso queira retornar para o menu, digite *Menu* ou *Voltar*.");
-                } else {
-                    await this.sendMessage(userId, jid, "Nosso atendimento humano funciona das *07:00 às 18:00*. 🕒\n\nComo estamos fora do expediente, você pode deixar sua mensagem agora que responderemos assim que retornarmos.\n\nOu digite *Menu* para continuar vendo imóveis com nosso sistema automático 24h! 🤖");
-                }
-
-                this.userStates.set(stateKey, { mode: 'HANDOVER' });
+                await this.handleConsultantHandover(userId, jid);
             } else if (msg === '3' || msg === 'btn_faq') {
                 this.userStates.set(stateKey, { mode: 'WAITING_FAQ' });
                 await this.sendMessage(userId, jid, "Envie sua dúvida e eu responderei com base nas informações da imobiliária 😉");
@@ -358,15 +350,31 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
                 // Free text search
                 this.userStates.set(stateKey, { mode: 'WAITING_SEARCH' });
                 await this.sendMessage(userId, jid, "Digite o que você procura (ex: Casa 3 quartos centro):");
-            } else {
-                // Fallback attempt to search directly if text is long enough
-                if (msg.split(' ').length > 2) {
+            } else if (!isCommand && msg.length > 3) {
+                // ULTRA POWERFUL AI ANALYSIS
+                const analysis = await this.aiService.analyzeIntent(msg);
+                this.logger.log(`AI Intent Analysis for "${msg}": ${JSON.stringify(analysis)}`);
+
+                if (analysis.intent === 'SEARCH') {
+                    // Smart search based on extracted entities or raw text
                     await this.handlePropertySearch(userId, jid, msg, storeName);
+                } else if (analysis.intent === 'TALK') {
+                    await this.handleConsultantHandover(userId, jid);
+                } else if (analysis.intent === 'FAQ') {
+                    await this.handleAiFaq(userId, jid, msg, storeName);
                 } else {
-                    await this.sendMessage(userId, jid, "Não entendi sua opção. Por favor, escolha um número do menu ou digite 'Menu' para ver as opções.");
+                    // Fallback attempt to search directly if text is long enough
+                    if (msg.split(' ').length > 2) {
+                        await this.handlePropertySearch(userId, jid, msg, storeName);
+                    } else {
+                        await this.sendMessage(userId, jid, "Não entendi sua opção. Por favor, escolha um número do menu ou digite 'Menu' para ver as opções.");
+                    }
                 }
+            } else {
+                await this.sendMessage(userId, jid, "Não entendi sua opção. Por favor, escolha um número do menu ou digite 'Menu' para ver as opções.");
             }
-        } else if (currentState === 'WAITING_CITY') {
+        }
+        else if (currentState === 'WAITING_CITY') {
             await this.handleTypeSelection(userId, jid, msg, storeName);
         } else if (currentState === 'WAITING_TYPE') {
             await this.handleNeighborhoodSelection(userId, jid, msg, storeName, stateData.tempCity || '');
@@ -376,15 +384,54 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
             await this.handlePropertySearch(userId, jid, msg, storeName);
             this.userStates.set(stateKey, { mode: 'MENU' });
         } else if (currentState === 'WAITING_FAQ') {
-            const answer = await this.faqService.findMatch(userId, msg);
-            if (answer) {
-                await this.sendMessage(userId, jid, answer);
-                await this.sendMainMenu(userId, jid, storeName);
-                this.userStates.set(stateKey, { mode: 'MENU' });
+            await this.handleAiFaq(userId, jid, msg, storeName);
+        }
+    }
+
+    private async handleConsultantHandover(userId: string, jid: string) {
+        // Ensure Brazil Timezone
+        const brazilTime = new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
+        const hour = new Date(brazilTime).getHours();
+
+        const isBusinessHours = hour >= 7 && hour < 18;
+
+        if (isBusinessHours) {
+            await this.sendMessage(userId, jid, "Certo 👍. Um corretor foi notificado e pode te responder em até 3 minutos.\n\nCaso queira retornar para o menu, digite *Menu* ou *Voltar*.");
+        } else {
+            await this.sendMessage(userId, jid, "Nosso atendimento humano funciona das *07:00 às 18:00*. 🕒\n\nComo estamos fora do expediente, você pode deixar sua mensagem agora que responderemos assim que retornarmos.\n\nOu digite *Menu* para continuar vendo imóveis com nosso sistema automático 24h! 🤖");
+        }
+
+        this.userStates.set(`${userId}:${jid}`, { mode: 'HANDOVER' });
+    }
+
+    private async handleAiFaq(userId: string, jid: string, msg: string, storeName: string) {
+        // Try exact match first
+        const answer = await this.faqService.findMatch(userId, msg);
+        if (answer) {
+            await this.sendMessage(userId, jid, answer);
+        } else {
+            // Use Gemini for intelligent FAQ
+            const storeContext = await this.faqService.findAll(userId);
+            const contextText = storeContext.map(f => `Q: ${f.question}\nA: ${f.answer}`).join('\n\n');
+
+            const systemPrompt = `Você é um assistente virtual da imobiliária ${storeName}. 
+            Responda às dúvidas do cliente com base no seguinte contexto de perguntas frequentes. 
+            Se não souber a resposta, peça para ele falar com um corretor. 
+            Seja cordial, profissional e use emojis moderadamente.
+            
+            CONTEXTO:
+            ${contextText}`;
+
+            const aiResponse = await this.aiService.generateResponse(systemPrompt, msg);
+            if (aiResponse) {
+                await this.sendMessage(userId, jid, aiResponse);
             } else {
                 await this.sendMessage(userId, jid, "Ainda não tenho uma resposta para isso 😅. Digite *menu* para voltar ou pergunte outra coisa.");
+                return;
             }
         }
+        await this.sendMainMenu(userId, jid, storeName);
+        this.userStates.set(`${userId}:${jid}`, { mode: 'MENU' });
     }
 
     private async handleCitySelection(userId: string, jid: string, storeName: string) {

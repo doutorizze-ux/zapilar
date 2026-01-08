@@ -20,6 +20,7 @@ import { SupportModule } from './support/support.module';
 import { ContactsModule } from './contacts/contacts.module';
 import { FinancialModule } from './financial/financial.module';
 import { AgendaModule } from './agenda/agenda.module';
+import { AiModule } from './integrations/ai/ai.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { AgendaModule } from './agenda/agenda.module';
     ContactsModule,
     FinancialModule,
     AgendaModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [AppService],
