@@ -100,72 +100,31 @@ export function LandingPage() {
                         </div>
                     </div>
 
-                    {/* 3D Composition */}
-                    <div className="relative mx-auto w-full max-w-[500px] lg:mr-0 z-10 perspective-1000 mt-10 lg:mt-0">
+                    {/* Hero Image */}
+                    <div className="relative mx-auto w-full max-w-[600px] lg:mr-0 z-10 perspective-1000 mt-10 lg:mt-0">
                         {/* Abstract Shape Background */}
                         <div className="absolute top-10 left-10 w-full h-full bg-gradient-to-tr from-[#00C2CB]/20 to-transparent rounded-full blur-3xl -z-10"></div>
 
                         <motion.div
-                            initial={{ opacity: 0, rotateY: -10, x: 50 }}
-                            animate={{ opacity: 1, rotateY: 0, x: 0 }}
+                            initial={{ opacity: 0, scale: 0.9, rotateY: -10 }}
+                            animate={{ opacity: 1, scale: 1, rotateY: 0 }}
                             transition={{ duration: 1 }}
-                            className="relative"
+                            className="relative rounded-2xl overflow-hidden shadow-2xl border border-white/10"
                         >
-                            {/* Browser Window Mockup (Site) */}
-                            <div className="relative rounded-xl overflow-hidden shadow-2xl border border-gray-700 bg-gray-900 w-full aspect-[4/3] z-10 transform lg:-translate-x-12 translate-y-6 lg:translate-y-12">
-                                <div className="bg-gray-800 p-2 flex gap-1.5 border-b border-gray-700">
-                                    <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
-                                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
-                                    <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>
-                                    <div className="ml-2 w-full bg-gray-900/50 rounded-sm h-4 text-[8px] flex items-center px-2 text-gray-400 font-mono">
-                                        imobiliaria.com.br
-                                    </div>
-                                </div>
-                                <div className="relative w-full h-full bg-slate-50 p-4">
-                                    {/* Mock Website Content */}
-                                    <div className="flex justify-between items-center mb-4">
-                                        <div className="w-20 h-6 bg-slate-200 rounded"></div>
-                                        <div className="flex gap-2">
-                                            <div className="w-12 h-2 bg-slate-200 rounded-full"></div>
-                                            <div className="w-12 h-2 bg-slate-200 rounded-full"></div>
-                                        </div>
-                                    </div>
-                                    <div className="w-full h-[40%] bg-slate-200 rounded-lg mb-4 flex items-center justify-center text-slate-400 text-xs">Banner Imóvel Destaque</div>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="h-24 bg-slate-100 rounded border border-slate-200 p-2">
-                                            <div className="w-full h-1/2 bg-slate-200 mb-2 rounded-sm"></div>
-                                            <div className="w-3/4 h-2 bg-slate-200 rounded-full"></div>
-                                        </div>
-                                        <div className="h-24 bg-slate-100 rounded border border-slate-200 p-2">
-                                            <div className="w-full h-1/2 bg-slate-200 mb-2 rounded-sm"></div>
-                                            <div className="w-3/4 h-2 bg-slate-200 rounded-full"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Mobile Mockup (WhatsApp) */}
-                            <div className="absolute right-0 -bottom-8 lg:-right-6 lg:-bottom-12 w-[160px] md:w-[200px] rounded-[2rem] md:rounded-[2.5rem] bg-[#1a1a1a] shadow-[0_0_50px_rgba(0,0,0,0.5)] border-[4px] md:border-[6px] border-[#333] overflow-hidden transform scale-90 md:scale-100 origin-bottom-right">
-                                <div className="absolute top-0 inset-x-0 h-3 md:h-4 bg-black rounded-b-xl z-20"></div>
-                                <div className="bg-[#E5DDD5] h-[300px] md:h-[400px] flex flex-col p-2 pt-6 md:pt-8 font-sans text-[9px] md:text-[10px]">
-                                    <div className="bg-white p-2 rounded-lg rounded-tl-none shadow-sm mb-2 max-w-[90%] self-start">
-                                        <p className="font-bold text-[#00C2CB]">Olá! 👋</p>
-                                        <p>Encontrei este apartamento:</p>
-                                        <div className="mt-1 bg-gray-100 h-12 md:h-16 rounded mb-1"></div>
-                                        <p className="font-bold">Apt. Centro - 3Q</p>
-                                        <p>R$ 450.000</p>
-                                    </div>
-                                </div>
-                            </div>
+                            <img
+                                src="/hero-zapilar.png"
+                                alt="Atendimento Imobiliário Profissional"
+                                className="w-full h-auto object-cover transform hover:scale-105 transition-transform duration-700"
+                            />
 
                             {/* Floating Badge */}
                             <motion.div
                                 animate={{ y: [0, -10, 0] }}
                                 transition={{ duration: 4, repeat: Infinity }}
-                                className="absolute -top-4 right-4 md:right-10 bg-[#00C2CB] text-white p-2 md:p-3 rounded-xl shadow-lg shadow-[#00C2CB]/30 z-30"
+                                className="absolute top-4 right-4 bg-[#00C2CB] text-white p-3 rounded-xl shadow-lg shadow-[#00C2CB]/30 z-30"
                             >
-                                <TrendingUp className="w-5 h-5 md:w-6 md:h-6 mb-1" />
-                                <div className="font-bold text-xs md:text-sm">+ Vendas</div>
+                                <TrendingUp className="w-6 h-6 mb-1" />
+                                <div className="font-bold text-sm">+ Eficiência</div>
                             </motion.div>
                         </motion.div>
                     </div>

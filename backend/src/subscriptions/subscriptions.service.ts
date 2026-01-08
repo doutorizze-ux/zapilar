@@ -68,23 +68,26 @@ export class SubscriptionsService {
             }
         }
 
-        // Determine frontend URL for callback
-        const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'https://zapilar.online');
+        // Determine frontend URL and optional callback
+        const asaasSuccessUrl = this.configService.get<string>('ASAAS_SUCCESS_URL');
 
-        let subscription;
-        const subscriptionPayload = {
+        const subscriptionPayload: any = {
             billingType: billingType || 'PIX',
             value: plan.price,
             nextDueDate: new Date().toISOString().split('T')[0],
             cycle: plan.interval,
             description: `Assinatura Plano ${plan.name}`,
             creditCard,
-            creditCardHolderInfo,
-            callback: {
-                successUrl: `${frontendUrl}/dashboard/plans`
-            }
+            creditCardHolderInfo
         };
 
+        if (asaasSuccessUrl) {
+            subscriptionPayload.callback = {
+                successUrl: asaasSuccessUrl
+            };
+        }
+
+        let subscription;
         try {
             subscription = await this.asaasService.createSubscription({
                 customer: customerId,
