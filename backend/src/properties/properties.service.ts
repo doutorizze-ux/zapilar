@@ -23,18 +23,11 @@ export class PropertiesService {
                 const plan = await this.plansService.findOne(user.planId);
 
                 // If plan has a limit (not null/undefined/0), check it
-                if (plan && plan.vehicleLimit !== null && plan.vehicleLimit !== undefined) {
+                if (plan && plan.propertyLimit !== null && plan.propertyLimit !== undefined) {
                     const currentCount = await this.propertiesRepository.count({ where: { userId } });
 
-                    // If limit is 0, it might mean unlimited or blocked. Assuming 0 is unlimited or handled elsewhere?
-                    // Usually 0 means 'None', -1 or null means 'Unlimited'.
-                    // User request said: "value x can put only 10 vehicles... value x can put unlimited".
-                    // Let's assume strict limit > 0. If limit is 0, we might want to block or treat as unlimited.
-                    // Given the context, usually limit=null is unlimited.
-                    // If explicit number, it is the limit.
-
-                    if (plan.vehicleLimit > 0 && currentCount >= plan.vehicleLimit) {
-                        throw new BadRequestException(`Limite de imóveis do plano ${plan.name} atingido (${plan.vehicleLimit} imóveis). Faça um upgrade para adicionar mais.`);
+                    if (plan.propertyLimit > 0 && currentCount >= plan.propertyLimit) {
+                        throw new BadRequestException(`Limite de imóveis do plano ${plan.name} atingido (${plan.propertyLimit} imóveis). Faça um upgrade para adicionar mais.`);
                     }
                 }
             }
