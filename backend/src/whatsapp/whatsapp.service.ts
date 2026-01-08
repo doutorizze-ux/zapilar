@@ -386,12 +386,15 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
     const stateData = this.userStates.get(stateKey) || { mode: 'MENU' };
     const currentState = stateData.mode;
     const isFirstMessage = !this.userStates.has(stateKey);
-    const normalizedMsg = lowerMsg.replace(/[^a-z]/g, '');
+    const normalizedMsg = lowerMsg
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z]/g, '');
 
     // Se estiver em modo HANDOVER (atendimento humano), o bot fica em silêncio
     // a menos que o cliente queira explicitamente voltar para o menu automático.
     if (currentState === 'HANDOVER') {
-      if (['menu', 'voltar', 'inicio', 'início'].includes(normalizedMsg)) {
+      if (['menu', 'voltar', 'inicio'].includes(normalizedMsg)) {
         this.userStates.set(stateKey, { mode: 'MENU' });
         await this.sendMainMenu(userId, jid, storeName);
         return;
@@ -403,9 +406,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
     // Lógica padrão de boas-vindas e reset de menu
     if (
       isFirstMessage ||
-      ['menu', 'início', 'inicio', 'voltar', 'oi', 'ola', 'olá'].includes(
-        normalizedMsg,
-      )
+      ['menu', 'inicio', 'voltar', 'oi', 'ola'].includes(normalizedMsg)
     ) {
       this.userStates.set(stateKey, { mode: 'MENU' });
       await this.sendMainMenu(userId, jid, storeName);
