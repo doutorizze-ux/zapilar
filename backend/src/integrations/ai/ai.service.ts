@@ -65,4 +65,28 @@ export class AiService {
 
         return { intent: 'UNKNOWN', entities: {} };
     }
+
+    async extractQualification(message: string): Promise<any> {
+        if (!this.model) return null;
+
+        const prompt = `
+            Extract lead qualification data from the following message.
+            Identify: budget (string), financing (Yes/No/Unsure), motivation (Living/Investment), urgency (Immediate/Soon/Researching), notes (brief summary).
+            Respond ONLY with a JSON object.
+            
+            Message: "${message}"
+        `;
+
+        try {
+            const result = await this.model.generateContent(prompt);
+            const text = result.response.text();
+            const jsonStr = text.match(/\{.*\}/s)?.[0];
+            if (jsonStr) {
+                return JSON.parse(jsonStr);
+            }
+        } catch (e) {
+            this.logger.error('Error extracting qualification with AI:', e);
+        }
+        return null;
+    }
 }

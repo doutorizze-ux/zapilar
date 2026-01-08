@@ -1,4 +1,4 @@
-import { Plus, Search, Filter, Home, Bed, Maximize } from 'lucide-react';
+import { Plus, Search, Filter, Home, Bed, Maximize, Share2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { API_URL } from '../config';
 import { PropertyManagerModal } from '../components/PropertyManagerModal';
@@ -159,12 +159,23 @@ export function PropertiesPage() {
                                     <span className="text-xl font-bold text-cyan-600">
                                         {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(property.price))}
                                     </span>
-                                    <button
-                                        onClick={() => handleEdit(property)}
-                                        className="text-sm font-medium text-gray-500 hover:text-cyan-600 transition-colors"
-                                    >
-                                        Gerenciar
-                                    </button>
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            onClick={() => {
+                                                const slug = localStorage.getItem('user_slug') || 'store';
+                                                window.open(`/${slug}/imovel/${property.id}`, '_blank');
+                                            }}
+                                            className="text-xs font-bold text-cyan-600 hover:underline flex items-center gap-1"
+                                        >
+                                            <Share2 className="w-3 h-3" /> Ver Público
+                                        </button>
+                                        <button
+                                            onClick={() => handleEdit(property)}
+                                            className="text-sm font-medium text-gray-500 hover:text-cyan-600 transition-colors"
+                                        >
+                                            Gerenciar
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>

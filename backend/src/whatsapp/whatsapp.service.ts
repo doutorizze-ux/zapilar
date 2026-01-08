@@ -30,7 +30,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
     private connectionStatuses: Map<string, 'CONNECTED' | 'DISCONNECTED' | 'QR_READY' | 'CONNECTING'> = new Map();
 
     // State Machine for Chat
-    private userStates: Map<string, { mode: 'MENU' | 'WAITING_PROPERTY_NAME' | 'WAITING_FAQ' | 'HANDOVER' | 'WAITING_CITY' | 'WAITING_TYPE' | 'WAITING_NEIGHBORHOOD' | 'WAITING_SEARCH', tempCity?: string, tempType?: string }> = new Map();
+    private userStates: Map<string, { mode: 'MENU' | 'WAITING_PROPERTY_NAME' | 'WAITING_FAQ' | 'HANDOVER' | 'WAITING_CITY' | 'WAITING_TYPE' | 'WAITING_NEIGHBORHOOD' | 'WAITING_SEARCH' | 'WAITING_QUALIFICATION', tempCity?: string, tempType?: string }> = new Map();
 
     // Pause List
     private pausedUsers: Set<string> = new Set();
@@ -385,6 +385,8 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
             this.userStates.set(stateKey, { mode: 'MENU' });
         } else if (currentState === 'WAITING_FAQ') {
             await this.handleAiFaq(userId, jid, msg, storeName);
+        } else if (currentState === 'WAITING_QUALIFICATION') {
+            await this.handleQualification(userId, jid, msg, storeName);
         }
     }
 
@@ -430,8 +432,37 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
                 return;
             }
         }
-        await this.sendMainMenu(userId, jid, storeName);
-        this.userStates.set(`${userId}:${jid}`, { mode: 'MENU' });
+        await this.startQualification(userId, jid, storeName);
+    }
+
+    private async startQualification(userId: string, jid: string, storeName: string) {
+        this.userStates.set(`${userId}:${jid}`, { mode: 'WAITING_QUALIFICATION' });
+        await new Promise(r => setTimeout(r, 2000));
+        await this.sendMessage(userId, jid, `Para eu te ajudar melhor, me conte um pouco mais: você busca esse imóvel para morar ou investir? E qual seria seu orçamento aproximado? 🏠💰`);
+    }
+
+    private async handleQualification(userId: string, jid: string, msg: string, storeName: string) {
+        const qualification = await this.aiService.extractQualification(msg);
+        this.logger.log(`AI Qualification Data for "${msg}": ${JSON.stringify(qualification)}`);
+
+        if (qualification) {
+            await this.leadsService.updateQualification(userId, jid, {
+                budget: qualification.budget,
+                financing: qualification.financing,
+                motivation: qualification.motivation,
+                urgency: qualification.urgency,
+                aiNotes: qualification.notes
+            });
+
+            await this.sendMessage(userId, jid, `Perfeito! Já anotei essas informações por aqui e vou passar para nossos consultores. Isso nos ajuda a encontrar as melhores oportunidades para você! 😉`);
+            await this.sendMainMenu(userId, jid, storeName);
+            this.userStates.set(`${userId}:${jid}`, { mode: 'MENU' });
+        } else {
+            // Fallback if AI fails to extract anything useful
+            await this.sendMessage(userId, jid, `Entendido! Se tiver mais alguma informação que queira compartilhar, como valor máximo ou se precisa de financiamento, pode me dizer agora.`);
+            await this.sendMainMenu(userId, jid, storeName);
+            this.userStates.set(`${userId}:${jid}`, { mode: 'MENU' });
+        }
     }
 
     private async handleCitySelection(userId: string, jid: string, storeName: string) {
@@ -575,22 +606,18 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         const menu = `👋 Olá! Bem-vindo(a) à *${storeName}*
 🏠 _Seu novo imóvel te espera aqui!_
 
-Sou seu assistente virtual. Selecione uma opção:
+✨ *Como posso te ajudar hoje?*
 
-1️⃣  *Comprar Imóvel*
-     _Buscar por Cidade e Bairro_
-
+1️⃣  *Comprar Imóvel* (Busca guiada)
 2️⃣  *Falar com Corretor*
-     _Atendimento humano personalizado_
-
-3️⃣  *Dúvidas Frequentes*
-     _Localização, financiamento, visitas_
-
+3️⃣  *Dúvidas Frequentes (IA)*
 4️⃣  *Busca Rápida*
-     _Digitar características (ex: Casa Centro)_
+
+💡 *DICA:* Você pode simplesmente digitar o que procura ou fazer uma pergunta agora mesmo! 
+_Ex: "Procuro uma casa com piscina no centro"_
 
 ━━━━━━━━━━━━━━━━━━━━
-🕐 _Atendimento 24h_`;
+🕐 _Atendimento Inteligente 24h_`;
 
         try {
             await sock.sendMessage(to, { text: menu });
@@ -601,38 +628,42 @@ Sou seu assistente virtual. Selecione uma opção:
     }
 
     private async handlePropertySearch(userId: string, jid: string, query: string, storeName: string) {
+        // AI INTENT ANALYSIS AGAIN (to get entities)
+        const analysis = await this.aiService.analyzeIntent(query);
+        const { entities } = analysis;
+
         const allProperties = await this.propertiesService.findAll(userId);
         let found: any[] = [];
 
         if (query) {
             // Smart Token Search
             const qNormalized = query.toLowerCase().trim();
-            const tokens = qNormalized.split(/\s+/).filter(t => t.length > 1); // Ignore single chars
+            const tokens = qNormalized.split(/\s+/).filter(t => t.length > 1);
 
             const scored = allProperties.map(p => {
                 let score = 0;
                 const pTitle = (p.title || '').toLowerCase();
                 const pType = (p.type || '').toLowerCase();
-                // Check new location fields fallback
                 const pCity = (p.city || '').toLowerCase();
                 const pNeigh = (p.neighborhood || '').toLowerCase();
                 const pLocation = (p.location || '').toLowerCase();
-                const pDesc = (p.description || '').toLowerCase();
 
-                // Construct a broad search string
+                // 1. AI Entity Priority (Highest Boost)
+                if (entities) {
+                    if (entities.city && pCity.includes(entities.city.toLowerCase())) score += 50;
+                    if (entities.neighborhood && pNeigh.includes(entities.neighborhood.toLowerCase())) score += 50;
+                    if (entities.type && pType.includes(entities.type.toLowerCase())) score += 30;
+                    if (entities.rooms && p.bedrooms >= parseInt(entities.rooms)) score += 20;
+                    if (entities.max_price && p.price <= parseFloat(entities.max_price)) score += 20;
+                }
+
+                // 2. Token Matching
                 const searchStr = `${pTitle} ${pType} ${pLocation} ${pCity} ${pNeigh} ${p.bedrooms} quartos ${p.area}m`;
-
                 for (const token of tokens) {
-                    // Broader Match in complete string
                     if (searchStr.includes(token)) score += 1;
-
-                    // Exact Word Match
                     const regex = new RegExp(`\\b${token}\\b`, 'i');
                     if (regex.test(searchStr)) score += 3;
-
-                    // High value match on Type/Location
                     if (pType.includes(token)) score += 2;
-                    if (pLocation.includes(token)) score += 2;
                     if (pCity.includes(token)) score += 2;
                     if (pNeigh.includes(token)) score += 2;
                 }
@@ -642,17 +673,20 @@ Sou seu assistente virtual. Selecione uma opção:
 
             // Filter and sort
             found = scored
-                .filter(item => item.score > 0) // Allows lower threshold for properties
+                .filter(item => item.score > 0)
                 .sort((a, b) => b.score - a.score)
                 .map(item => item.property);
         }
 
-        await this.sendPropertyResults(userId, jid, found, storeName);
+        const user = await this.usersService.findById(userId);
+        const slug = user?.slug || userId;
+
+        await this.sendPropertyResults(userId, jid, found, storeName, slug);
     }
 
-    private async sendPropertyResults(userId: string, jid: string, properties: any[], storeName: string) {
+    private async sendPropertyResults(userId: string, jid: string, properties: any[], storeName: string, slug?: string) {
         if (properties.length > 0) {
-            const limit = 5; // Increased limit to 5
+            const limit = 5;
             const subset = properties.slice(0, limit);
 
             // Mark interest in the top property
@@ -660,42 +694,27 @@ Sou seu assistente virtual. Selecione uma opção:
                 await this.leadsService.setInterest(userId, jid, `${subset[0].type} - ${subset[0].title}`);
             } catch (e) { }
 
+            const frontendUrl = this.configService.get('FRONTEND_URL') || 'https://zapilar.online';
+
             for (const prop of subset) {
                 // Send Images
                 if (prop.images && prop.images.length > 0) {
-                    // Limit to first 3 images to avoid spamming too much
-                    const imagesToSend = prop.images.slice(0, 3);
-                    for (const img of imagesToSend) {
-                        await this.sendImage(userId, jid, this.resolveImageUrl(img));
-                        // Small delay between images
-                        await new Promise(r => setTimeout(r, 600));
-                    }
+                    const firstImage = this.resolveImageUrl(prop.images[0]);
+                    await this.sendImage(userId, jid, firstImage);
+                    await new Promise(r => setTimeout(r, 600));
                 }
 
                 // Send Details
                 const price = Number(prop.price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                const features: string[] = [];
-                if (prop.pool) features.push('Piscina');
-                if (prop.security) features.push('Segurança 24h');
-                if (prop.elevator) features.push('Elevador');
-                if (prop.furnished) features.push('Mobiliado');
+                const propertyLink = `${frontendUrl}/${slug}/imovel/${prop.id}`;
 
                 let specs = `🏠 *${prop.title}*
 📍 *Local:* ${prop.neighborhood ? prop.neighborhood + ', ' + prop.city : prop.location}
-📐 *Área:* ${prop.area} m²
-🛏️ *Quartos:* ${prop.bedrooms}
-🛁 *Banheiros:* ${prop.bathrooms}
-🚗 *Vagas:* ${prop.parkingSpaces}
-💰 *R$ ${price}*`;
+📐 *Área:* ${prop.area} m² | 🛏️ *Quartos:* ${prop.bedrooms}
+💰 *R$ ${price}*
 
-                if (features.length > 0) {
-                    specs += `\n\n✨ *Destaques:* \n${features.join(' | ')}`;
-                }
-
-                if (prop.description) {
-                    const shortDesc = prop.description.length > 100 ? prop.description.substring(0, 100) + '...' : prop.description;
-                    specs += `\n\n📝 ${shortDesc}`;
-                }
+✨ _Confira todos os detalhes e fotos em nossa apresentação premium:_
+🔗 ${propertyLink}`;
 
                 await this.sendMessage(userId, jid, specs);
                 await new Promise(r => setTimeout(r, 1000));
@@ -705,10 +724,9 @@ Sou seu assistente virtual. Selecione uma opção:
                 await this.sendMessage(userId, jid, `_Exibindo ${limit} de ${properties.length} imóveis encontrados._`);
             }
 
-            // Send Menu
-            await this.sendMainMenu(userId, jid, storeName);
+            await this.startQualification(userId, jid, storeName);
         } else {
-            await this.sendMessage(userId, jid, "😕 Não encontrei nenhum imóvel com essas características neste bairro. Tente buscar em outra região.");
+            await this.sendMessage(userId, jid, "😕 Não encontrei nenhum imóvel com essas características. Tente buscar em outra região ou diga o que você procura.");
             await this.sendMainMenu(userId, jid, storeName);
         }
     }

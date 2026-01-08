@@ -38,6 +38,7 @@ export function LoginPage() {
 
             if (response.ok) {
                 const data = await response.json();
+                if (data.user?.slug) localStorage.setItem('user_slug', data.user.slug);
                 login(data.access_token, data.user);
 
                 if (data.user.role === 'admin') {

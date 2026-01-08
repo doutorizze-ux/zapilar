@@ -27,6 +27,7 @@ import { PublicStorePage } from './pages/PublicStorePage';
 import { ContactsPage } from './pages/ContactsPage';
 import { FinancialPage } from './pages/FinancialPage';
 import { AgendaPage } from './pages/AgendaPage';
+import { PropertyDetailPage } from './pages/PropertyDetailPage';
 
 import { useEffect } from 'react';
 import { API_URL } from './config';
@@ -74,6 +75,7 @@ function App() {
 
           {/* Public Store Route - Must be last to avoid conflicts */}
           <Route path="/:slug" element={<PublicStorePage />} />
+          <Route path="/:slug/imovel/:propertyId" element={<PropertyDetailPage />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

@@ -51,6 +51,14 @@ export class LeadsService {
         return null;
     }
 
+    async updateQualification(storeId: string, phone: string, data: Partial<Lead>) {
+        const lead = await this.leadsRepository.findOne({ where: { storeId, phone } });
+        if (lead) {
+            Object.assign(lead, data);
+            return this.leadsRepository.save(lead);
+        }
+    }
+
     async getStats(storeId: string) {
         const totalLeads = await this.leadsRepository.count({ where: { storeId } });
         const recentLeads = await this.leadsRepository.find({

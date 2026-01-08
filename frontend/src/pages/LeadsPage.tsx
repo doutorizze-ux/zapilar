@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { User, MessageSquare, Phone, Calendar, Plus, Trash2, Home } from 'lucide-react';
+import { User, Plus, Trash2, Home } from 'lucide-react';
 import { API_URL } from '../config';
 import { CreateLeadModal } from '../components/CreateLeadModal';
 
@@ -14,6 +14,11 @@ interface Lead {
     updatedAt: string;
     isHot?: boolean;
     interestSubject?: string;
+    budget?: string;
+    financing?: string;
+    motivation?: string;
+    urgency?: string;
+    aiNotes?: string;
 }
 
 export function LeadsPage() {
@@ -77,12 +82,19 @@ export function LeadsPage() {
         return '?';
     };
 
+    const getUrgencyColor = (u?: string) => {
+        if (!u) return 'bg-gray-100 text-gray-600';
+        if (u.toLowerCase().includes('immedia')) return 'bg-red-100 text-red-700 border-red-200';
+        if (u.toLowerCase().includes('soon')) return 'bg-orange-100 text-orange-700 border-orange-200';
+        return 'bg-blue-100 text-blue-700 border-blue-200';
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Meus Leads</h1>
-                    <p className="text-gray-500">Gerencie os contatos capturados pelo seu assistente virtual.</p>
+                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Cérebro de Vendas (CRM)</h1>
+                    <p className="text-gray-500">Qualificação automática por IA e gestão de oportunidades.</p>
                 </div>
                 <div className="flex gap-3">
                     <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 flex items-center">
@@ -101,79 +113,97 @@ export function LeadsPage() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
-                        <thead className="bg-gray-50 border-b border-gray-200 font-medium text-gray-500">
+                        <thead className="bg-gray-50 border-b border-gray-200 font-bold text-gray-400 uppercase tracking-wider text-[10px]">
                             <tr>
                                 <th className="px-6 py-4">Nome / Contato</th>
-                                <th className="px-6 py-4">Última Mensagem</th>
-                                <th className="px-6 py-4">Telefone</th>
+                                <th className="px-6 py-4">Qualificação IA</th>
+                                <th className="px-6 py-4">Contexto & Conversa</th>
                                 <th className="px-6 py-4">Data</th>
-                                <th className="px-6 py-4">Ações</th>
+                                <th className="px-6 py-4 text-right">Ações</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                             {leads.map(lead => (
-                                <tr key={lead.id} className="hover:bg-gray-50 transition-colors">
+                                <tr key={lead.id} className="hover:bg-gray-50/50 transition-colors">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-full flex items-center justify-center text-white font-bold shadow-sm">
+                                            <div className="w-10 h-10 bg-neutral-900 rounded-lg flex items-center justify-center text-white font-bold shadow-sm">
                                                 {getInitial(lead.name)}
                                             </div>
                                             <div>
                                                 <div className="flex items-center gap-2">
                                                     <p className="font-bold text-gray-900">{lead.name || 'Desconhecido'}</p>
                                                     {lead.isHot && (
-                                                        <span className="px-2 py-0.5 bg-red-100 text-red-600 text-[10px] font-bold uppercase rounded-full border border-red-200 flex items-center gap-1">
-                                                            🔥 Hot Lead
+                                                        <span className="px-2 py-0.5 bg-red-500 text-white text-[9px] font-black uppercase rounded shadow-sm">
+                                                            HOT
                                                         </span>
                                                     )}
                                                 </div>
-                                                <p className="text-xs text-gray-500">ID: {lead.id.slice(0, 8)}</p>
+                                                <p className="text-xs text-gray-500 font-medium">{formatPhone(lead.phone)}</p>
                                             </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex flex-wrap gap-1.5 max-w-[200px]">
+                                            {lead.budget && (
+                                                <span className="px-2 py-1 bg-green-50 text-green-700 text-[10px] font-bold rounded border border-green-100 flex items-center gap-1">
+                                                    💰 {lead.budget}
+                                                </span>
+                                            )}
+                                            {lead.motivation && (
+                                                <span className="px-2 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded border border-indigo-100">
+                                                    🎯 {lead.motivation === 'Living' ? 'Moradia' : 'Investimento'}
+                                                </span>
+                                            )}
+                                            {lead.urgency && (
+                                                <span className={`px-2 py-1 text-[10px] font-bold rounded border ${getUrgencyColor(lead.urgency)}`}>
+                                                    ⏳ {lead.urgency}
+                                                </span>
+                                            )}
+                                            {!lead.budget && !lead.motivation && !lead.urgency && (
+                                                <span className="text-gray-400 italic text-xs">Pendente...</span>
+                                            )}
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex flex-col gap-1 max-w-xs">
                                             {lead.interestSubject && (
-                                                <div className="flex items-center gap-1.5 text-xs font-semibold text-cyan-700 bg-cyan-50 px-2 py-1 rounded w-fit mb-1">
+                                                <div className="flex items-center gap-1.5 text-xs font-bold text-cyan-700 mb-1">
                                                     <Home className="w-3 h-3" />
                                                     {lead.interestSubject}
                                                 </div>
                                             )}
-                                            <div className="flex items-center gap-2">
-                                                <MessageSquare className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                                                <span className="truncate text-gray-600" title={lead.lastMessage}>
-                                                    {lead.lastMessage && lead.lastMessage.length > 50
-                                                        ? lead.lastMessage.substring(0, 50) + '...'
-                                                        : lead.lastMessage || '-'}
-                                                </span>
+                                            <div className="bg-gray-50 p-2 rounded-lg border border-gray-100">
+                                                <p className="text-xs text-gray-600 line-clamp-2 italic">
+                                                    "{lead.lastMessage || '-'}"
+                                                </p>
                                             </div>
+                                            {lead.aiNotes && (
+                                                <p className="text-[10px] text-gray-400 font-medium mt-1 truncate" title={lead.aiNotes}>
+                                                    🤖 {lead.aiNotes}
+                                                </p>
+                                            )}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-2 text-gray-600">
-                                            <Phone className="w-4 h-4 text-gray-400" />
-                                            {formatPhone(lead.phone)}
+                                    <td className="px-6 py-4 text-gray-500 font-medium text-xs">
+                                        <div className="flex flex-col">
+                                            <span>{new Date(lead.updatedAt).toLocaleDateString()}</span>
+                                            <span className="text-[10px] opacity-70">{new Date(lead.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-gray-500">
-                                        <div className="flex items-center gap-2">
-                                            <Calendar className="w-4 h-4 text-gray-400" />
-                                            {new Date(lead.updatedAt).toLocaleDateString()} <span className="text-xs">{new Date(lead.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex gap-2">
+                                    <td className="px-6 py-4 text-right">
+                                        <div className="flex gap-2 justify-end">
                                             <a
                                                 href={`https://wa.me/${lead.phone}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="text-green-600 hover:text-green-800 font-medium text-xs border border-green-200 bg-green-50 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-colors inline-block"
+                                                className="text-green-600 hover:text-green-800 font-bold text-[10px] uppercase border border-green-200 bg-green-50 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-colors inline-block"
                                             >
-                                                Conversar no WhatsApp
+                                                WhatsApp
                                             </a>
                                             <button
                                                 onClick={() => handleDelete(lead.id)}
-                                                className="text-red-600 hover:text-red-800 font-medium text-xs border border-red-200 bg-red-50 px-3 py-1.5 rounded-lg hover:bg-red-100 transition-colors"
+                                                className="text-gray-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors"
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
