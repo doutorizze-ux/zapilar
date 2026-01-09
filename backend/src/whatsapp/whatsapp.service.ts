@@ -1146,8 +1146,11 @@ _Ex: "Procuro uma casa com piscina no centro"_
   }
 
   async getChatHistory(storeId: string, contactId: string) {
+    let jid = contactId;
+    if (!jid.includes('@')) jid = `${jid.replace(/\D/g, '')}@s.whatsapp.net`;
+
     return this.chatRepository.find({
-      where: { storeId, contactId },
+      where: { storeId, contactId: jid },
       order: { createdAt: 'ASC' },
     });
   }

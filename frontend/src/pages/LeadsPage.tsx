@@ -1,9 +1,10 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { User, Plus, Trash2, Home } from 'lucide-react';
+import { User, Plus, Trash2, Home, MessageSquare } from 'lucide-react';
 import { API_URL } from '../config';
 import { CreateLeadModal } from '../components/CreateLeadModal';
+import { ChatHistoryModal } from '../components/ChatHistoryModal';
 
 interface Lead {
     id: string;
@@ -26,6 +27,8 @@ export function LeadsPage() {
     const [leads, setLeads] = useState<Lead[]>([]);
     const [loading, setLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [selectedChatLead, setSelectedChatLead] = useState<Lead | null>(null);
+    const [isChatModalOpen, setIsChatModalOpen] = useState(false);
 
     useEffect(() => {
         fetchLeads();
@@ -173,10 +176,20 @@ export function LeadsPage() {
                                                     {lead.interestSubject}
                                                 </div>
                                             )}
-                                            <div className="bg-gray-50 p-2 rounded-lg border border-gray-100">
-                                                <p className="text-xs text-gray-600 line-clamp-2 italic">
+                                            <div
+                                                className="bg-gray-50 p-2 rounded-lg border border-gray-100 hover:border-cyan-200 hover:bg-cyan-50/30 cursor-pointer transition-all group/msg"
+                                                onClick={() => {
+                                                    setSelectedChatLead(lead);
+                                                    setIsChatModalOpen(true);
+                                                }}
+                                            >
+                                                <p className="text-xs text-gray-600 line-clamp-2 italic group-hover/msg:text-cyan-700">
                                                     "{lead.lastMessage || '-'}"
                                                 </p>
+                                                <div className="flex items-center gap-1 mt-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                                                    <MessageSquare className="w-3 h-3 text-cyan-600" />
+                                                    <span className="text-[10px] font-bold text-cyan-600 uppercase">Ver todas</span>
+                                                </div>
                                             </div>
                                             {lead.aiNotes && (
                                                 <p className="text-[10px] text-gray-400 font-medium mt-1 truncate" title={lead.aiNotes}>
@@ -201,6 +214,15 @@ export function LeadsPage() {
                                             >
                                                 WhatsApp
                                             </a>
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedChatLead(lead);
+                                                    setIsChatModalOpen(true);
+                                                }}
+                                                className="text-cyan-600 hover:text-cyan-800 font-bold text-[10px] uppercase border border-cyan-200 bg-cyan-50 px-3 py-1.5 rounded-lg hover:bg-cyan-100 transition-colors inline-block"
+                                            >
+                                                Conversa
+                                            </button>
                                             <button
                                                 onClick={() => handleDelete(lead.id)}
                                                 className="text-gray-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors"
@@ -236,6 +258,13 @@ export function LeadsPage() {
                 onSuccess={() => {
                     fetchLeads();
                 }}
+            />
+
+            <ChatHistoryModal
+                isOpen={isChatModalOpen}
+                onClose={() => setIsChatModalOpen(false)}
+                lead={selectedChatLead}
+                token={token}
             />
         </div >
     );

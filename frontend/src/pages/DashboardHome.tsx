@@ -60,7 +60,7 @@ export function DashboardHome() {
                         <Link to="/dashboard/properties" className="bg-white text-cyan-900 px-4 py-2 rounded-lg font-bold hover:bg-cyan-50 transition flex items-center gap-2">
                             <Plus className="w-4 h-4" /> Novo Imóvel
                         </Link>
-                        <Link to="/dashboard/chat" className="bg-white/10 text-white px-4 py-2 rounded-lg font-bold hover:bg-white/20 transition backdrop-blur-sm">
+                        <Link to="/dashboard/leads" className="bg-white/10 text-white px-4 py-2 rounded-lg font-bold hover:bg-white/20 transition backdrop-blur-sm">
                             Ver Mensagens
                         </Link>
                     </div>
@@ -98,7 +98,7 @@ export function DashboardHome() {
                 <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="text-lg font-bold text-gray-900">Leads Recentes</h3>
-                        <Link to="/dashboard/whatsapp" className="text-sm text-cyan-600 hover:text-cyan-800 font-medium flex items-center gap-1">
+                        <Link to="/dashboard/leads" className="text-sm text-cyan-600 hover:text-cyan-800 font-medium flex items-center gap-1">
                             Ver todos <ArrowRight className="w-4 h-4" />
                         </Link>
                     </div>
@@ -108,7 +108,7 @@ export function DashboardHome() {
                             <p className="text-gray-500 text-center py-8">Nenhum lead recente.</p>
                         ) : (
                             statsData.recentLeads.map((lead: any) => (
-                                <div key={lead.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer group">
+                                <Link to="/dashboard/leads" key={lead.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer group">
                                     <div className="flex items-center gap-4">
                                         <div className="w-10 h-10 bg-cyan-100 rounded-full flex items-center justify-center text-cyan-600 font-bold shrink-0">
                                             {(lead.name || lead.phone || 'L').charAt(0).toUpperCase()}
@@ -123,7 +123,7 @@ export function DashboardHome() {
                                     <span className="text-xs text-gray-400 whitespace-nowrap">
                                         {new Date(lead.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </span>
-                                </div>
+                                </Link>
                             ))
                         )}
                     </div>
