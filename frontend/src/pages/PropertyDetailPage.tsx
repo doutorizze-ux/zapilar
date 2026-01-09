@@ -158,10 +158,6 @@ export function PropertyDetailPage() {
                                 <MapPin className="text-red-500" /> Localização
                             </h3>
                             <p className="text-lg text-gray-600 font-medium mb-4">{property.location}</p>
-                            <div className="w-full h-64 bg-gray-50 rounded-3xl border border-gray-100 flex items-center justify-center overflow-hidden">
-                                <img src={`https://static-maps.yandex.ru/1.x/?lang=pt_BR&ll=${-47.9},-15.8&z=14&l=map&size=650,450`} className="w-full h-full object-cover opacity-50 grayscale" />
-                                <div className="absolute font-bold text-gray-400">Mapa Ilustrativo</div>
-                            </div>
                         </div>
 
                         {/* Description */}
