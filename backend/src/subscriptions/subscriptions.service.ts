@@ -7,6 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
 import { PlansService } from '../plans/plans.service';
 import { AsaasService } from '../integrations/asaas/asaas.service';
+import { WhatsappService } from '../whatsapp/whatsapp.service';
 
 @Injectable()
 export class SubscriptionsService {
@@ -15,7 +16,8 @@ export class SubscriptionsService {
     private plansService: PlansService,
     private asaasService: AsaasService,
     private configService: ConfigService,
-  ) {}
+    private whatsappService: WhatsappService,
+  ) { }
 
   async createSubscription(userId: string, data: any) {
     const { planId, billingType, creditCard, creditCardHolderInfo } = data;
@@ -228,6 +230,38 @@ export class SubscriptionsService {
           ? await this.plansService.findOne(user.planId)
           : null;
 
+        // --- EXPRIATION NOTIFICATION LOGIC ---
+        if (sub.status === 'ACTIVE' && sub.nextDueDate) {
+          const dueDate = new Date(sub.nextDueDate);
+          const now = new Date();
+          const diffTime = dueDate.getTime() - now.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+          // If due in 3 days or less, and not notified today
+          if (diffDays >= 0 && diffDays <= 3) {
+            const lastNotified = user.lastSubscriptionNotification ? new Date(user.lastSubscriptionNotification) : null;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (!lastNotified || lastNotified.getTime() < today.getTime()) {
+              // Send WhatsApp Alert
+              const adminPhone = user.phone;
+              if (adminPhone) {
+                const message = `🚨 *AVISO DE VENCIMENTO - ZAPILAR*\n\nOlá, sua assinatura do plano *${planDetails?.name || 'Zapilar'}* vence em *${diffDays === 0 ? 'HOJE' : diffDays + ' dias'}* (${new Date(sub.nextDueDate).toLocaleDateString('pt-BR')}).\n\nPor favor, garanta que o pagamento seja realizado para evitar a interrupção dos seus serviços e do seu bot 🤖.\n\n_Acesse seu painel em Financeiro > Planos para mais detalhes._`;
+
+                // Try sending to the user itself from their session
+                await this.whatsappService.sendMessage(user.id, adminPhone, message);
+
+                // Update last notification date
+                await this.usersService.updateById(user.id, {
+                  lastSubscriptionNotification: new Date(),
+                });
+              }
+            }
+          }
+        }
+        // -------------------------------------
+
         return {
           ...sub,
           planId: user.planId,
@@ -235,6 +269,8 @@ export class SubscriptionsService {
           maxProperties: planDetails?.propertyLimit || 50, // Default fallback
           latestPaymentStatus: latestPayment ? latestPayment.status : 'UNKNOWN',
           latestPaymentId: latestPayment ? latestPayment.id : null,
+          isExpiringSoon: !!sub.nextDueDate && (new Date(sub.nextDueDate).getTime() - new Date().getTime()) < (3 * 24 * 60 * 60 * 1000),
+          daysUntilDue: sub.nextDueDate ? Math.ceil((new Date(sub.nextDueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null,
         };
       } catch (pError) {
         console.error('Error fetching payments details:', pError);

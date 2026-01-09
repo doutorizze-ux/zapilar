@@ -77,6 +77,9 @@ export class User {
   // @ManyToOne(() => Store, { nullable: true })
   // store: Store;
 
+  @Column({ nullable: true })
+  lastSubscriptionNotification: Date;
+
   @CreateDateColumn()
   createdAt: Date;
 

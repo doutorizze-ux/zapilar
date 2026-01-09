@@ -23,7 +23,16 @@ const sidebarItems = [
 export function DashboardLayout() {
     const location = useLocation();
     const navigate = useNavigate();
-    const [storeInfo, setStoreInfo] = useState<{ name: string; logoUrl: string; subscriptionId?: string; subscriptionStatus?: string; planName?: string; nextDueDate?: string } | null>(null);
+    const [storeInfo, setStoreInfo] = useState<{
+        name: string;
+        logoUrl: string;
+        subscriptionId?: string;
+        subscriptionStatus?: string;
+        planName?: string;
+        nextDueDate?: string;
+        isExpiringSoon?: boolean;
+        daysUntilDue?: number;
+    } | null>(null);
     const [loading, setLoading] = useState(true);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -66,7 +75,9 @@ export function DashboardLayout() {
                             subscriptionId: data.subscriptionId,
                             subscriptionStatus: status,
                             planName: subData?.planName,
-                            nextDueDate: subData?.nextDueDate
+                            nextDueDate: subData?.nextDueDate,
+                            isExpiringSoon: subData?.isExpiringSoon,
+                            daysUntilDue: subData?.daysUntilDue
                         });
                     }
                 } catch (error) {
@@ -246,6 +257,25 @@ export function DashboardLayout() {
             )}
 
             <main className="flex-1 overflow-auto bg-gray-50 p-4 md:p-8 pt-20 md:pt-8 w-full">
+                {storeInfo?.isExpiringSoon && storeInfo?.subscriptionStatus === 'ACTIVE' && (
+                    <div className="mb-6 bg-gradient-to-r from-orange-600 to-red-600 p-4 rounded-xl text-white shadow-lg flex flex-col md:flex-row items-center justify-between gap-4 animate-pulse">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-white/20 p-2 rounded-lg">
+                                <CreditCard className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h4 className="font-bold">Sua mensalidade vence {storeInfo.daysUntilDue === 0 ? 'HOJE' : `em ${storeInfo.daysUntilDue} dias`}!</h4>
+                                <p className="text-sm opacity-90">Evite a suspensão do seu bot e do acesso ao CRM realizando o pagamento.</p>
+                            </div>
+                        </div>
+                        <Link
+                            to="/dashboard/plans"
+                            className="bg-white text-red-600 px-6 py-2 rounded-lg font-bold hover:bg-red-50 transition-colors whitespace-nowrap shadow-sm"
+                        >
+                            Ver Meus Planos
+                        </Link>
+                    </div>
+                )}
                 <Outlet />
             </main>
 

@@ -5,10 +5,11 @@ import { SubscriptionsWebhookController } from './subscriptions.webhook.controll
 import { UsersModule } from '../users/users.module';
 import { PlansModule } from '../plans/plans.module';
 import { AsaasModule } from '../integrations/asaas/asaas.module';
+import { WhatsappModule } from '../whatsapp/whatsapp.module';
 
 @Module({
-  imports: [UsersModule, PlansModule, AsaasModule],
+  imports: [UsersModule, PlansModule, AsaasModule, WhatsappModule],
   controllers: [SubscriptionsController, SubscriptionsWebhookController],
   providers: [SubscriptionsService],
 })
-export class SubscriptionsModule {}
+export class SubscriptionsModule { }
