@@ -1,4 +1,4 @@
-import { X, Upload, FileText, Share2, Copy, Check, Instagram, Home, FileCheck, Bed, Bath, Car as CarIcon, Maximize } from 'lucide-react';
+import { X, Upload, FileText, Share2, Copy, Check, Instagram, Home, FileCheck, Bed, Bath, Car as CarIcon, Maximize, Trash2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
 
@@ -154,6 +154,32 @@ export function PropertyManagerModal({ isOpen, onClose, onSuccess, initialData }
         } catch (error) {
             console.error(error);
             alert('Erro de conexão.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDeleteDoc = async (docIndex: number) => {
+        if (!initialData || !window.confirm('Tem certeza que deseja excluir este documento?')) return;
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        try {
+            const updatedDocs = initialData.documents.filter((_: any, i: number) => i !== docIndex);
+            const res = await fetch(`${API_URL}/properties/${initialData.id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ documents: updatedDocs })
+            });
+            if (res.ok) {
+                onSuccess(); // Refresh to update list
+            } else {
+                alert('Erro ao excluir documento.');
+            }
+        } catch (error) {
+            console.error(error);
         } finally {
             setLoading(false);
         }
@@ -417,15 +443,24 @@ Aproveite essa oportunidade!
                                                         <p className="text-xs text-gray-500">{new Date(doc.date).toLocaleDateString()}</p>
                                                     </div>
                                                 </div>
-                                                <a
-                                                    href={doc.url.startsWith('http') ? doc.url : `${API_URL}${doc.url}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    download={doc.name}
-                                                    className="px-4 py-2 text-sm font-medium text-teal-600 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors"
-                                                >
-                                                    Baixar
-                                                </a>
+                                                <div className="flex gap-2">
+                                                    <a
+                                                        href={doc.url.startsWith('http') ? doc.url : `${API_URL}${doc.url}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        download={doc.name}
+                                                        className="px-4 py-2 text-sm font-medium text-teal-600 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors"
+                                                    >
+                                                        Baixar
+                                                    </a>
+                                                    <button
+                                                        onClick={() => handleDeleteDoc(i)}
+                                                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                        title="Excluir documento"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
