@@ -81,55 +81,61 @@ export function PropertyDetailPage() {
     return (
         <div className="min-h-screen bg-white font-sans text-gray-900 pb-20">
             {/* Header / Nav */}
-            <nav className="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100 h-16 flex items-center justify-between px-6">
-                <button onClick={() => navigate(`/${slug}`)} className="p-2 hover:bg-gray-100 rounded-full transition-colors flex items-center gap-2 font-medium">
-                    <ChevronLeft size={20} /> <span className="hidden sm:inline">Voltar para Loja</span>
-                </button>
-                <div className="flex items-center gap-2">
-                    {store.logoUrl ? <img src={getImageUrl(store.logoUrl)} className="h-8 w-auto" /> : <span className="font-bold">{store.name}</span>}
+            <nav className="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100 h-16 flex items-center">
+                <div className="max-w-7xl mx-auto w-full flex items-center justify-between px-6">
+                    <button onClick={() => navigate(`/${slug}`)} className="p-2 hover:bg-gray-100 rounded-full transition-colors flex items-center gap-2 font-medium">
+                        <ChevronLeft size={20} /> <span className="hidden sm:inline">Voltar para Loja</span>
+                    </button>
+                    <div className="flex items-center gap-2">
+                        {store.logoUrl ? <img src={getImageUrl(store.logoUrl)} className="h-10 w-auto object-contain" /> : <span className="font-bold text-xl">{store.name}</span>}
+                    </div>
+                    <button onClick={() => navigator.share({ title: property.title, url: window.location.href })} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                        <Share2 size={20} />
+                    </button>
                 </div>
-                <button onClick={() => navigator.share({ title: property.title, url: window.location.href })} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                    <Share2 size={20} />
-                </button>
             </nav>
 
             {/* Hero Gallery */}
-            <div className="pt-16 grid grid-cols-1 lg:grid-cols-4 gap-2 h-[60vh] md:h-[75vh] p-2">
-                <div className="lg:col-span-3 relative h-full rounded-2xl overflow-hidden bg-gray-100">
-                    <motion.img
-                        key={activeImage}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        src={getImageUrl(images[activeImage])}
-                        className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-8">
-                        <span className="bg-white/90 backdrop-blur-md text-black px-4 py-1 rounded-full text-sm font-bold uppercase tracking-widest mb-4 inline-block">
-                            {property.type}
-                        </span>
-                        <h1 className="text-4xl md:text-6xl font-black text-white leading-tight drop-shadow-2xl">{property.title}</h1>
-                    </div>
-                </div>
-
-                <div className="hidden lg:grid grid-rows-3 gap-2 h-full">
-                    {images.slice(1, 4).map((img, idx) => (
-                        <div key={idx} onClick={() => setActiveImage(idx + 1)} className="cursor-pointer overflow-hidden rounded-2xl bg-gray-100 hover:brightness-75 transition-all">
-                            <img src={getImageUrl(img)} className="w-full h-full object-cover" />
+            <div className="pt-20 px-4 md:px-6">
+                <div className={`max-w-7xl mx-auto grid grid-cols-1 ${images.length > 1 ? 'lg:grid-cols-4' : 'lg:grid-cols-1'} gap-4 h-[60vh] md:h-[75vh]`}>
+                    <div className={`${images.length > 1 ? 'lg:col-span-3' : ''} relative h-full rounded-3xl overflow-hidden bg-gray-100 shadow-xl shadow-black/5`}>
+                        <motion.img
+                            key={activeImage}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            src={getImageUrl(images[activeImage])}
+                            className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-8 md:p-12">
+                            <span className="bg-white/90 backdrop-blur-md text-black px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest mb-4 inline-block">
+                                {property.type}
+                            </span>
+                            <h1 className="text-4xl md:text-6xl font-black text-white leading-tight drop-shadow-2xl">{property.title}</h1>
                         </div>
-                    ))}
-                    {images.length > 4 && (
-                        <div className="relative cursor-pointer overflow-hidden rounded-2xl bg-gray-100 group">
-                            <img src={getImageUrl(images[4])} className="w-full h-full object-cover brightness-50 group-hover:brightness-40 transition-all" />
-                            <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-xl">
-                                +{images.length - 4} fotos
-                            </div>
+                    </div>
+
+                    {images.length > 1 && (
+                        <div className="hidden lg:grid grid-rows-3 gap-4 h-full">
+                            {images.slice(1, 4).map((img, idx) => (
+                                <div key={idx} onClick={() => setActiveImage(idx + 1)} className="cursor-pointer overflow-hidden rounded-2xl bg-gray-100 hover:brightness-75 transition-all shadow-lg hover:scale-[1.02]">
+                                    <img src={getImageUrl(img)} className="w-full h-full object-cover" />
+                                </div>
+                            ))}
+                            {images.length > 4 && (
+                                <div className="relative cursor-pointer overflow-hidden rounded-2xl bg-gray-100 group">
+                                    <img src={getImageUrl(images[4])} className="w-full h-full object-cover brightness-50 group-hover:brightness-40 transition-all" />
+                                    <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-xl">
+                                        +{images.length - 4} fotos
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
             </div>
 
             {/* Content */}
-            <div className="max-w-6xl mx-auto px-6 py-12">
+            <div className="max-w-7xl mx-auto px-6 py-12">
                 <div className="flex flex-col lg:flex-row gap-16">
                     <div className="flex-1">
                         {/* Specs Bar */}
