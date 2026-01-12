@@ -87,7 +87,11 @@ export function PropertyDetailPage() {
                         <ChevronLeft size={20} /> <span className="hidden sm:inline">Voltar para Loja</span>
                     </button>
                     <div className="flex items-center gap-2">
-                        {store.logoUrl ? <img src={getImageUrl(store.logoUrl)} className="h-10 w-auto object-contain" /> : <span className="font-bold text-xl">{store.name}</span>}
+                        {store.logoUrl ? (
+                            <img src={getImageUrl(store.logoUrl)} className="h-14 w-auto object-contain hover:scale-105 transition-transform" />
+                        ) : (
+                            <span className="font-bold text-2xl tracking-tight text-gray-900">{store.name}</span>
+                        )}
                     </div>
                     <button onClick={() => navigator.share({ title: property.title, url: window.location.href })} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                         <Share2 size={20} />

@@ -349,11 +349,11 @@ export function PublicStorePage() {
                 <div className="container mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         {store.logoUrl ? (
-                            <img src={getImageUrl(store.logoUrl)} className="h-10 w-auto object-contain" />
+                            <img src={getImageUrl(store.logoUrl)} className="h-14 w-auto object-contain hover:scale-105 transition-transform" />
                         ) : (
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-gray-900 rounded-full flex items-center justify-center text-white font-bold">{store.name[0]}</div>
-                                <span className="font-bold text-xl text-gray-900 truncate max-w-[200px]">{store.name}</span>
+                                <div className="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center text-white font-bold text-xl">{store.name[0]}</div>
+                                <span className="font-bold text-2xl text-gray-900 truncate max-w-[250px] tracking-tight">{store.name}</span>
                             </div>
                         )}
                     </div>
