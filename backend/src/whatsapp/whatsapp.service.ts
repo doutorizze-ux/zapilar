@@ -924,6 +924,8 @@ _Ex: "Procuro uma casa com piscina no centro"_
         const pType = (p.type || '').toLowerCase();
         const pCity = (p.city || '').toLowerCase();
         const pNeigh = (p.neighborhood || '').toLowerCase();
+        const pAddress = (p.address || '').toLowerCase();
+        const pCep = (p.cep || '').toLowerCase();
         const pLocation = (p.location || '').toLowerCase();
 
         // 1. AI Entity Priority (Highest Boost)
@@ -935,6 +937,10 @@ _Ex: "Procuro uma casa com piscina no centro"_
             pNeigh.includes(entities.neighborhood.toLowerCase())
           )
             score += 50;
+          if (entities.address && pAddress.includes(entities.address.toLowerCase()))
+            score += 60;
+          if (entities.cep && pCep.includes(entities.cep.replace(/\D/g, '')))
+            score += 70;
           if (entities.type && pType.includes(entities.type.toLowerCase()))
             score += 30;
           if (entities.rooms && p.bedrooms >= parseInt(entities.rooms))
@@ -944,7 +950,7 @@ _Ex: "Procuro uma casa com piscina no centro"_
         }
 
         // 2. Token Matching
-        const searchStr = `${pTitle} ${pType} ${pLocation} ${pCity} ${pNeigh} ${p.bedrooms} quartos ${p.area}m`;
+        const searchStr = `${pTitle} ${pType} ${pLocation} ${pAddress} ${pCep} ${pCity} ${pNeigh} ${p.bedrooms} quartos ${p.area}m`;
         for (const token of tokens) {
           if (searchStr.includes(token)) score += 1;
           const regex = new RegExp(`\\b${token}\\b`, 'i');
@@ -1008,7 +1014,8 @@ _Ex: "Procuro uma casa com piscina no centro"_
         const propertyLink = `${frontendUrl}/${slug}/imovel/${prop.id}`;
 
         const specs = `🏠 *${prop.title}*
-📍 *Local:* ${prop.neighborhood ? prop.neighborhood + ', ' + prop.city : prop.location}
+📍 *Local:* ${prop.address ? prop.address + (prop.neighborhood ? ', ' + prop.neighborhood : '') + (prop.city ? ' - ' + prop.city : '') : (prop.neighborhood ? prop.neighborhood + ', ' + prop.city : prop.location)}
+${prop.cep ? '📮 *CEP:* ' + prop.cep : ''}
 📐 *Área:* ${prop.area} m² | 🛏️ *Quartos:* ${prop.bedrooms}
 💰 *R$ ${price}*
 

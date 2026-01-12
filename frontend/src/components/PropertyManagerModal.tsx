@@ -29,6 +29,10 @@ export function PropertyManagerModal({ isOpen, onClose, onSuccess, initialData }
         price: '',
         description: '',
         location: '',
+        city: '',
+        neighborhood: '',
+        address: '',
+        cep: '',
         area: 0,
         bedrooms: 0,
         bathrooms: 0,
@@ -52,6 +56,10 @@ export function PropertyManagerModal({ isOpen, onClose, onSuccess, initialData }
                 price: initialData.price ? initialData.price.toString().replace('.', ',') : '',
                 description: initialData.description || '',
                 location: initialData.location || '',
+                city: initialData.city || '',
+                neighborhood: initialData.neighborhood || '',
+                address: initialData.address || '',
+                cep: initialData.cep || '',
                 area: initialData.area || 0,
                 bedrooms: initialData.bedrooms || 0,
                 bathrooms: initialData.bathrooms || 0,
@@ -68,6 +76,7 @@ export function PropertyManagerModal({ isOpen, onClose, onSuccess, initialData }
         } else {
             setFormData({
                 title: '', type: 'Casa', price: '', description: '', location: '',
+                city: '', neighborhood: '', address: '', cep: '',
                 area: 0, bedrooms: 0, bathrooms: 0, parkingSpaces: 0,
                 pool: false, security: false, elevator: false, furnished: false,
             });
@@ -193,6 +202,7 @@ export function PropertyManagerModal({ isOpen, onClose, onSuccess, initialData }
         try {
             const payload = {
                 ...formData,
+                location: formData.location || `${formData.address}${formData.neighborhood ? ', ' + formData.neighborhood : ''}${formData.city ? ', ' + formData.city : ''}`,
                 price: formatMoneyRequest(formData.price),
                 area: Number(formData.area),
                 bedrooms: Number(formData.bedrooms),
@@ -373,8 +383,28 @@ Aproveite essa oportunidade!
                                             <input name="price" value={formData.price} onChange={handlePriceChange} className="w-full mt-1 p-2 border rounded-lg font-bold text-cyan-700" placeholder="0,00" />
                                         </div>
                                     </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-gray-500 uppercase">Localização</label>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Cidade</label>
+                                            <input name="city" value={formData.city} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg" placeholder="Ex: São Paulo" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Bairro</label>
+                                            <input name="neighborhood" value={formData.neighborhood} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg" placeholder="Ex: Centro" />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="col-span-1">
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Endereço</label>
+                                            <input name="address" value={formData.address} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg" placeholder="Rua, Número..." />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-gray-500 uppercase">CEP</label>
+                                            <input name="cep" value={formData.cep} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg" placeholder="00000-000" />
+                                        </div>
+                                    </div>
+                                    <div className="hidden">
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Localização (Legacy)</label>
                                         <input name="location" value={formData.location} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg" placeholder="Endereço, Bairro..." />
                                     </div>
                                     <div>

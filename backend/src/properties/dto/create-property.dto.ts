@@ -6,6 +6,8 @@ export class CreatePropertyDto {
   price: number;
   city?: string;
   neighborhood?: string;
+  address?: string;
+  cep?: string;
   location: string;
   area: number;
   bedrooms: number;

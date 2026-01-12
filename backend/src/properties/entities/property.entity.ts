@@ -41,6 +41,12 @@ export class Property {
   @Column({ nullable: true })
   neighborhood: string;
 
+  @Column({ nullable: true })
+  address: string;
+
+  @Column({ nullable: true })
+  cep: string;
+
   @Column()
   location: string;
 

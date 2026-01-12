@@ -57,7 +57,7 @@ export class AiService {
     const prompt = `
             Analyze the following message from a real estate customer and return a JSON object with:
             - intent: "SEARCH" (if looking for property), "FAQ" (if asking questions about rules/info), "TALK" (if wanting to speak to human), "UNKNOWN".
-            - entities: { city, neighborhood, type, rooms, max_price } (extract if available).
+            - entities: { city, neighborhood, address, cep, type, rooms, max_price } (extract if available).
             
             Message: "${message}"
         `;
