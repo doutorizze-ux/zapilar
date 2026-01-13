@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
 
 const PROPERTY_TYPES = [
-    'Casa', 'Apartamento', 'Terreno', 'Fazenda', 'Comercial', 'Outro'
+    'Casa', 'Apartamento', 'Terreno', 'Lote', 'Chácara', 'Fazenda', 'Comercial', 'Outro'
 ];
 
 interface PropertyManagerModalProps {
@@ -153,6 +153,12 @@ export function PropertyManagerModal({ isOpen, onClose, onSuccess, initialData }
                 headers: { 'Authorization': `Bearer ${token}` },
                 body: uploadData
             });
+
+            if (res.status === 401) {
+                alert('Sua sessão expirou. Por favor, faça login novamente.');
+                return;
+            }
+
             if (res.ok) {
                 alert('Documentos enviados com sucesso!');
                 setDocFiles([]);
@@ -199,6 +205,12 @@ export function PropertyManagerModal({ isOpen, onClose, onSuccess, initialData }
         setLoading(true);
         const token = localStorage.getItem('token');
 
+        if (!token) {
+            alert('Você precisa estar logado para realizar esta ação.');
+            setLoading(false);
+            return;
+        }
+
         try {
             const payload = {
                 ...formData,
@@ -227,6 +239,13 @@ export function PropertyManagerModal({ isOpen, onClose, onSuccess, initialData }
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify(payload),
                 });
+
+                if (response.status === 401) {
+                    alert('Sua sessão expirou ou o acesso foi negado. Por favor, saia e entre novamente no sistema.');
+                    setLoading(false);
+                    return;
+                }
+
                 const data = await response.json();
                 propertyId = data.id;
             }
@@ -235,17 +254,22 @@ export function PropertyManagerModal({ isOpen, onClose, onSuccess, initialData }
                 if (imageFiles.length > 0) {
                     const uploadData = new FormData();
                     imageFiles.forEach(file => uploadData.append('files', file));
-                    await fetch(`${API_URL}/properties/${propertyId}/upload`, { method: 'POST', body: uploadData });
+                    await fetch(`${API_URL}/properties/${propertyId}/upload`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        body: uploadData
+                    });
                 }
                 onSuccess();
                 if (!initialData) onClose();
                 else alert('Imóvel atualizado!');
             } else {
-                alert('Erro ao salvar imóvel');
+                const errorData = await response.json().catch(() => ({}));
+                alert(errorData.message || 'Erro ao salvar imóvel. Verifique os dados e tente novamente.');
             }
         } catch (error) {
-            console.error(error);
-            alert('Erro ao conectar com servidor');
+            console.error('Submit property error:', error);
+            alert('Erro ao conectar com o servidor. Tente novamente em instantes.');
         } finally {
             setLoading(false);
         }
@@ -558,6 +582,29 @@ Aproveite essa oportunidade!
                                     {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                                     {copied ? 'Copiado!' : 'Copiar'}
                                 </button>
+                            </div>
+
+                            {/* New Microsite Feature */}
+                            <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl p-6 text-white shadow-lg">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                                            <Share2 className="w-6 h-6 text-white" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-xl">Site Exclusivo do Imóvel</h3>
+                                            <p className="text-white/80 text-sm">Página de alta conversão gerada automaticamente.</p>
+                                        </div>
+                                    </div>
+                                    <a
+                                        href={`/loja/imovel/${initialData?.id}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="px-6 py-3 bg-white text-blue-600 font-bold rounded-xl hover:bg-blue-50 transition-colors shadow-xl"
+                                    >
+                                        Ver Site Exclusivo
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     )}

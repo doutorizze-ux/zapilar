@@ -70,6 +70,8 @@ export function ConsultasPage() {
                                 <option value="Casa">Casa</option>
                                 <option value="Apartamento">Apartamento</option>
                                 <option value="Terreno">Terreno</option>
+                                <option value="Lote">Lote</option>
+                                <option value="Chácara">Chácara</option>
                                 <option value="Comercial">SALA Comercial</option>
                                 <option value="Sobrado">Sobrado</option>
                             </select>

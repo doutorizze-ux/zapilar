@@ -28,7 +28,7 @@ export class PropertiesController {
   constructor(
     private readonly propertiesService: PropertiesService,
     private readonly plansService: PlansService,
-  ) {}
+  ) { }
 
   @UseGuards(JwtAuthGuard)
   @Post()
@@ -36,6 +36,7 @@ export class PropertiesController {
     return this.propertiesService.create(createPropertyDto, req.user.userId);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post(':id/upload')
   @UseInterceptors(
     FilesInterceptor('files', 5, {
@@ -54,13 +55,19 @@ export class PropertiesController {
   async uploadImages(
     @Param('id') id: string,
     @UploadedFiles() files: Array<Express.Multer.File>,
+    @Request() req,
   ) {
-    if (!files || files.length === 0) throw new Error('No files found');
+    if (!files || files.length === 0) throw new BadRequestException('No files found');
 
     const property = await this.propertiesService.findOne(id);
     if (!property) {
-      throw new Error('Property not found');
+      throw new BadRequestException('Property not found');
     }
+
+    if (property.userId !== req.user.userId) {
+      throw new BadRequestException('Unauthorized');
+    }
+
     if (!property.images) property.images = [];
 
     files.forEach((file) => {
@@ -70,9 +77,10 @@ export class PropertiesController {
       }
     });
 
-    return this.propertiesService.update(id, { images: property.images });
+    return this.propertiesService.update(id, { images: property.images }, req.user.userId);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post(':id/upload-doc')
   @UseInterceptors(
     FilesInterceptor('files', 10, {
@@ -91,12 +99,16 @@ export class PropertiesController {
   async uploadDocuments(
     @Param('id') id: string,
     @UploadedFiles() files: Array<Express.Multer.File>,
+    @Request() req,
   ) {
-    // Ensure uploads/docs exists (In production code we'd check/create folder, but assuming it works or standard multer pattern)
-    if (!files || files.length === 0) throw new Error('No files found');
+    if (!files || files.length === 0) throw new BadRequestException('No files found');
 
     const property = await this.propertiesService.findOne(id);
-    if (!property) throw new Error('Property not found');
+    if (!property) throw new BadRequestException('Property not found');
+
+    if (property.userId !== req.user.userId) {
+      throw new BadRequestException('Unauthorized');
+    }
 
     if (!property.documents) property.documents = [];
 
@@ -110,7 +122,7 @@ export class PropertiesController {
       });
     });
 
-    return this.propertiesService.update(id, { documents: property.documents });
+    return this.propertiesService.update(id, { documents: property.documents }, req.user.userId);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -124,16 +136,19 @@ export class PropertiesController {
     return this.propertiesService.findOne(id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   update(
     @Param('id') id: string,
     @Body() updatePropertyDto: UpdatePropertyDto,
+    @Request() req,
   ) {
-    return this.propertiesService.update(id, updatePropertyDto);
+    return this.propertiesService.update(id, updatePropertyDto, req.user.userId);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.propertiesService.remove(id);
+  remove(@Param('id') id: string, @Request() req) {
+    return this.propertiesService.remove(id, req.user.userId);
   }
 }

@@ -145,6 +145,7 @@ export function PropertiesPage() {
                                 <div className="absolute top-3 right-3 px-3 py-1 bg-black/60 backdrop-blur-md text-white text-xs font-medium rounded-full">
                                     {property.type}
                                 </div>
+                                <MatchBadge propertyId={property.id} />
                             </div>
                             <div className="p-5">
                                 <div className="mb-4">
@@ -182,6 +183,37 @@ export function PropertiesPage() {
                     ))}
                 </div>
             )}
+        </div>
+    );
+}
+
+function MatchBadge({ propertyId }: { propertyId: string }) {
+    const [count, setCount] = useState(0);
+
+    useEffect(() => {
+        const fetchMatches = async () => {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            try {
+                const res = await fetch(`${API_URL}/leads/matches/${propertyId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data)) setCount(data.length);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        };
+        fetchMatches();
+    }, [propertyId]);
+
+    if (count === 0) return null;
+
+    return (
+        <div className="absolute top-3 left-3 px-3 py-1 bg-gradient-to-r from-pink-500 to-rose-600 text-white text-xs font-bold rounded-full shadow-lg animate-pulse flex items-center gap-1">
+            🎯 {count} Match{count > 1 ? 'es' : ''}
         </div>
     );
 }

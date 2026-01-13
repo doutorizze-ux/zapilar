@@ -28,30 +28,30 @@ export function TermsModal({ isOpen, onClose }: TermsModalProps) {
 
                     <section>
                         <h3 className="font-bold text-gray-900 mb-2">2. Sobre a Plataforma</h3>
-                        <p>A zapilar é uma plataforma SaaS que fornece ferramentas de automação de atendimento via WhatsApp, permitindo que lojistas divulguem informações de seus veículos e respondam automaticamente a mensagens de clientes interessados. A plataforma não realiza vendas, não intermedia pagamentos, não participa de negociações e não garante qualquer transação comercial realizada entre lojistas e compradores.</p>
+                        <p>A zapilar é uma plataforma SaaS que fornece ferramentas de automação de atendimento via WhatsApp, permitindo que imobiliárias e corretores divulguem informações de seus imóveis e respondam automaticamente a mensagens de clientes interessados. A plataforma não realiza vendas, não intermedia pagamentos, não participa de negociações e não garante qualquer transação comercial realizada entre anunciantes e compradores/locatários.</p>
                     </section>
 
                     <section>
-                        <h3 className="font-bold text-gray-900 mb-2">3. Responsabilidade dos Lojistas</h3>
+                        <h3 className="font-bold text-gray-900 mb-2">3. Responsabilidade dos Anunciantes</h3>
                         <ul className="list-disc pl-5 mt-1 space-y-1">
-                            <li>Veracidade das informações dos veículos cadastrados;</li>
+                            <li>Veracidade das informações dos imóveis cadastrados;</li>
                             <li>Preços, condições, imagens e descrições;</li>
                             <li>Atendimento prestado ao cliente;</li>
                             <li>Cumprimento de acordos comerciais;</li>
-                            <li>Entrega de veículos e documentação;</li>
+                            <li>Entrega das chaves e documentação;</li>
                             <li>Cumprimento da legislação vigente.</li>
                         </ul>
-                        <p className="mt-2">A zapilar não se responsabiliza por fraudes, golpes, atrasos, desistências, problemas mecânicos ou qualquer prejuízo decorrente da negociação entre lojista e comprador.</p>
+                        <p className="mt-2">A zapilar não se responsabiliza por fraudes, golpes, atrasos, desistências, problemas estruturais ou qualquer prejuízo decorrente da negociação entre anunciante e interessado.</p>
                     </section>
 
                     <section>
-                        <h3 className="font-bold text-gray-900 mb-2">4. Responsabilidade dos Compradores</h3>
+                        <h3 className="font-bold text-gray-900 mb-2">4. Responsabilidade dos Interessados</h3>
                         <ul className="list-disc pl-5 mt-1 space-y-1">
-                            <li>A negociação ocorre diretamente com o lojista;</li>
-                            <li>Devem verificar pessoalmente o veículo antes de qualquer pagamento;</li>
+                            <li>A negociação ocorre diretamente com o anunciante;</li>
+                            <li>Devem visitar pessoalmente o imóvel antes de qualquer pagamento;</li>
                             <li>Devem desconfiar de ofertas fora do padrão de mercado;</li>
-                            <li>A zapilar não solicita pagamentos em nome de lojistas;</li>
-                            <li>Qualquer pagamento feito sem a devida verificação é de responsabilidade exclusiva do comprador.</li>
+                            <li>A zapilar não solicita pagamentos em nome de terceiros;</li>
+                            <li>Qualquer pagamento feito sem a devida verificação é de responsabilidade exclusiva do interessado.</li>
                         </ul>
                     </section>
 
@@ -87,7 +87,7 @@ export function TermsModal({ isOpen, onClose }: TermsModalProps) {
                         <h3 className="font-bold text-gray-900 mb-2">8. Privacidade e Proteção de Dados (LGPD)</h3>
                         <p>A zapilar respeita a Lei Geral de Proteção de Dados (LGPD).</p>
                         <div className="mt-2">
-                            <strong>Dados coletados:</strong> Nome, telefone e mensagens trocadas no WhatsApp, informações cadastrais do lojista, dados técnicos para funcionamento da plataforma.
+                            <strong>Dados coletados:</strong> Nome, telefone e mensagens trocadas no WhatsApp, informações cadastrais do anunciante, dados técnicos para funcionamento da plataforma.
                         </div>
                         <div className="mt-2">
                             <strong>Uso dos dados:</strong> Exclusivamente para funcionamento do sistema, atendimento ao cliente, segurança e melhoria da plataforma.

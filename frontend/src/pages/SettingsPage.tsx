@@ -1,4 +1,4 @@
-import { Store, CreditCard, LogOut, MessageCircle, Upload, Save, Pencil, Globe, ExternalLink, Image as ImageIcon } from 'lucide-react';
+import { Store, CreditCard, LogOut, Upload, Save, Pencil, Globe, ExternalLink, Image as ImageIcon } from 'lucide-react';
 import { API_URL } from '../config';
 import { useNavigate } from 'react-router-dom';
 
@@ -90,7 +90,7 @@ export function SettingsPage() {
                 }
 
                 setUser({
-                    name: data.storeName || 'Minha Loja',
+                    name: data.storeName || 'Minha Imobiliária',
                     email: data.email,
                     phone: data.phone || '',
                     plan: subInfo,
@@ -103,7 +103,7 @@ export function SettingsPage() {
                     nextBilling: nextBilling
                 } as any);
                 setEditForm({
-                    name: data.storeName || 'Minha Loja',
+                    name: data.storeName || 'Minha Imobiliária',
                     phone: data.phone || '',
                     slug: data.slug || '',
                     primaryColor: data.primaryColor || '#000000',
@@ -255,7 +255,7 @@ export function SettingsPage() {
         <div className="max-w-4xl mx-auto space-y-8">
             <div>
                 <h2 className="text-3xl font-bold text-gray-900">Configurações</h2>
-                <p className="text-gray-500 mt-1">Gerencie sua conta, nome da loja e telefone para contato.</p>
+                <p className="text-gray-500 mt-1">Gerencie sua conta, nome da imobiliária e telefone para contato.</p>
             </div>
 
             {/* Profile Section */}
@@ -282,7 +282,7 @@ export function SettingsPage() {
                             />
                         </div>
                         <div>
-                            <h3 className="text-lg font-bold text-gray-900">Perfil da Loja</h3>
+                            <h3 className="text-lg font-bold text-gray-900">Perfil da Imobiliária</h3>
                             <p className="text-sm text-gray-500">
                                 {uploadingLogo ? 'Enviando logo...' : 'Clique na logo para alterar'}
                             </p>
@@ -304,7 +304,7 @@ export function SettingsPage() {
                 </div>
                 <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Nome da Loja</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Nome da Imobiliária</label>
                         <input
                             value={isEditing ? editForm.name : user.name}
                             onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
@@ -322,7 +322,7 @@ export function SettingsPage() {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Endereço da Loja</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Endereço da Imobiliária</label>
                         <input
                             value={isEditing ? editForm.address : (user as any).address}
                             onChange={(e) => setEditForm(prev => ({ ...prev, address: e.target.value }))}
@@ -332,13 +332,13 @@ export function SettingsPage() {
                         />
                     </div>
                     <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Slogan / Sobre a Loja (Aparece na capa do site)</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Slogan / Sobre a Imobiliária (Aparece na capa do site)</label>
                         <textarea
                             value={isEditing ? editForm.storeDescription : (user as any).storeDescription}
                             onChange={(e) => setEditForm(prev => ({ ...prev, storeDescription: e.target.value }))}
                             disabled={!isEditing}
                             rows={2}
-                            placeholder="Seu próximo carro está aqui. Qualidade, confiança e procedência."
+                            placeholder="Seu próximo imóvel está aqui. Qualidade, confiança e procedência."
                             className={`w-full px-4 py-2 border rounded-xl transition-colors ${isEditing ? 'bg-white border-cyan-500 ring-2 ring-cyan-500/20' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
                         />
                     </div>
@@ -349,13 +349,13 @@ export function SettingsPage() {
 
                     <div className="md:col-span-2 border-t border-gray-100 pt-6 mt-2">
                         <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                            <Globe className="w-5 h-5 text-blue-500" /> Site da Loja
+                            <Globe className="w-5 h-5 text-blue-500" /> Site da Imobiliária
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Link da Loja (Apelido)
-                                    <span className="text-xs text-gray-400 font-normal ml-2">ex: zapilar.online/<b>minhaloja</b></span>
+                                    Link da Imobiliária (Apelido)
+                                    <span className="text-xs text-gray-400 font-normal ml-2">ex: zapilar.online/<b>minhaimobiliaria</b></span>
                                 </label>
                                 {hasWebsiteFeature ? (
                                     <div className="flex gap-2">
@@ -363,7 +363,7 @@ export function SettingsPage() {
                                             value={isEditing ? editForm.slug : (user as any).slug}
                                             onChange={(e) => setEditForm(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))}
                                             disabled={!isEditing}
-                                            placeholder="minhaloja"
+                                            placeholder="minhaimobiliaria"
                                             className={`flex-1 px-4 py-2 border rounded-xl lowercase transition-colors ${isEditing ? 'bg-white border-cyan-500 ring-2 ring-cyan-500/20' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
                                         />
                                         {!(isEditing) && (user as any).slug && (

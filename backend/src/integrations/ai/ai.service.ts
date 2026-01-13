@@ -110,4 +110,44 @@ export class AiService {
     }
     return null;
   }
+
+  async generateSearchSummary(
+    userName: string,
+    query: string,
+    properties: any[],
+  ): Promise<string> {
+    if (!this.model || properties.length === 0) return '';
+
+    const propsContext = properties
+      .slice(0, 3)
+      .map(
+        (p) =>
+          `- ${p.type} em ${p.neighborhood || p.city}, ${p.bedrooms} quartos, R$ ${p.price}`,
+      )
+      .join('\n');
+
+    const prompt = `
+            Act as a friendly Brazilian real estate agent from 'Zapilar'.
+            The customer "${userName || 'Alguém'}" search for: "${query}".
+            
+            We found these best matches from our database:
+            ${propsContext}
+
+            Write a SHORT, natural, and enthusiastic message (max 1 sentences) introducing these results.
+            Examples:
+            - "Encontrei ótimas opções com piscina para você! Dá uma olhada nessas casas:"
+            - "Tenho exatamente o que você procura no Centro. Confira abaixo:"
+            - "Separei 3 imóveis incríveis que combinam com seu perfil!"
+            
+            Do NOT list the properties again in text, just introduce them. The cards will be shown below.
+        `;
+
+    try {
+      const result = await this.model.generateContent(prompt);
+      return result.response.text();
+    } catch (e) {
+      this.logger.error('Error generating search summary:', e);
+      return '';
+    }
+  }
 }

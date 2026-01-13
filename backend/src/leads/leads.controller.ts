@@ -15,7 +15,7 @@ import { CreateLeadDto } from './dto/create-lead.dto';
 
 @Controller('leads')
 export class LeadsController {
-  constructor(private readonly leadsService: LeadsService) {}
+  constructor(private readonly leadsService: LeadsService) { }
 
   @UseGuards(JwtAuthGuard)
   @Post()
@@ -33,5 +33,10 @@ export class LeadsController {
   @Delete(':id')
   async remove(@Request() req, @Param('id') id: string) {
     return this.leadsService.remove(id, req.user.userId);
+  }
+  @UseGuards(JwtAuthGuard)
+  @Get('matches/:propertyId')
+  async getMatches(@Request() req, @Param('propertyId') propertyId: string) {
+    return this.leadsService.getMatchesForProperty(req.user.userId, propertyId);
   }
 }

@@ -7,6 +7,8 @@ import { UpdatePropertyDto } from './dto/update-property.dto';
 import { UsersService } from '../users/users.service';
 import { PlansService } from '../plans/plans.service';
 
+import { LeadsService } from '../leads/leads.service';
+
 @Injectable()
 export class PropertiesService {
   constructor(
@@ -14,7 +16,8 @@ export class PropertiesService {
     private propertiesRepository: Repository<Property>,
     private usersService: UsersService,
     private plansService: PlansService,
-  ) {}
+    private leadsService: LeadsService,
+  ) { }
 
   async create(createPropertyDto: CreatePropertyDto, userId?: string) {
     if (userId) {
@@ -41,7 +44,15 @@ export class PropertiesService {
       }
     }
 
-    return this.propertiesRepository.save({ ...createPropertyDto, userId });
+    const property = await this.propertiesRepository.save({
+      ...createPropertyDto,
+      userId,
+    });
+
+    // Reverse Matching Trigger
+    this.notifyMatchingLeads(property);
+
+    return property;
   }
 
   findAll(userId?: string) {
@@ -55,11 +66,31 @@ export class PropertiesService {
     return this.propertiesRepository.findOne({ where: { id } });
   }
 
-  update(id: string, updatePropertyDto: UpdatePropertyDto) {
-    return this.propertiesRepository.update(id, updatePropertyDto);
+  async update(id: string, updatePropertyDto: UpdatePropertyDto, userId?: string) {
+    if (userId) {
+      const property = await this.findOne(id);
+      if (property && property.userId !== userId) {
+        throw new BadRequestException('Você não tem permissão para alterar este imóvel.');
+      }
+    }
+    const result = await this.propertiesRepository.update(
+      id,
+      updatePropertyDto,
+    );
+    // Reverse Matching Trigger (only if price dropped or key details changed? For now, on all updates)
+    const property = await this.findOne(id);
+    if (property) this.notifyMatchingLeads(property);
+
+    return result;
   }
 
-  remove(id: string) {
+  async remove(id: string, userId?: string) {
+    if (userId) {
+      const property = await this.findOne(id);
+      if (property && property.userId !== userId) {
+        throw new BadRequestException('Você não tem permissão para excluir este imóvel.');
+      }
+    }
     return this.propertiesRepository.delete(id);
   }
 
@@ -217,5 +248,33 @@ export class PropertiesService {
     }
 
     return query.getMany();
+  }
+
+  private async notifyMatchingLeads(property: Property) {
+    if (!property.userId) return;
+
+    try {
+      const matches = await this.leadsService.findPotentialMatches(
+        property.userId,
+        property.city || '',
+        property.neighborhood || '',
+        property.type || '',
+        Number(property.price || 0),
+      );
+
+      if (matches.length > 0) {
+        // TODO: Create a Notification entity or send WhatsApp message to the Agent?
+        // For now, let's just log it.
+        console.log(
+          `[MATCHIMÓVEL] Found ${matches.length} leads potentially interested in Property ${property.id} (${property.title})`,
+        );
+        matches.forEach((l) => console.log(` - Lead: ${l.name} (${l.phone})`));
+
+        // Future:
+        // this.notificationsService.create(userId, `Encontramos ${matches.length} interessados no seu novo imóvel!`);
+      }
+    } catch (e) {
+      console.error('Error in Reverse Matching:', e);
+    }
   }
 }

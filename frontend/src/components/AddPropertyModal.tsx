@@ -3,8 +3,8 @@ import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
 
 const PROPERTY_TYPES = [
-    'Casa', 'Apartamento', 'Terreno', 'Casa em Condomínio', 'Cobertura',
-    'Flat', 'Loja', 'Sala Comercial', 'Galpão', 'Sítio/Chácara'
+    'Casa', 'Apartamento', 'Terreno', 'Lote', 'Chácara', 'Casa em Condomínio', 'Cobertura',
+    'Flat', 'Loja', 'Sala Comercial', 'Galpão', 'Sítio', 'Fazenda'
 ];
 
 interface AddPropertyModalProps {

@@ -12,7 +12,9 @@ export enum PropertyType {
   HOUSE = 'Casa',
   APARTMENT = 'Apartamento',
   LAND = 'Terreno',
+  LOT = 'Lote',
   FARM = 'Fazenda',
+  CHACARA = 'Chácara',
   COMMERCIAL = 'Comercial',
   OTHER = 'Outro',
 }

@@ -451,7 +451,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
 
         if (analysis.intent === 'SEARCH') {
           // Smart search based on extracted entities or raw text
-          await this.handlePropertySearch(userId, jid, msg, storeName);
+          await this.handlePropertySearch(userId, jid, msg, storeName, name);
         } else if (analysis.intent === 'TALK') {
           await this.handleConsultantHandover(userId, jid);
         } else if (analysis.intent === 'FAQ') {
@@ -459,7 +459,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         } else {
           // Fallback attempt to search directly if text is long enough
           if (msg.split(' ').length > 2) {
-            await this.handlePropertySearch(userId, jid, msg, storeName);
+            await this.handlePropertySearch(userId, jid, msg, storeName, name);
           } else {
             await this.sendMessage(
               userId,
@@ -495,7 +495,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         storeName,
       );
     } else if (currentState === 'WAITING_SEARCH') {
-      await this.handlePropertySearch(userId, jid, msg, storeName);
+      await this.handlePropertySearch(userId, jid, msg, storeName, name);
       // Do NOT reset to MENU here, sendPropertyResults handles it
     } else if (currentState === 'WAITING_FAQ') {
       await this.handleAiFaq(userId, jid, msg, storeName);
@@ -905,6 +905,7 @@ _Ex: "Procuro uma casa com piscina no centro"_
     jid: string,
     query: string,
     storeName: string,
+    customerName?: string,
   ) {
     // AI INTENT ANALYSIS AGAIN (to get entities)
     const analysis = await this.aiService.analyzeIntent(query);
@@ -972,6 +973,20 @@ _Ex: "Procuro uma casa com piscina no centro"_
 
     const user = await this.usersService.findById(userId);
     const slug = user?.slug || userId;
+
+    if (found.length > 0) {
+      // AI Conversational Intro
+      const summary = await this.aiService.generateSearchSummary(
+        customerName || '',
+        query,
+        found,
+      );
+      if (summary) {
+        await this.sendMessage(userId, jid, summary);
+      } else {
+        await this.sendMessage(userId, jid, `Encontrei ${found.length} imóveis que podem te interessar:`);
+      }
+    }
 
     await this.sendPropertyResults(userId, jid, found, storeName, slug);
   }

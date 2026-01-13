@@ -4,10 +4,12 @@ import { Lead } from './entities/lead.entity';
 import { LeadsService } from './leads.service';
 import { LeadsController } from './leads.controller';
 
+import { Property } from '../properties/entities/property.entity';
+
 @Module({
-  imports: [TypeOrmModule.forFeature([Lead])],
+  imports: [TypeOrmModule.forFeature([Lead, Property])],
   controllers: [LeadsController],
   providers: [LeadsService],
   exports: [LeadsService],
 })
-export class LeadsModule {}
+export class LeadsModule { }
