@@ -29,6 +29,9 @@ export class Lead {
   @Column({ nullable: true })
   interestSubject: string;
 
+  @Column({ default: 'NEW' })
+  column: string; // NEW, CONTACTED, VISIT, PROPOSAL, CLOSED, ARCHIVED
+
   // --- Qualification Fields (AI Driven) ---
   @Column({ nullable: true })
   budget: string;

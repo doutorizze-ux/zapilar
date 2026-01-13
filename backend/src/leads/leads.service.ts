@@ -168,4 +168,13 @@ export class LeadsService {
     }
     return null;
   }
+
+  async updateStatus(id: string, storeId: string, column: string) {
+    const lead = await this.leadsRepository.findOne({ where: { id, storeId } });
+    if (lead) {
+      lead.column = column;
+      return this.leadsRepository.save(lead);
+    }
+    return null;
+  }
 }

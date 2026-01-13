@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Body,
+  Patch,
   UseGuards,
   Request,
   Delete,
@@ -38,5 +39,15 @@ export class LeadsController {
   @Get('matches/:propertyId')
   async getMatches(@Request() req, @Param('propertyId') propertyId: string) {
     return this.leadsService.getMatchesForProperty(req.user.userId, propertyId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id/status')
+  async updateStatus(
+    @Request() req,
+    @Param('id') id: string,
+    @Body('column') column: string,
+  ) {
+    return this.leadsService.updateStatus(id, req.user.userId, column);
   }
 }
