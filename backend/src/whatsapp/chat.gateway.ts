@@ -10,11 +10,18 @@ import { Injectable } from '@nestjs/common';
 
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    origin: [
+      'https://staysoft.fun',
+      'https://api.staysoft.fun',
+      'http://localhost:5173',
+      'http://localhost:3000',
+    ],
     methods: ['GET', 'POST'],
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   },
-  transports: ['websocket', 'polling'],
+  transports: ['websocket', 'polling'], // Suporte total a WebSockets e Polling fallback
+  allowEIO3: true, // Compatibilidade com versões mais antigas se necessário
 })
 @Injectable()
 export class ChatGateway {
