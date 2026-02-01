@@ -4,9 +4,11 @@ import { motion } from 'framer-motion';
 import { SupportChatWidget } from '../components/SupportChatWidget';
 import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
+import { useAuth } from '../contexts/AuthContext';
 
 export function LandingPage() {
     const navigate = useNavigate();
+    const { isAuthenticated } = useAuth();
     const [logoUrl, setLogoUrl] = useState("/logo-zapilar-white.svg");
 
     useEffect(() => {
@@ -35,15 +37,27 @@ export function LandingPage() {
                     <img src={logoUrl} alt="Zapilar" className="h-10 w-auto object-contain" />
 
                     <div className="flex items-center gap-6">
-                        <button onClick={() => navigate('/login')} className="text-sm font-medium text-gray-300 hover:text-white transition-colors border border-transparent hover:border-white/10 px-4 py-2 rounded-full">
-                            Entrar
-                        </button>
-                        <button
-                            onClick={() => navigate('/register')}
-                            className="hidden md:flex bg-[#00C2CB] text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-[#00A8B0] transition-all hover:scale-105 shadow-lg shadow-[#00C2CB]/20"
-                        >
-                            Começar Agora
-                        </button>
+                        {isAuthenticated ? (
+                            <button
+                                onClick={() => navigate('/dashboard')}
+                                className="bg-[#00C2CB] text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-[#00A8B0] transition-all hover:scale-105 shadow-lg shadow-[#00C2CB]/20 flex items-center gap-2"
+                            >
+                                <Home className="w-4 h-4" />
+                                Acessar Painel
+                            </button>
+                        ) : (
+                            <>
+                                <button onClick={() => navigate('/login')} className="text-sm font-medium text-gray-300 hover:text-white transition-colors border border-transparent hover:border-white/10 px-4 py-2 rounded-full">
+                                    Entrar
+                                </button>
+                                <button
+                                    onClick={() => navigate('/register')}
+                                    className="hidden md:flex bg-[#00C2CB] text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-[#00A8B0] transition-all hover:scale-105 shadow-lg shadow-[#00C2CB]/20"
+                                >
+                                    Começar Agora
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
             </nav>
