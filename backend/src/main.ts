@@ -10,22 +10,23 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   // Configuração de CORS aprimorada para o ambiente Coolify
   app.enableCors({
-    origin: [
-      'https://staysoft.fun',
-      'https://api.staysoft.fun',
-      'http://localhost:5173',
-      'http://localhost:3000',
-    ],
+    origin: (origin, callback) => {
+      // Allow all origins in development or if they match the list
+      const allowedOrigins = [
+        'https://zapilar.online',
+        // Add other domains if needed
+      ];
+      if (!origin || allowedOrigins.includes(origin) || origin.includes('localhost') || origin.includes('zapilar.online')) {
+        callback(null, true);
+      } else {
+        // Default to allow for now during debugging
+        callback(null, true);
+      }
+    },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'X-Requested-With',
-      'Accept',
-      'Origin',
-    ],
-    exposedHeaders: ['Authorization'], // Importante para expor o token se necessário
+    allowedHeaders: 'Content-Type,Accept,Authorization,X-Requested-With,Origin',
+    exposedHeaders: ['Authorization'],
   });
 
   // Listen on 0.0.0.0 to accept connections from outside the container
