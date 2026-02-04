@@ -11,19 +11,24 @@ const REAL_ESTATE_LINKS = [
 const UF_LIST = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
 
 const BASE_PRICES: Record<string, number> = {
-    'SP': 9500,
-    'RJ': 8800,
-    'DF': 8200,
-    'SC': 7800,
-    'PR': 7200,
-    'MG': 6800,
-    'GO': 6200,
-    'RS': 6500,
-    'PE': 6000,
-    'CE': 5800,
-    'BA': 5700,
-    'default': 5500
+    'SP': 7500,
+    'RJ': 7000,
+    'DF': 6800,
+    'SC': 6200,
+    'PR': 5800,
+    'MG': 5500,
+    'GO': 4500,
+    'RS': 5200,
+    'PE': 4800,
+    'CE': 4500,
+    'BA': 4400,
+    'default': 4000
 };
+
+const CAPITALS = [
+    'SAO PAULO', 'RIO DE JANEIRO', 'BRASILIA', 'CURITIBA', 'FLORIANOPOLIS',
+    'BELO HORIZONTE', 'GOIANIA', 'PORTO ALEGRE', 'RECIFE', 'FORTALEZA', 'SALVADOR'
+];
 
 export function ConsultasPage() {
     const [selectedLink, setSelectedLink] = useState(0);
@@ -46,33 +51,41 @@ export function ConsultasPage() {
 
         // Simulation delay
         setTimeout(() => {
-            const basePrice = BASE_PRICES[valuationQuery.uf] || BASE_PRICES['default'];
+            let basePrice = BASE_PRICES[valuationQuery.uf] || BASE_PRICES['default'];
             const area = parseInt(valuationQuery.area) || 50;
+            const cidadeUpper = (valuationQuery.cidade || '').toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+            // Adjust for non-capitals
+            const isCapital = CAPITALS.some(c => cidadeUpper.includes(c));
+            if (!isCapital) basePrice *= 0.75;
+
+            // Scale adjustment
+            let scaleMult = 1.0;
+            if (area > 200) scaleMult = 0.85;
 
             // Multipliers
             const typeMultipliers: Record<string, number> = {
-                'Apartamento': 1.15,
+                'Apartamento': 1.1,
                 'Casa': 1.0,
-                'Terreno': 0.5,
-                'Lote': 0.45,
-                'Chácara': 0.35,
-                'Comercial': 1.3,
-                'Sobrado': 1.1
+                'Terreno': 0.4,
+                'Lote': 0.35,
+                'Chácara': 0.2,
+                'Comercial': 1.2,
+                'Sobrado': 1.0
             };
 
             const patternMultipliers: Record<string, number> = {
-                'popular': 0.8,
+                'popular': 0.6,
                 'médio': 1.0,
-                'luxo': 1.6
+                'luxo': 1.5
             };
 
             const typeMult = typeMultipliers[valuationQuery.tipo] || 1.0;
             const patternMult = patternMultipliers[valuationQuery.padrao] || 1.0;
 
-            // Adjust based on rooms/vagas (simple addition to m2 price)
-            const extraBonus = (parseInt(valuationQuery.vagas) * 200) + (parseInt(valuationQuery.quartos) * 150);
+            const extraBonus = (parseInt(valuationQuery.vagas) * 150) + (parseInt(valuationQuery.quartos) * 100);
 
-            const finalM2Price = (basePrice * typeMult * patternMult) + extraBonus;
+            const finalM2Price = (basePrice * typeMult * patternMult * scaleMult) + extraBonus;
             const price = finalM2Price * area;
 
             setValuationResult({
@@ -83,7 +96,7 @@ export function ConsultasPage() {
                 area: area,
                 m2Preco: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(finalM2Price),
                 mesReferencia: `Fevereiro de 2026`,
-                confianca: "Alta (Baseado em transações recentes)",
+                confianca: isCapital ? "Alta (Baseado em capitais)" : "Média (Estimativa para interior)",
             });
             setLoadingValuation(false);
         }, 1500);
