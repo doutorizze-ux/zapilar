@@ -1,13 +1,36 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
 
-<meta charset="UTF-8" />
-<link rel="icon" type="image/png" href="/logo-z-green.png" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="theme-color" content="#0B2B26" />
-<meta name="description" content="zapilar - Sua plataforma de revenda de veículos." />
-<link rel="apple-touch-icon" href="/logo-z-green.png">
-<title>zapilar</title>
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="/logo-z-green.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0B2B26" />
+
+  <!-- SEO & WhatsApp Sharing Meta Tags -->
+  <title>Zapilar - Gestão Imobiliária Inteligente</title>
+  <meta name="description"
+    content="Zapilar - A plataforma completa para corretores e imobiliárias. Gestão de imóveis, CRM, automação de WhatsApp e consultas integradas." />
+
+  <!-- Facebook / WhatsApp / LinkedIn -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://zapilar.online/" />
+  <meta property="og:title" content="Zapilar - Gestão Imobiliária Inteligente" />
+  <meta property="og:description"
+    content="A plataforma completa para corretores e imobiliárias. Gestão, CRM e Automação." />
+  <meta property="og:image" content="https://zapilar.online/logo-z-green.png" />
+  <meta property="og:image:width" content="300" />
+  <meta property="og:image:height" content="300" />
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="https://zapilar.online/" />
+  <meta property="twitter:title" content="Zapilar - Gestão Imobiliária Inteligente" />
+  <meta property="twitter:description"
+    content="A plataforma completa para corretores e imobiliárias. Gestão, CRM e Automação." />
+  <meta property="twitter:image" content="https://zapilar.online/logo-z-green.png" />
+
+  <link rel="apple-touch-icon" href="/logo-z-green.png">
 </head>
 
 <body>
@@ -28,7 +51,8 @@
       font-family: sans-serif;
     ">
       <div style="position: relative; width: 80px; height: 80px;">
-        <img src="/logo-z-green.png" alt="Zapilar" style="width: 100%; height: 100%; object-fit: contain; animation: pulse 2s infinite ease-in-out;" />
+        <img src="/logo-z-green.png" alt="Zapilar"
+          style="width: 100%; height: 100%; object-fit: contain; animation: pulse 2s infinite ease-in-out;" />
         <div style="
           position: absolute;
           top: -10px;
@@ -42,15 +66,55 @@
         "></div>
       </div>
       <h2 style="color: white; margin-top: 24px; font-weight: 700; letter-spacing: 2px; font-size: 18px;">ZAPILAR</h2>
-      <div style="width: 150px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 10px; margin-top: 12px; overflow: hidden;">
-        <div style="width: 30%; height: 100%; background: #22c55e; border-radius: 10px; animation: loading-bar 2s infinite ease-in-out;"></div>
+      <div
+        style="width: 150px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 10px; margin-top: 12px; overflow: hidden;">
+        <div
+          style="width: 30%; height: 100%; background: #22c55e; border-radius: 10px; animation: loading-bar 2s infinite ease-in-out;">
+        </div>
       </div>
     </div>
 
     <style>
-      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-      @keyframes pulse { 0% { opacity: 0.5; transform: scale(0.95); } 50% { opacity: 1; transform: scale(1.05); } 100% { opacity: 0.5; transform: scale(0.95); } }
-      @keyframes loading-bar { 0% { transform: translateX(-100%); } 50% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 0.5;
+          transform: scale(0.95);
+        }
+
+        50% {
+          opacity: 1;
+          transform: scale(1.05);
+        }
+
+        100% {
+          opacity: 0.5;
+          transform: scale(0.95);
+        }
+      }
+
+      @keyframes loading-bar {
+        0% {
+          transform: translateX(-100%);
+        }
+
+        50% {
+          transform: translateX(100%);
+        }
+
+        100% {
+          transform: translateX(-100%);
+        }
+      }
     </style>
   </div>
   <script type="module" src="/src/main.tsx"></script>
