@@ -14,7 +14,7 @@ export default defineConfig({
       manifest: {
         name: 'zapilar',
         short_name: 'zapilar',
-        description: 'Sua plataforma de gestão de veículos.',
+        description: 'Sua plataforma imobiliária.',
         theme_color: '#0B2B26',
         background_color: '#0B2B26',
         display: 'standalone',
