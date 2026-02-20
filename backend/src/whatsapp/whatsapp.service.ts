@@ -50,6 +50,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
       | 'WAITING_TYPE'
       | 'WAITING_NEIGHBORHOOD'
       | 'WAITING_SEARCH'
+      | 'SEARCH_FINISHED'
       | 'WAITING_QUALIFICATION';
       tempCity?: string;
       tempType?: string;
@@ -378,6 +379,14 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
     const msg = text.trim();
     const lowerMsg = msg.toLowerCase();
 
+    // 2. Detector de Intenção (Handover Humano)
+    const humanKeywords = ['atendente', 'consultor', 'vendedor', 'humano', 'falar com', 'pessoa', 'corretor'];
+    if (humanKeywords.some(keyword => lowerMsg.includes(keyword))) {
+      this.logger.log(`Handover detected for ${jid} via keywords`);
+      await this.handleConsultantHandover(userId, jid);
+      return;
+    }
+
     // Retrieve Store Name
     const user = await this.usersService.findById(userId);
     const storeName = user?.storeName || 'Imobiliária';
@@ -499,6 +508,19 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
       // Do NOT reset to MENU here, sendPropertyResults handles it
     } else if (currentState === 'WAITING_FAQ') {
       await this.handleAiFaq(userId, jid, msg, storeName);
+    } else if (currentState === 'SEARCH_FINISHED') {
+      if (msg === '1') {
+        this.userStates.set(stateKey, { mode: 'WAITING_SEARCH' });
+        await this.sendMessage(userId, jid, 'Certo! O que você procura? (ex: Apartamento 2 quartos)');
+      } else if (msg === '2') {
+        this.userStates.set(stateKey, { mode: 'MENU' });
+        await this.sendMainMenu(userId, jid, storeName);
+      } else if (msg.length > 3) {
+        // Interceptação: se digitar termo de busca, processa direto
+        await this.handlePropertySearch(userId, jid, msg, storeName, name);
+      } else {
+        await this.sendMessage(userId, jid, 'Escolha uma opção:\n1️⃣ Procurar outro\n2️⃣ Menu Principal');
+      }
     } else if (currentState === 'WAITING_QUALIFICATION') {
       await this.handleQualification(userId, jid, msg, storeName);
     }
@@ -857,7 +879,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
     const user = await this.usersService.findById(userId);
     const slug = user?.slug || userId;
 
-    await this.sendPropertyResults(userId, jid, properties, storeName, slug);
+    await this.sendPropertyResults(userId, jid, properties, storeName, slug, inputNeighborhood || '');
     // Do NOT reset to MENU here, qualification starts inside sendPropertyResults
   }
 
@@ -988,7 +1010,7 @@ _Ex: "Procuro uma casa com piscina no centro"_
       }
     }
 
-    await this.sendPropertyResults(userId, jid, found, storeName, slug);
+    await this.sendPropertyResults(userId, jid, found, storeName, slug, query);
   }
 
   private async sendPropertyResults(
@@ -997,7 +1019,10 @@ _Ex: "Procuro uma casa com piscina no centro"_
     properties: any[],
     storeName: string,
     slug?: string,
+    query?: string,
   ) {
+    const stateKey = `${userId}:${jid}`;
+
     if (properties.length > 0) {
       const limit = 5;
       const subset = properties.slice(0, limit);
@@ -1049,15 +1074,39 @@ ${prop.cep ? '📮 *CEP:* ' + prop.cep : ''}
         );
       }
 
-      await this.startQualification(userId, jid, storeName);
-    } else {
+      // 3. Fluxo Pós-Busca (Estado SEARCH_FINISHED)
       await this.sendMessage(
         userId,
         jid,
-        '😕 Não encontrei nenhum imóvel com essas características. Tente buscar em outra região ou diga o que você procura.',
+        "O que deseja fazer agora?\n\n1️⃣ Procurar outro\n2️⃣ Menu Principal",
       );
-      await this.sendMainMenu(userId, jid, storeName);
-      this.userStates.set(`${userId}:${jid}`, { mode: 'MENU' });
+      this.userStates.set(stateKey, { mode: 'SEARCH_FINISHED' });
+
+    } else {
+      // 4. Inteligência de Resposta Negativa
+      const lowerQuery = (query || '').toLowerCase().trim();
+      const isQuestion = lowerQuery.includes('?') ||
+        ['qual', 'como', 'onde', 'quanto'].some(word => lowerQuery.startsWith(word));
+
+      if (isQuestion) {
+        await this.sendMessage(
+          userId,
+          jid,
+          'Ainda não tenho essa informação exata, mas um de nossos consultores pode te ajudar agora mesmo! 😉\n\nDigite *2* para falar com um consultor ou *Menu* para voltar.',
+        );
+      } else {
+        await this.sendMessage(
+          userId,
+          jid,
+          '😕 Não encontrei nenhum imóvel com essas características.\n\n💡 *Dica:* Tente buscar por termos mais simples, como apenas o *Bairro* ou o *Tipo* do imóvel (ex: Casa, Apartamento).',
+        );
+        await this.sendMessage(
+          userId,
+          jid,
+          "1️⃣ Tentar nova busca\n2️⃣ Menu Principal",
+        );
+      }
+      this.userStates.set(stateKey, { mode: 'SEARCH_FINISHED' });
     }
   }
 
