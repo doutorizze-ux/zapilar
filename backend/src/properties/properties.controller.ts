@@ -131,12 +131,6 @@ export class PropertiesController {
     return this.propertiesService.copyProperty(shareCode, req.user.userId);
   }
 
-  @Get('db-fix')
-  async fixDatabase(@Request() req) {
-    await this.propertiesService.fixExistingSoldStatus();
-    return { message: 'Database status fixed successfully!' };
-  }
-
   @UseGuards(JwtAuthGuard)
   @Post(':id/sell')
   setSold(@Param('id') id: string, @Body('shareCode') shareCode: string, @Request() req) {
