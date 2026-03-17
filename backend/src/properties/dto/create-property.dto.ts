@@ -19,5 +19,8 @@ export class CreatePropertyDto {
   security?: boolean;
   elevator?: boolean;
   furnished?: boolean; // mobilado
+  isShared?: boolean;
+  shareCode?: string;
+  isSold?: boolean;
   documents?: { name: string; url: string; type: string; date: string }[];
 }
