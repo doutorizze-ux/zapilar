@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { API_URL } from './config';
 
@@ -47,6 +47,11 @@ const LoadingPage = () => (
   </div>
 );
 
+const RootRedirect = () => {
+  const token = localStorage.getItem('token');
+  return token ? <Navigate to="/dashboard" replace /> : <LoginPage />;
+};
+
 function App() {
   useEffect(() => {
     console.log('🚀 Zapilar Application Started');
@@ -58,7 +63,7 @@ function App() {
       <AuthProvider>
         <Suspense fallback={<LoadingPage />}>
           <Routes>
-            <Route path="/" element={<LoginPage />} />
+            <Route path="/" element={<RootRedirect />} />
             <Route path="/register" element={<RegisterPage />} />
 
             <Route path="/login" element={<LoginPage />} />
