@@ -87,10 +87,24 @@ export class Property {
   furnished: boolean;
 
   @ManyToOne(() => Store)
+  @ManyToOne(() => Store)
   store: Store;
 
   @Column({ nullable: true })
   userId: string;
+
+  // Compartilhamento
+  @Column({ default: false })
+  isShared: boolean;
+
+  @Column({ nullable: true })
+  shareCode: string; // Também usado como senha para venda
+
+  @Column({ nullable: true })
+  parentPropertyId: string;
+
+  @Column({ default: false })
+  isSold: boolean;
 
   @CreateDateColumn()
   createdAt: Date;

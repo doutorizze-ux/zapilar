@@ -887,6 +887,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         city,
         selectedNeighborhood,
         type,
+        true,
       );
     }
 
@@ -949,7 +950,7 @@ _Ex: "Procuro uma casa com piscina no centro"_
     const analysis = await this.aiService.analyzeIntent(query);
     const { entities } = analysis;
 
-    const allProperties = await this.propertiesService.findAll(userId);
+    const allProperties = await this.propertiesService.findAll(userId, true);
     let found: any[] = [];
 
     if (query) {

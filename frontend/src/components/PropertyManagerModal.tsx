@@ -41,6 +41,8 @@ export function PropertyManagerModal({ isOpen, onClose, onSuccess, initialData }
         security: false,
         elevator: false,
         furnished: false,
+        isShared: false,
+        shareCode: '',
     });
 
     // Marketing Data
@@ -68,6 +70,8 @@ export function PropertyManagerModal({ isOpen, onClose, onSuccess, initialData }
                 security: initialData.security || false,
                 elevator: initialData.elevator || false,
                 furnished: initialData.furnished || false,
+                isShared: initialData.isShared || false,
+                shareCode: initialData.shareCode || '',
             });
             setExistingImages(initialData.images || []);
             setDocFiles([]); // Reset pending docs
@@ -79,6 +83,7 @@ export function PropertyManagerModal({ isOpen, onClose, onSuccess, initialData }
                 city: '', neighborhood: '', address: '', cep: '',
                 area: 0, bedrooms: 0, bathrooms: 0, parkingSpaces: 0,
                 pool: false, security: false, elevator: false, furnished: false,
+                isShared: false, shareCode: '',
             });
             setExistingImages([]);
             setDocFiles([]);
@@ -455,6 +460,24 @@ Aproveite essa oportunidade!
                                                 <label key={opt.k} className="flex items-center gap-1.5 cursor-pointer bg-white border px-2 py-1 rounded-md hover:bg-gray-50"><input type="checkbox" name={opt.k} checked={(formData as any)[opt.k]} onChange={handleCheckboxChange} className="rounded text-cyan-600" /><span className="text-xs">{opt.l}</span></label>
                                             ))}
                                         </div>
+                                    </div>
+
+                                    <div className="border-t pt-4">
+                                        <label className="flex items-center gap-2 cursor-pointer bg-cyan-50 border border-cyan-100 p-2.5 rounded-xl">
+                                            <input type="checkbox" name="isShared" checked={formData.isShared} onChange={handleCheckboxChange} className="rounded text-cyan-600" />
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-bold text-cyan-800 flex items-center gap-1"><Share2 className="w-4 h-4" /> Compartilhar Imóvel</span>
+                                                <span className="text-xs text-cyan-600">Gera um código que outros corretores podem usar para copiar este anúncio.</span>
+                                            </div>
+                                        </label>
+
+                                        {formData.isShared && (
+                                            <div className="mt-2">
+                                                <label className="text-xs font-bold text-gray-500 uppercase">Código / Senha de Venda</label>
+                                                <input name="shareCode" value={formData.shareCode} onChange={handleChange} className="w-full mt-1 p-2 border border-cyan-200 rounded-lg text-sm bg-white" placeholder="Ex: SENHA123" />
+                                                <p className="text-[10px] text-gray-400 mt-1">Este código servirá para vincular e confirmar a venda.</p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>

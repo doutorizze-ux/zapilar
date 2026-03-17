@@ -55,11 +55,12 @@ export class PropertiesService {
     return property;
   }
 
-  findAll(userId?: string) {
-    if (userId) {
-      return this.propertiesRepository.find({ where: { userId } });
-    }
-    return this.propertiesRepository.find();
+  findAll(userId?: string, excludeSold = false) {
+    const where: any = {};
+    if (userId) where.userId = userId;
+    if (excludeSold) where.isSold = false;
+
+    return this.propertiesRepository.find({ where });
   }
 
   findOne(id: string) {
@@ -220,6 +221,7 @@ export class PropertiesService {
     city: string,
     neighborhood: string,
     type?: string,
+    excludeSold = false,
   ) {
     // Try precise match first
     const where: any = {
@@ -228,6 +230,7 @@ export class PropertiesService {
       neighborhood,
     };
     if (type) where.type = type;
+    if (excludeSold) where.isSold = false;
 
     const exactMatches = await this.propertiesRepository.find({ where });
 
@@ -247,7 +250,58 @@ export class PropertiesService {
       query.andWhere('property.type = :type', { type });
     }
 
+    if (excludeSold) {
+      query.andWhere('property.isSold = false');
+    }
+
     return query.getMany();
+  }
+
+  async findByShareCode(shareCode: string) {
+    return this.propertiesRepository.findOne({ where: { shareCode, isShared: true } });
+  }
+
+  async copyProperty(shareCode: string, userId: string) {
+    const original = await this.findByShareCode(shareCode);
+    if (!original) throw new BadRequestException('Imóvel não encontrado ou não compartilhado.');
+    if (original.isSold) throw new BadRequestException('Este imóvel já foi vendido.');
+
+    // Create copy for current user
+    const { id, createdAt, updatedAt, userId: _, ...data } = original;
+    const property = this.propertiesRepository.create({
+      ...data,
+      userId,
+      parentPropertyId: original.id,
+      isShared: false, 
+    });
+
+    return this.propertiesRepository.save(property);
+  }
+
+  async setSold(id: string, shareCode: string, userId: string) {
+    const property = await this.findOne(id);
+    if (!property) throw new BadRequestException('Imóvel não encontrado.');
+
+    let originalId = property.id;
+    let actualOriginal = property;
+
+    if (property.parentPropertyId) {
+      originalId = property.parentPropertyId;
+      const original = await this.findOne(originalId);
+      if (!original) throw new BadRequestException('Original não encontrado.');
+      actualOriginal = original;
+    }
+
+    if (actualOriginal.shareCode !== shareCode) {
+      throw new BadRequestException('Senha de controle incorreta.');
+    }
+
+    // Mark original and ALL copies with that parent as Sold
+    await this.propertiesRepository.update({ id: originalId }, { isSold: true });
+    // Also matching copies
+    await this.propertiesRepository.update({ parentPropertyId: originalId }, { isSold: true });
+
+    return { message: 'Imóvel marcado como vendido com sucesso!', success: true };
   }
 
   private async notifyMatchingLeads(property: Property) {

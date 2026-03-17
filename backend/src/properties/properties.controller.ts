@@ -126,6 +126,18 @@ export class PropertiesController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Post('copy')
+  copy(@Body('shareCode') shareCode: string, @Request() req) {
+    return this.propertiesService.copyProperty(shareCode, req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/sell')
+  setSold(@Param('id') id: string, @Body('shareCode') shareCode: string, @Request() req) {
+    return this.propertiesService.setSold(id, shareCode, req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get()
   findAll(@Request() req) {
     return this.propertiesService.findAll(req.user.userId);
