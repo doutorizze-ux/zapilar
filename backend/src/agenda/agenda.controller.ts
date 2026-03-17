@@ -37,4 +37,14 @@ export class AgendaController {
   remove(@Request() req, @Param('id') id: string) {
     return this.service.remove(id, req.user.userId);
   }
+
+  @Get('availability')
+  getAvailability(@Request() req) {
+    return this.service.getAvailability(req.user.userId);
+  }
+
+  @Post('availability')
+  setAvailability(@Request() req, @Body() slots: any[]) {
+    return this.service.setAvailability(req.user.userId, slots);
+  }
 }

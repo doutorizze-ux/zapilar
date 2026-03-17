@@ -26,6 +26,7 @@ import { UsersService } from '../users/users.service';
 import { FaqService } from '../faq/faq.service';
 import { LeadsService } from '../leads/leads.service';
 import { AiService } from '../integrations/ai/ai.service';
+import { AgendaService } from '../agenda/agenda.service';
 
 @Injectable()
 export class WhatsappService implements OnModuleInit, OnModuleDestroy {
@@ -51,9 +52,14 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
       | 'WAITING_NEIGHBORHOOD'
       | 'WAITING_SEARCH'
       | 'SEARCH_FINISHED'
-      | 'WAITING_QUALIFICATION';
+      | 'WAITING_QUALIFICATION'
+      | 'WAITING_SCHEDULE_DATE'
+      | 'WAITING_SCHEDULE_TIME';
       tempCity?: string;
       tempType?: string;
+      tempPropertyId?: string;
+      tempDate?: string;
+      slots?: any[];
     }
   > = new Map();
 
@@ -72,6 +78,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
     private faqService: FaqService,
     private leadsService: LeadsService,
     private aiService: AiService,
+    private agendaService: AgendaService,
   ) {
     if (!fs.existsSync(this.SESSIONS_DIR)) {
       fs.mkdirSync(this.SESSIONS_DIR, { recursive: true });
@@ -422,6 +429,11 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
+    if (normalizedMsg.includes('agendar')) {
+      await this.handleStartScheduling(userId, jid);
+      return;
+    }
+
     // State Machine
     if (currentState === 'MENU') {
       const isCommand =
@@ -523,6 +535,10 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
       }
     } else if (currentState === 'WAITING_QUALIFICATION') {
       await this.handleQualification(userId, jid, msg, storeName);
+    } else if (currentState === 'WAITING_SCHEDULE_DATE') {
+      await this.handleScheduleDateSelection(userId, jid, msg);
+    } else if (currentState === 'WAITING_SCHEDULE_TIME') {
+      await this.handleScheduleTimeSelection(userId, jid, msg);
     }
   }
 
@@ -1060,7 +1076,9 @@ ${prop.cep ? '📮 *CEP:* ' + prop.cep : ''}
 💰 *R$ ${price}*
 
 ✨ _Confira todos os detalhes e fotos em nossa apresentação premium:_
-🔗 ${propertyLink}`;
+🔗 ${propertyLink}
+
+💬 *Para agendar uma visita*, digite *Agendar*!`;
 
         await this.sendMessage(userId, jid, specs);
         await new Promise((r) => setTimeout(r, 1000));
@@ -1268,5 +1286,107 @@ ${prop.cep ? '📮 *CEP:* ' + prop.cep : ''}
   // Stub for sync
   async syncSessions() {
     await this.restoreSessions();
+  }
+
+  async handleStartScheduling(userId: string, jid: string) {
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(startDate.getDate() + 7);
+
+    const slots = await this.agendaService.getAvailableSlots(userId, startDate, endDate);
+
+    if (slots.length === 0) {
+      await this.sendMessage(userId, jid, "Desculpe, não tenho horários disponíveis para agendamento nos próximos dias. 😕\nDigite *2* para falar com um corretor.");
+      return;
+    }
+
+    let msg = "📅 *Selecione o Dia para sua Visita:*\n\n";
+    const weekdays = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
+
+    slots.forEach((s, index) => {
+      const parts = s.date.split('-');
+      msg += `*${index + 1}* - ${parts[2]}/${parts[1]} (${weekdays[s.dayOfWeek]})\n`;
+    });
+    msg += "\nDigite o *número* da data desejada.";
+
+    this.userStates.set(`${userId}:${jid}`, {
+      mode: 'WAITING_SCHEDULE_DATE',
+      slots: slots,
+    });
+    await this.sendMessage(userId, jid, msg);
+  }
+
+  async handleScheduleDateSelection(userId: string, jid: string, input: string) {
+    const stateKey = `${userId}:${jid}`;
+    const stateData = this.userStates.get(stateKey);
+    const slots = stateData?.slots || [];
+
+    const index = parseInt(input) - 1;
+    if (isNaN(index) || index < 0 || index >= slots.length) {
+      await this.sendMessage(userId, jid, "Opção inválida. Por favor, escolha um número da lista.");
+      return;
+    }
+
+    const selectedSlot = slots[index];
+    const parts = selectedSlot.date.split('-');
+    let msg = `⏰ *Horários disponíveis para ${parts[2]}/${parts[1]}:*\n\n`;
+    
+    selectedSlot.timeSlots.forEach((t, i) => {
+      msg += `*${i + 1}* - ${t}\n`;
+    });
+    msg += "\nDigite o *número* do horário que prefere.";
+
+    this.userStates.set(stateKey, {
+      ...stateData,
+      mode: 'WAITING_SCHEDULE_TIME',
+      tempDate: selectedSlot.date,
+    });
+    await this.sendMessage(userId, jid, msg);
+  }
+
+  async handleScheduleTimeSelection(userId: string, jid: string, input: string) {
+    const stateKey = `${userId}:${jid}`;
+    const stateData = this.userStates.get(stateKey);
+    const slots = stateData?.slots || [];
+    const dateStr = stateData?.tempDate || '';
+
+    const selectedSlot = slots.find(s => s.date === dateStr);
+    if (!selectedSlot) {
+      await this.sendMessage(userId, jid, "Ocorreu um erro. Tente novamente digitando *Agendar*.");
+      this.userStates.set(stateKey, { mode: 'MENU' });
+      return;
+    }
+
+    const index = parseInt(input) - 1;
+    if (isNaN(index) || index < 0 || index >= selectedSlot.timeSlots.length) {
+      await this.sendMessage(userId, jid, "Opção inválida. Por favor, escolha um número da lista.");
+      return;
+    }
+
+    const time = selectedSlot.timeSlots[index];
+
+    // Create Event
+    const startDateStr = `${dateStr}T${time}:00`;
+    const startObj = new Date(startDateStr);
+    const endObj = new Date(startObj.getTime() + 60*60*1000); // 1hr
+
+    await this.agendaService.create(userId, {
+      title: `Visita de Cliente (WhatsApp)`,
+      start: startObj as any,
+      end: endObj as any,
+      description: `Agendado via Bot WhatsApp por cliente ${jid.split('@')[0]}`,
+      location: 'Imóvel'
+    });
+
+    await this.sendMessage(userId, jid, `✅ *Agendamento Confirmado!*
+    
+📅 *Data:* ${dateStr.split('-').reverse().join('/')}
+⏰ *Horário:* ${time}
+
+Um corretor foi notificado e seu compromisso já aparece em nossa agenda. Obrigado!`);
+
+    this.userStates.set(stateKey, { mode: 'MENU' });
+    const user = await this.usersService.findById(userId);
+    await this.sendMainMenu(userId, jid, user?.storeName || 'Imobiliária');
   }
 }

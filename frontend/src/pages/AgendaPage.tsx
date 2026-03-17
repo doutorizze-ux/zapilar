@@ -7,6 +7,10 @@ export function AgendaPage() {
     const [events, setEvents] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [formData, setFormData] = useState({ title: '', start: '', end: '', location: '', description: '' });
+    
+    // Availability State
+    const [availability, setAvailability] = useState<any[]>([]);
+    const [isAvailabilityModalOpen, setIsAvailabilityModalOpen] = useState(false);
 
     // Calendar State
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -14,6 +18,7 @@ export function AgendaPage() {
 
     useEffect(() => {
         fetchEvents();
+        fetchAvailability();
     }, []);
 
     const fetchEvents = async () => {
@@ -21,6 +26,26 @@ export function AgendaPage() {
             headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) setEvents(await res.json());
+    };
+
+    const fetchAvailability = async () => {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/agenda/availability`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) setAvailability(await res.json());
+    };
+
+    const handleSaveAvailability = async (slots: any[]) => {
+        await fetch(`${import.meta.env.VITE_API_URL}/agenda/availability`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify(slots)
+        });
+        fetchAvailability();
+        setIsAvailabilityModalOpen(false);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -148,12 +173,20 @@ export function AgendaPage() {
                     <CalendarIcon className="w-6 h-6 text-cyan-600" />
                     Agenda de Compromissos
                 </h1>
-                <button
-                    onClick={openNewEventModal}
-                    className="bg-cyan-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-cyan-700 shadow-sm transition-all"
-                >
-                    <Plus className="w-4 h-4" /> Novo Evento
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => setIsAvailabilityModalOpen(true)}
+                        className="bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-50 shadow-sm transition-all text-sm font-medium"
+                    >
+                        <Clock className="w-4 h-4 text-gray-500" /> Horários
+                    </button>
+                    <button
+                        onClick={openNewEventModal}
+                        className="bg-cyan-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-cyan-700 shadow-sm transition-all text-sm font-medium"
+                    >
+                        <Plus className="w-4 h-4" /> Novo Evento
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -315,6 +348,92 @@ export function AgendaPage() {
                                 <button type="submit" className="px-6 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 font-medium shadow-md hover:shadow-lg transition-all">Salvar Evento</button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+            {isAvailabilityModalOpen && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl w-full max-w-md p-6 shadow-xl animate-scale-in flex flex-col max-h-[80vh]">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-bold text-gray-900">Horários de Disponibilidade</h2>
+                            <button onClick={() => setIsAvailabilityModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                                Fechar
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+                            <p className="text-xs text-gray-500">Adicione os dias e horários que você está disponível para atender clientes.</p>
+                            
+                            <div className="space-y-2">
+                                {availability.length > 0 ? availability.map((s, index) => (
+                                    <div key={index} className="flex justify-between items-center bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                                        <span className="text-sm font-medium text-gray-800">
+                                            {['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][s.dayOfWeek]}
+                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm text-gray-500">{s.startTime} - {s.endTime}</span>
+                                            <button 
+                                                onClick={async () => {
+                                                    const updated = availability.filter((_, i) => i !== index);
+                                                    setAvailability(updated);
+                                                }}
+                                                className="p-1 hover:bg-red-50 rounded text-gray-400 hover:text-red-500"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <p className="text-sm text-center text-gray-400 py-4">Nenhum horário cadastrado.</p>
+                                )}
+                            </div>
+
+                            <div className="border-t border-gray-100 pt-4 mt-2">
+                                <form onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const form = e.target as any;
+                                    const day = parseInt(form.day.value);
+                                    const start = form.start.value;
+                                    const end = form.end.value;
+                                    if(day>=0 && start && end) {
+                                        setAvailability([...availability, { dayOfWeek: day, startTime: start, endTime: end }]);
+                                    }
+                                }} className="flex flex-col gap-2">
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">Dia da Semana</label>
+                                            <select name="day" className="w-full border p-2 rounded-lg text-sm">
+                                                <option value="1">Segunda-feira</option>
+                                                <option value="2">Terça-feira</option>
+                                                <option value="3">Quarta-feira</option>
+                                                <option value="4">Quinta-feira</option>
+                                                <option value="5">Sexta-feira</option>
+                                                <option value="6">Sábado</option>
+                                                <option value="0">Domingo</option>
+                                            </select>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-1">
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-700 mb-1">Início</label>
+                                                <input type="time" name="start" required className="w-full border p-1.5 rounded-lg text-sm" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-700 mb-1">Fim</label>
+                                                <input type="time" name="end" required className="w-full border p-1.5 rounded-lg text-sm" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="submit" className="bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm py-2 rounded-lg font-medium transition-all">
+                                        + Adicionar Slot
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-4">
+                            <button onClick={() => setIsAvailabilityModalOpen(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-medium">Cancelar</button>
+                            <button onClick={() => handleSaveAvailability(availability)} className="px-6 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 text-sm font-medium shadow-md">Salvar</button>
+                        </div>
                     </div>
                 </div>
             )}
