@@ -93,9 +93,9 @@ export function DashboardHome() {
             </div>
 
             {/* Recent Activity / Content */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 gap-8">
                 {/* Recent Leads */}
-                <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="text-lg font-bold text-gray-900">Leads Recentes</h3>
                         <Link to="/dashboard/leads" className="text-sm text-cyan-600 hover:text-cyan-800 font-medium flex items-center gap-1">
@@ -126,44 +126,6 @@ export function DashboardHome() {
                                 </Link>
                             ))
                         )}
-                    </div>
-                </div>
-
-                {/* Quick Status */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                    <h3 className="text-lg font-bold text-gray-900 mb-6">Status da Imobiliária</h3>
-
-                    <div className="space-y-6">
-                        <div>
-                            <div className="flex justify-between text-sm mb-2">
-                                <span className="text-gray-500">Plano Atual</span>
-                                <Link to="/dashboard/plans" className="text-cyan-600 font-medium text-xs hover:underline">Gerenciar</Link>
-                            </div>
-                            <div className="p-4 bg-gradient-to-br from-purple-50 to-white text-purple-700 rounded-xl border border-purple-100 shadow-sm">
-                                {statsData.plan ? (
-                                    <div className="text-center">
-                                        <div className="text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-1">Plano Atual</div>
-                                        <div className="text-xl font-black text-purple-900">{statsData.plan.name}</div>
-                                        <div className="text-sm font-semibold mt-1 text-purple-600">
-                                            {Number(statsData.plan.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                                            <span className="text-[10px] font-medium text-purple-400 ml-1">/mês</span>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="font-bold text-center py-2">Visualizar Planos</div>
-                                )}
-                            </div>
-                        </div>
-
-                        <div>
-                            <div className="flex justify-between text-sm mb-2">
-                                <span className="text-gray-500">Limite de Imóveis</span>
-                                <span className="text-gray-900 font-medium">{statsData.activeProperties} / 50</span>
-                            </div>
-                            <div className="w-full bg-gray-100 rounded-full h-2">
-                                <div className="bg-cyan-500 h-2 rounded-full" style={{ width: `${Math.min((statsData.activeProperties / 50) * 100, 100)}%` }}></div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

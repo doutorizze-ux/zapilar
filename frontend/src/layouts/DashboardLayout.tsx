@@ -10,7 +10,6 @@ const sidebarItems = [
     { icon: DollarSign, label: 'Financeiro', path: '/dashboard/financial' },
     { icon: Calendar, label: 'Agenda', path: '/dashboard/agenda' },
     { icon: Contact, label: 'Contatos', path: '/dashboard/contacts' },
-    { icon: CreditCard, label: 'Planos', path: '/dashboard/plans' },
     { icon: Home, label: 'Imóveis', path: '/dashboard/properties' },
     { icon: Search, label: 'Consultas', path: '/dashboard/consultas' },
     { icon: Users, label: 'Leads', path: '/dashboard/leads' },
@@ -94,13 +93,8 @@ export function DashboardLayout() {
     }, [navigate]);
 
     useEffect(() => {
-        if (!loading && storeInfo) {
-            const isPlansPage = location.pathname === '/dashboard/plans';
-            if ((!storeInfo.subscriptionId || (storeInfo.subscriptionStatus !== 'ACTIVE' && storeInfo.subscriptionStatus !== 'RECEIVED' && storeInfo.subscriptionStatus !== 'CONFIRMED' && storeInfo.subscriptionStatus !== 'COMPLETED')) && !isPlansPage) {
-                navigate('/dashboard/plans');
-            }
-        }
-    }, [loading, storeInfo, location.pathname, navigate]);
+        // Disabled plans enforcement redirect
+    }, []);
 
     // Close mobile menu on route change
     useEffect(() => {
@@ -114,9 +108,7 @@ export function DashboardLayout() {
 
     if (loading) return <div className="h-screen flex items-center justify-center">Carregando...</div>;
 
-    const filteredSidebarItems = (!storeInfo?.subscriptionId)
-        ? sidebarItems.filter(item => item.path === '/dashboard/plans')
-        : sidebarItems;
+    const filteredSidebarItems = sidebarItems;
 
     return (
         <div className="flex h-screen bg-gray-50 text-gray-900 font-sans overflow-hidden">
@@ -205,34 +197,7 @@ export function DashboardLayout() {
 
                 {/* Footer Section - Plan Status & Logout */}
                 <div className="p-4 space-y-4 bg-gradient-to-t from-black/20 to-transparent">
-                    {/* Plan Card */}
-                    <div className="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/5 rounded-2xl p-4 relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-                        <div className="flex items-center justify-between relative z-10 mb-2">
-                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Seu Plano</span>
-                            <span className={cn(
-                                "text-[10px] px-2 py-0.5 rounded-full font-bold uppercase",
-                                storeInfo?.subscriptionStatus === 'ACTIVE'
-                                    ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/20"
-                                    : "bg-yellow-500/20 text-yellow-400 border border-yellow-500/20"
-                            )}>
-                                {storeInfo?.subscriptionStatus === 'ACTIVE' ? 'Ativo' : 'Pendente'}
-                            </span>
-                        </div>
-                        <p className="text-white font-bold text-sm relative z-10">{storeInfo?.planName || 'Plano Desconhecido'}</p>
-                        <p className="text-gray-500 text-xs mt-0.5 relative z-10">
-                            {storeInfo?.nextDueDate
-                                ? `Renova em ${new Date(storeInfo.nextDueDate).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}`
-                                : 'Assinatura Vitalícia'
-                            }
-                        </p>
-
-                        {/* Progress bar decoration */}
-                        <div className="w-full bg-white/10 h-1 rounded-full mt-3 overflow-hidden">
-                            <div className="bg-cyan-500 h-full w-[70%] rounded-full"></div>
-                        </div>
-                    </div>
+                    {/* Plan Card (Disabled) */}
 
                     <div className="h-px bg-white/5 w-full"></div>
 
@@ -257,25 +222,7 @@ export function DashboardLayout() {
             )}
 
             <main className="flex-1 overflow-auto bg-gray-50 p-4 md:p-8 pt-20 md:pt-8 w-full">
-                {storeInfo?.isExpiringSoon && storeInfo?.subscriptionStatus === 'ACTIVE' && (
-                    <div className="mb-6 bg-gradient-to-r from-orange-600 to-red-600 p-4 rounded-xl text-white shadow-lg flex flex-col md:flex-row items-center justify-between gap-4 animate-pulse">
-                        <div className="flex items-center gap-3">
-                            <div className="bg-white/20 p-2 rounded-lg">
-                                <CreditCard className="w-6 h-6" />
-                            </div>
-                            <div>
-                                <h4 className="font-bold">Sua mensalidade vence {storeInfo.daysUntilDue === 0 ? 'HOJE' : `em ${storeInfo.daysUntilDue} dias`}!</h4>
-                                <p className="text-sm opacity-90">Evite a suspensão do seu bot e do acesso ao CRM realizando o pagamento.</p>
-                            </div>
-                        </div>
-                        <Link
-                            to="/dashboard/plans"
-                            className="bg-white text-red-600 px-6 py-2 rounded-lg font-bold hover:bg-red-50 transition-colors whitespace-nowrap shadow-sm"
-                        >
-                            Ver Meus Planos
-                        </Link>
-                    </div>
-                )}
+                {/* alert isExpiringSoon (Disabled) */}
                 <Outlet />
             </main>
 
