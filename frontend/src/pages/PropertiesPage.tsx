@@ -1,4 +1,4 @@
-import { Plus, Search, Filter, Home, Bed, Maximize, Share2 } from 'lucide-react';
+import { Plus, Search, Filter, Home, Bed, Maximize, Share2, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { API_URL } from '../config';
 import { PropertyManagerModal } from '../components/PropertyManagerModal';
@@ -87,6 +87,21 @@ export function PropertiesPage() {
             console.error("Failed to fetch properties", err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDeleteProperty = async (id: string) => {
+        if (!window.confirm("Tem certeza que deseja EXCLUIR este imóvel permanentemente?")) return;
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/properties/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+            alert('Imóvel excluído com sucesso!');
+            fetchProperties();
+        } else {
+            alert('Erro ao excluir imóvel.');
         }
     };
 
@@ -238,6 +253,13 @@ export function PropertiesPage() {
                                                 Marcar Vendido
                                             </button>
                                         )}
+                                         <button
+                                            onClick={() => handleDeleteProperty(property.id)}
+                                            className="text-xs font-bold text-gray-400 hover:text-red-600 flex items-center gap-1"
+                                            title="Excluir Imóvel"
+                                        >
+                                            <Trash2 className="w-3 h-3" /> Excluir
+                                        </button>
                                         <button
                                             onClick={() => handleEdit(property)}
                                             className="text-sm font-medium text-gray-500 hover:text-cyan-600 transition-colors"
