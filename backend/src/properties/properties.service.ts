@@ -304,6 +304,11 @@ export class PropertiesService {
     return { message: 'Imóvel marcado como vendido com sucesso!', success: true };
   }
 
+  async fixExistingSoldStatus() {
+    await this.propertiesRepository.update({}, { isSold: false });
+    return true;
+  }
+
   private async notifyMatchingLeads(property: Property) {
     if (!property.userId) return;
 
