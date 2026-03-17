@@ -19,7 +19,24 @@ export class PropertiesService {
     private leadsService: LeadsService,
   ) { }
 
+  async checkShareCodeUnique(shareCode: string, excludeId?: string) {
+    if (!shareCode) return;
+    const query = this.propertiesRepository.createQueryBuilder('property')
+      .where('property.shareCode = :shareCode AND property.isShared = true', { shareCode });
+    if (excludeId) {
+      query.andWhere('property.id != :excludeId', { excludeId });
+    }
+    const count = await query.getCount();
+    if (count > 0) {
+      throw new BadRequestException('Este Código de Compartilhamento já está em uso por outro imóvel.');
+    }
+  }
+
   async create(createPropertyDto: CreatePropertyDto, userId?: string) {
+    if (createPropertyDto.isShared && createPropertyDto.shareCode) {
+      await this.checkShareCodeUnique(createPropertyDto.shareCode);
+    }
+
     if (userId) {
       const user = await this.usersService.findById(userId);
       if (user && user.planId) {
@@ -68,6 +85,10 @@ export class PropertiesService {
   }
 
   async update(id: string, updatePropertyDto: UpdatePropertyDto, userId?: string) {
+    if (updatePropertyDto.isShared && updatePropertyDto.shareCode) {
+      await this.checkShareCodeUnique(updatePropertyDto.shareCode, id);
+    }
+
     if (userId) {
       const property = await this.findOne(id);
       if (property && property.userId !== userId) {
