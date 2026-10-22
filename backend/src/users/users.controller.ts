@@ -20,7 +20,6 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from './entities/user.entity';
-
 import { PlansService } from '../plans/plans.service';
 
 @Controller('users')
@@ -56,12 +55,11 @@ export class UsersController {
       primaryColor?: string;
       address?: string;
       storeDescription?: string;
+      aiAgentName?: string;
+      notifyHotLeads?: boolean;
+      aiCustomInstructions?: string;
     },
   ) {
-    console.log('--------------------------------------------------');
-    console.log('[UsersController] PATCH /profile called');
-    console.log('[UsersController] User:', req.user);
-
     const updates: any = {};
     if (body.storeName !== undefined) updates.storeName = body.storeName;
     if (body.phone !== undefined) updates.phone = body.phone;
@@ -71,6 +69,10 @@ export class UsersController {
     if (body.address !== undefined) updates.address = body.address;
     if (body.storeDescription !== undefined)
       updates.storeDescription = body.storeDescription;
+    if (body.aiAgentName !== undefined) updates.aiAgentName = body.aiAgentName;
+    if (body.notifyHotLeads !== undefined) updates.notifyHotLeads = body.notifyHotLeads;
+    if (body.aiCustomInstructions !== undefined)
+      updates.aiCustomInstructions = body.aiCustomInstructions;
 
     return this.usersService.updateById(req.user.userId, updates);
   }
@@ -127,7 +129,6 @@ export class UsersController {
       throw new Error('Store not found');
     }
 
-    // Verify Plan Access
     let allowSite = false;
     if (user.planId) {
       const plan = await this.plansService.findOne(user.planId);
@@ -138,7 +139,6 @@ export class UsersController {
             ? (plan.features as string).split(',')
             : [];
 
-        // Check both partial match (legacy) or exact string
         if (features.some((f) => f.trim().includes('Site Personalizado'))) {
           allowSite = true;
         }
@@ -176,9 +176,6 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @Patch(':id')
   async updateUser(@Param('id') id: string, @Body() body: any) {
@@ -193,7 +190,6 @@ export class UsersController {
   // --- System Config (Public) ---
   @Get('system-config')
   async getSystemConfig() {
-    // Find the admin user
     const users = await this.usersService.findAll();
     const admin = users.find((u) => u.role === UserRole.ADMIN);
 
@@ -211,10 +207,8 @@ export class UsersController {
     };
   }
 
-  // TEMP: Force Reset to ensure access - Re-added for Production fix
   @Post('force-reset-admin')
   async forceReset() {
-    // Resets to 'admin'
     return this.usersService.seedAdmin(true);
   }
 }

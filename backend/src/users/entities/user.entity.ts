@@ -2,11 +2,9 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  ManyToOne,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Store } from '../../stores/entities/store.entity';
 
 export enum UserRole {
   ADMIN = 'admin',
@@ -23,7 +21,7 @@ export class User {
   email: string;
 
   @Column({ nullable: true })
-  phone: string; // WhatsApp number for human handover
+  phone: string; // WhatsApp number for human handover and hot lead alerts
 
   @Column({ nullable: true })
   document: string; // CPF or CNPJ
@@ -44,7 +42,7 @@ export class User {
   @Column({ unique: true, nullable: true })
   slug: string; // URL friendly name (e.g. 'motors-v8')
 
-  @Column({ nullable: true, default: '#000000' })
+  @Column({ nullable: true, default: '#00C2CB' })
   primaryColor: string; // Store branding color
 
   @Column({ nullable: true })
@@ -58,6 +56,16 @@ export class User {
 
   @Column('text', { nullable: true })
   storeDescription: string; // Slogan or About Us text
+
+  // Configurações do Corretor / Consultor IA
+  @Column({ nullable: true, default: 'Sofia' })
+  aiAgentName: string;
+
+  @Column({ default: true })
+  notifyHotLeads: boolean; // Enviar alerta de lead quente no WhatsApp do corretor
+
+  @Column('text', { nullable: true })
+  aiCustomInstructions: string; // Instruções personalizadas da imobiliária para a IA
 
   @Column({ nullable: true })
   asaasCustomerId: string;
@@ -73,9 +81,6 @@ export class User {
 
   @Column({ nullable: true })
   evolutionInstanceName: string;
-
-  // @ManyToOne(() => Store, { nullable: true })
-  // store: Store;
 
   @Column({ nullable: true })
   lastSubscriptionNotification: Date;

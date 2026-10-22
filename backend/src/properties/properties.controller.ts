@@ -10,14 +10,13 @@ import {
   Request,
   UseInterceptors,
   UploadedFiles,
-  ParseFilePipeBuilder,
-  HttpStatus,
   BadRequestException,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { PropertiesService } from './properties.service';
+import { PropertiesImporterService } from './properties-importer.service';
 import { CreatePropertyDto } from './dto/create-property.dto';
 import { UpdatePropertyDto } from './dto/update-property.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -27,8 +26,9 @@ import { PlansService } from '../plans/plans.service';
 export class PropertiesController {
   constructor(
     private readonly propertiesService: PropertiesService,
+    private readonly importerService: PropertiesImporterService,
     private readonly plansService: PlansService,
-  ) { }
+  ) {}
 
   @UseGuards(JwtAuthGuard)
   @Post()
@@ -37,9 +37,27 @@ export class PropertiesController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Post('import-url')
+  importUrl(@Body('url') url: string, @Request() req) {
+    return this.importerService.importFromUrl(req.user.userId, url);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('import-xml')
+  importXml(@Body('xml') xml: string, @Request() req) {
+    return this.importerService.importFromXml(req.user.userId, xml);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('import-csv')
+  importCsv(@Body('csv') csv: string, @Request() req) {
+    return this.importerService.importFromCsv(req.user.userId, csv);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post(':id/upload')
   @UseInterceptors(
-    FilesInterceptor('files', 5, {
+    FilesInterceptor('files', 8, {
       storage: diskStorage({
         destination: './uploads',
         filename: (req, file, cb) => {
@@ -71,7 +89,7 @@ export class PropertiesController {
     if (!property.images) property.images = [];
 
     files.forEach((file) => {
-      if (property.images.length < 5) {
+      if (property.images.length < 10) {
         const imageUrl = `/uploads/${file.filename}`;
         property.images.push(imageUrl);
       }

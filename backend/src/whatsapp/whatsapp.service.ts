@@ -43,23 +43,25 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
     string,
     {
       mode:
-      | 'MENU'
-      | 'WAITING_PROPERTY_NAME'
-      | 'WAITING_FAQ'
-      | 'HANDOVER'
-      | 'WAITING_CITY'
-      | 'WAITING_TYPE'
-      | 'WAITING_NEIGHBORHOOD'
-      | 'WAITING_SEARCH'
-      | 'SEARCH_FINISHED'
-      | 'WAITING_QUALIFICATION'
-      | 'WAITING_SCHEDULE_DATE'
-      | 'WAITING_SCHEDULE_TIME';
+        | 'CONVERSATIONAL'
+        | 'MENU'
+        | 'WAITING_PROPERTY_NAME'
+        | 'WAITING_FAQ'
+        | 'HANDOVER'
+        | 'WAITING_CITY'
+        | 'WAITING_TYPE'
+        | 'WAITING_NEIGHBORHOOD'
+        | 'WAITING_SEARCH'
+        | 'SEARCH_FINISHED'
+        | 'WAITING_QUALIFICATION'
+        | 'WAITING_SCHEDULE_DATE'
+        | 'WAITING_SCHEDULE_TIME';
       tempCity?: string;
       tempType?: string;
       tempPropertyId?: string;
       tempDate?: string;
       slots?: any[];
+      lastIntent?: string;
     }
   > = new Map();
 
@@ -124,55 +126,33 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async getSession(userId: string) {
+  async getSessionStatus(userId: string) {
     let status = this.connectionStatuses.get(userId) || 'DISCONNECTED';
-    const socket = this.sessions.get(userId);
+    let qr = this.qrCodes.get(userId) || null;
 
-    // Auto-recover stuck CONNECTING state (if > 30s)
-    if (status === 'CONNECTING') {
-      const startTime = this.sessionStartTimes.get(userId) || 0;
-      if (Date.now() - startTime > 30000) {
-        this.logger.warn(`Stuck in CONNECTING for user ${userId}. Resetting.`);
-        this.connectionStatuses.set(userId, 'DISCONNECTED');
-        status = 'DISCONNECTED';
-      }
+    if (status === 'DISCONNECTED' && !qr) {
+      this.createSession(userId);
+      status = 'CONNECTING';
     }
 
-    // If disconnected and no socket, try to initialize (user trying to connect)
-    if (!socket && status === 'DISCONNECTED') {
-      await this.createSession(userId);
-      status = 'CONNECTING'; // will update shortly
-    }
-
-    const qr = this.qrCodes.get(userId) || null;
-
-    // Map native status to API response expected by frontend
-    let finalStatus = status;
-    if (status === 'CONNECTING') finalStatus = 'DISCONNECTED'; // Frontend might not handle CONNECTING
-
-    return { status: finalStatus, qr };
+    return { status, qr };
   }
 
-  async createSession(userId: string) {
+  async createSession(userId: string): Promise<WASocket> {
     if (this.sessions.has(userId)) {
-      return this.sessions.get(userId);
+      return this.sessions.get(userId)!;
     }
 
-    this.sessionStartTimes.set(userId, Date.now());
     this.connectionStatuses.set(userId, 'CONNECTING');
+    this.sessionStartTimes.set(userId, Date.now());
+
     const sessionPath = path.join(this.SESSIONS_DIR, `user_${userId}`);
-
-    if (!fs.existsSync(sessionPath)) {
-      fs.mkdirSync(sessionPath, { recursive: true });
-    }
-
     const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
     const { version } = await fetchLatestBaileysVersion();
 
     const sock = makeWASocket({
       version,
       logger: pino({ level: 'silent' }) as any,
-      printQRInTerminal: false,
       auth: {
         creds: state.creds,
         keys: makeCacheableSignalKeyStore(
@@ -180,23 +160,24 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
           pino({ level: 'silent' }) as any,
         ),
       },
-      browser: ['Zapilar Bot', 'Chrome', '1.0.0'], // More standard browser signature
-      connectTimeoutMs: 20000, // Faster timeout to fail fast and retry
-      retryRequestDelayMs: 2000,
-      keepAliveIntervalMs: 30000, // Prevent timeouts
-      markOnlineOnConnect: true,
-      syncFullHistory: false, // Speed up initial connection
+      browser: Browsers.ubuntu('Chrome'),
+      printQRInTerminal: false,
+      connectTimeoutMs: 60000,
+      defaultQueryTimeoutMs: 60000,
+      keepAliveIntervalMs: 30000,
+      generateHighQualityLinkPreview: true,
+      syncFullHistory: false,
     });
 
     this.sessions.set(userId, sock);
 
     sock.ev.on('creds.update', saveCreds);
 
-    sock.ev.on('connection.update', (update) => {
+    sock.ev.on('connection.update', async (update) => {
       const { connection, lastDisconnect, qr } = update;
 
       if (qr) {
-        this.logger.log(`QR Code generated for User ${userId}`);
+        this.logger.log(`[Baileys] QR Code generated for user ${userId}`);
         this.qrCodes.set(userId, qr);
         this.connectionStatuses.set(userId, 'QR_READY');
       }
@@ -205,33 +186,30 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         const shouldReconnect =
           (lastDisconnect?.error as any)?.output?.statusCode !==
           DisconnectReason.loggedOut;
-        this.logger.warn(
-          `Connection closed for User ${userId}. Reconnecting: ${shouldReconnect}`,
+
+        this.logger.log(
+          `[Baileys] Connection closed for user ${userId}. Reconnecting: ${shouldReconnect}`,
         );
 
+        this.sessions.delete(userId);
+        this.qrCodes.delete(userId);
+        this.connectionStatuses.set(userId, 'DISCONNECTED');
+
         if (shouldReconnect) {
-          this.connectionStatuses.set(userId, 'DISCONNECTED');
-          this.sessions.delete(userId);
-          // Fast retry
-          setTimeout(() => this.createSession(userId), 1000);
+          setTimeout(() => this.createSession(userId), 3000);
         } else {
-          this.connectionStatuses.set(userId, 'DISCONNECTED');
-          this.sessions.delete(userId);
-          this.qrCodes.delete(userId);
-          // Clean up files on logout?
-          try {
+          this.logger.log(
+            `[Baileys] User ${userId} logged out. Cleaning up session files.`,
+          );
+          if (fs.existsSync(sessionPath)) {
             fs.rmSync(sessionPath, { recursive: true, force: true });
-          } catch (e) {
-            this.logger.error(
-              `Failed to remove session files for ${userId}`,
-              e,
-            );
           }
         }
       } else if (connection === 'open') {
-        this.logger.log(`Connection opened for User ${userId}!`);
+        this.logger.log(`[Baileys] Connected successfully for user ${userId}!`);
         this.connectionStatuses.set(userId, 'CONNECTED');
         this.qrCodes.delete(userId);
+        this.sessionStartTimes.delete(userId);
       }
     });
 
@@ -252,13 +230,11 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
     return sock;
   }
 
-  // Interval to clean up inactive (stuck in QR) sessions
   private startInactivityCheck() {
     setInterval(() => {
       const now = Date.now();
       this.connectionStatuses.forEach((status, userId) => {
         const started = this.sessionStartTimes.get(userId) || 0;
-        // If stuck in QR / Connecting for > 5 mins (reduced from 10)
         if (
           (status === 'QR_READY' || status === 'CONNECTING') &&
           now - started > 300000
@@ -269,7 +245,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
           this.deleteInstance(userId);
         }
       });
-    }, 60000); // Check every minute
+    }, 60000);
   }
 
   async deleteInstance(userId: string) {
@@ -302,7 +278,6 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
     const jid = msg.key?.remoteJid;
     if (!jid) return;
 
-    // Filter out Status Updates (Stories), Newsletters (Channels), and Groups
     if (
       jid.includes('status@broadcast') ||
       jid.includes('@newsletter') ||
@@ -313,7 +288,6 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
 
     const name = msg.pushName || jid.split('@')[0];
 
-    // Handling Text Content & Button Responses
     let text = '';
     const m = msg.message;
     if (!m) return;
@@ -321,7 +295,6 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
     if (m.conversation) text = m.conversation;
     else if (m.extendedTextMessage?.text) text = m.extendedTextMessage.text;
     else if (m.imageMessage?.caption) text = m.imageMessage.caption;
-    // Button/List Responses
     else if (m.buttonsResponseMessage?.selectedButtonId)
       text = m.buttonsResponseMessage.selectedButtonId;
     else if (m.listResponseMessage?.singleSelectReply?.selectedRowId)
@@ -334,27 +307,24 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         try {
           const params = JSON.parse(native.paramsJson || '{}');
           text = params.id || '';
-        } catch (e) { }
+        } catch (e) {}
       }
     }
 
     if (!text) return;
 
-    // Timestamp Check
     const msgTime =
       (typeof msg.messageTimestamp === 'number'
         ? msg.messageTimestamp
         : (msg.messageTimestamp as any).low) * 1000;
 
     const now = Date.now();
-    // 2 Minutes Tolerance
     if (now - msgTime > 120000) {
       return;
     }
 
-    this.logger.log(`[Native] Msg from ${name}: ${text}`);
+    this.logger.log(`[Baileys] Msg from ${name}: ${text}`);
 
-    // Log to DB
     await this.logMessage(
       userId,
       jid,
@@ -367,10 +337,12 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
 
     if (this.isBotPaused(userId)) return;
 
-    // Auto-reply Logic
     await this.handleAutoReply(userId, jid, text, name);
   }
 
+  /**
+   * Atendimento Inteligente Humanizado de Elite (Sem menus robóticos URA)
+   */
   private async handleAutoReply(
     userId: string,
     jid: string,
@@ -385,758 +357,481 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
 
     const msg = text.trim();
     const lowerMsg = msg.toLowerCase();
-
-    // 2. Detector de Intenção (Handover Humano)
-    const humanKeywords = ['atendente', 'consultor', 'vendedor', 'humano', 'falar com', 'pessoa', 'corretor'];
-    if (humanKeywords.some(keyword => lowerMsg.includes(keyword))) {
-      this.logger.log(`Handover detected for ${jid} via keywords`);
-      await this.handleConsultantHandover(userId, jid);
-      return;
-    }
-
-    // Retrieve Store Name
-    const user = await this.usersService.findById(userId);
-    const storeName = user?.storeName || 'Imobiliária';
-
-    const stateKey = `${userId}:${jid}`;
-    const stateData = this.userStates.get(stateKey) || { mode: 'MENU' };
-    const currentState = stateData.mode;
-    const isFirstMessage = !this.userStates.has(stateKey);
     const normalizedMsg = lowerMsg
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z]/g, '');
+      .replace(/[^a-z0-9\s]/g, '');
 
-    // Se estiver em modo HANDOVER (atendimento humano), o bot fica em silêncio
-    // a menos que o cliente queira explicitamente voltar para o menu automático.
+    const user = await this.usersService.findById(userId);
+    const storeName = user?.storeName || 'Imobiliária';
+    const agentName = user?.aiAgentName || 'Sofia';
+
+    const stateKey = `${userId}:${jid}`;
+    const stateData = this.userStates.get(stateKey) || { mode: 'CONVERSATIONAL' };
+    const currentState = stateData.mode;
+    const isFirstMessage = !this.userStates.has(stateKey);
+
+    // 1. Handover Humano (Corretor presencial)
+    const humanKeywords = ['atendente', 'consultor', 'vendedor', 'humano', 'falar com pessoa', 'corretor', 'gerente'];
+    if (humanKeywords.some((keyword) => lowerMsg.includes(keyword))) {
+      this.logger.log(`Handover requested for ${jid}`);
+      await this.handleConsultantHandover(userId, jid, name, msg);
+      return;
+    }
+
+    // Se estiver em modo HANDOVER (atendimento humano ativo)
     if (currentState === 'HANDOVER') {
-      if (['menu', 'voltar', 'inicio'].includes(normalizedMsg)) {
-        this.userStates.set(stateKey, { mode: 'MENU' });
-        await this.sendMainMenu(userId, jid, storeName);
+      if (['reiniciar', 'inicio', 'voltar', 'oi', 'ola'].includes(normalizedMsg)) {
+        this.userStates.set(stateKey, { mode: 'CONVERSATIONAL' });
+        await this.sendConversationalGreeting(userId, jid, storeName, agentName, name);
         return;
       }
-      // Se não for comando de retorno, ignoramos para deixar o humano falar
-      return;
+      return; // Deixa o corretor humano conduzir a conversa
     }
 
-    // Lógica padrão de boas-vindas e reset de menu
-    if (
-      isFirstMessage ||
-      ['menu', 'inicio', 'voltar', 'oi', 'ola'].includes(normalizedMsg)
-    ) {
-      this.userStates.set(stateKey, { mode: 'MENU' });
-      await this.sendMainMenu(userId, jid, storeName);
+    // 2. Fluxo de Agendamento de Visita
+    if (currentState === 'WAITING_SCHEDULE_DATE') {
+      await this.handleScheduleDateSelection(userId, jid, msg);
       return;
     }
-
-    if (normalizedMsg.includes('agendar')) {
+    if (currentState === 'WAITING_SCHEDULE_TIME') {
+      await this.handleScheduleTimeSelection(userId, jid, msg);
+      return;
+    }
+    if (normalizedMsg.includes('agendar') || normalizedMsg.includes('visitar') || normalizedMsg.includes('marcar visita')) {
       await this.handleStartScheduling(userId, jid);
       return;
     }
 
-    // State Machine
-    if (currentState === 'MENU') {
-      const isCommand =
-        ['1', '2', '3', '4'].includes(msg) || msg.startsWith('btn_');
-
-      if (
-        msg === '1' ||
-        lowerMsg.includes('comprar') ||
-        lowerMsg.includes('imovel')
-      ) {
-        // Feature: Search by City
-        await this.handleCitySelection(userId, jid, storeName);
-      } else if (msg === '2' || msg === 'btn_consultor') {
-        await this.handleConsultantHandover(userId, jid);
-      } else if (msg === '3' || msg === 'btn_faq') {
-        this.userStates.set(stateKey, { mode: 'WAITING_FAQ' });
-        await this.sendMessage(
-          userId,
-          jid,
-          'Envie sua dúvida e eu responderei com base nas informações da imobiliária 😉',
-        );
-      } else if (msg === '4') {
-        // Free text search
-        this.userStates.set(stateKey, { mode: 'WAITING_SEARCH' });
-        await this.sendMessage(
-          userId,
-          jid,
-          'Digite o que você procura (ex: Casa 3 quartos centro):',
-        );
-      } else if (!isCommand && msg.length > 3) {
-        // ULTRA POWERFUL AI ANALYSIS
-        const analysis = await this.aiService.analyzeIntent(msg);
-        this.logger.log(
-          `AI Intent Analysis for "${msg}": ${JSON.stringify(analysis)}`,
-        );
-
-        if (analysis.intent === 'SEARCH') {
-          // Smart search based on extracted entities or raw text
-          await this.handlePropertySearch(userId, jid, msg, storeName, name);
-        } else if (analysis.intent === 'TALK') {
-          await this.handleConsultantHandover(userId, jid);
-        } else if (analysis.intent === 'FAQ') {
-          await this.handleAiFaq(userId, jid, msg, storeName);
-        } else {
-          // Fallback attempt to search directly if text is long enough
-          if (msg.split(' ').length > 2) {
-            await this.handlePropertySearch(userId, jid, msg, storeName, name);
-          } else {
-            await this.sendMessage(
-              userId,
-              jid,
-              "Não entendi sua opção. Por favor, escolha um número do menu ou digite 'Menu' para ver as opções.",
-            );
-          }
-        }
-      } else {
-        await this.sendMessage(
-          userId,
-          jid,
-          "Não entendi sua opção. Por favor, escolha um número do menu ou digite 'Menu' para ver as opções.",
-        );
-      }
-    } else if (currentState === 'WAITING_CITY') {
-      await this.handleTypeSelection(userId, jid, msg, storeName);
-    } else if (currentState === 'WAITING_TYPE') {
-      await this.handleNeighborhoodSelection(
-        userId,
-        jid,
-        msg,
-        storeName,
-        stateData.tempCity || '',
-      );
-    } else if (currentState === 'WAITING_NEIGHBORHOOD') {
-      await this.handlePropertySearchByLocation(
-        userId,
-        jid,
-        stateData.tempCity || '',
-        stateData.tempType || '',
-        msg,
-        storeName,
-      );
-    } else if (currentState === 'WAITING_SEARCH') {
-      await this.handlePropertySearch(userId, jid, msg, storeName, name);
-      // Do NOT reset to MENU here, sendPropertyResults handles it
-    } else if (currentState === 'WAITING_FAQ') {
-      await this.handleAiFaq(userId, jid, msg, storeName);
-    } else if (currentState === 'SEARCH_FINISHED') {
-      if (msg === '1') {
-        this.userStates.set(stateKey, { mode: 'WAITING_SEARCH' });
-        await this.sendMessage(userId, jid, 'Certo! O que você procura? (ex: Apartamento 2 quartos)');
-      } else if (msg === '2') {
-        this.userStates.set(stateKey, { mode: 'MENU' });
-        await this.sendMainMenu(userId, jid, storeName);
-      } else if (msg.length > 3) {
-        // Interceptação: se digitar termo de busca, processa direto
-        await this.handlePropertySearch(userId, jid, msg, storeName, name);
-      } else {
-        await this.sendMessage(userId, jid, 'Escolha uma opção:\n1️⃣ Procurar outro\n2️⃣ Menu Principal');
-      }
-    } else if (currentState === 'WAITING_QUALIFICATION') {
-      await this.handleQualification(userId, jid, msg, storeName);
-    } else if (currentState === 'WAITING_SCHEDULE_DATE') {
-      await this.handleScheduleDateSelection(userId, jid, msg);
-    } else if (currentState === 'WAITING_SCHEDULE_TIME') {
-      await this.handleScheduleTimeSelection(userId, jid, msg);
-    }
-  }
-
-  private async handleConsultantHandover(userId: string, jid: string) {
-    // Ensure Brazil Timezone
-    const brazilTime = new Date().toLocaleString('en-US', {
-      timeZone: 'America/Sao_Paulo',
-    });
-    const hour = new Date(brazilTime).getHours();
-
-    const isBusinessHours = hour >= 7 && hour < 18;
-
-    if (isBusinessHours) {
-      await this.sendMessage(
-        userId,
-        jid,
-        'Certo 👍. Um corretor foi notificado e pode te responder em até 3 minutos.\n\nCaso queira retornar para o menu, digite *Menu* ou *Voltar*.',
-      );
-    } else {
-      await this.sendMessage(
-        userId,
-        jid,
-        'Nosso atendimento humano funciona das *07:00 às 18:00*. 🕒\n\nComo estamos fora do expediente, você pode deixar sua mensagem agora que responderemos assim que retornarmos.\n\nOu digite *Menu* para continuar vendo imóveis com nosso sistema automático 24h! 🤖',
-      );
+    // 3. Primeira Mensagem / Saudação Inicial
+    if (isFirstMessage || ['oi', 'ola', 'bom dia', 'boa tarde', 'boa noite', 'opa', 'ola tudo bem'].includes(normalizedMsg)) {
+      this.userStates.set(stateKey, { mode: 'CONVERSATIONAL' });
+      await this.sendConversationalGreeting(userId, jid, storeName, agentName, name);
+      return;
     }
 
-    this.userStates.set(`${userId}:${jid}`, { mode: 'HANDOVER' });
-  }
+    // 4. Análise de Intenção e Qualificação com IA
+    const [intentAnalysis, qualification] = await Promise.all([
+      this.aiService.analyzeIntent(msg),
+      this.aiService.extractQualification(msg),
+    ]);
 
-  private async handleAiFaq(
-    userId: string,
-    jid: string,
-    msg: string,
-    storeName: string,
-  ) {
-    // Try exact match first
-    const answer = await this.faqService.findMatch(userId, msg);
-    if (answer) {
-      await this.sendMessage(userId, jid, answer);
-    } else {
-      // Use Gemini for intelligent FAQ
-      const storeContext = await this.faqService.findAll(userId);
-      let contextText = '';
-      let roleInstruction = '';
+    this.logger.log(`[AI-INTENT] ${JSON.stringify(intentAnalysis)}`);
+    this.logger.log(`[AI-QUALIFY] ${JSON.stringify(qualification)}`);
 
-      if (storeContext.length > 0) {
-        contextText = storeContext
-          .map((f) => `Q: ${f.question}\nA: ${f.answer}`)
-          .join('\n\n');
-        roleInstruction = `Responda às dúvidas do cliente com base no seguinte contexto de perguntas frequentes da imobiliária. Se a resposta não estiver no contexto, use seu conhecimento geral de mercado imobiliário brasileiro, mas avise que as condições específicas dependem da imobiliária.`;
-      } else {
-        roleInstruction = `Você é um assistente virtual especialista em mercado imobiliário. 
-                A imobiliária ainda não cadastrou regras específicas, então responda dúvidas gerais (como financiamento, documentos, aluguel) com base nas leis e práticas do Brasil.
-                SEMPRE finalize dizendo que "Para valores exatos e condições desta imobiliária, por favor fale com um de nossos corretores".`;
-      }
-
-      const systemPrompt = `Você é um assistente virtual da imobiliária ${storeName}. 
-            ${roleInstruction}
-            Seja cordial, profissional, use emojis moderadamente e fale sempre em Português do Brasil.
-            
-            CONTEXTO ESPECÍFICO (Se houver):
-            ${contextText}`;
-
-      const aiResponse = await this.aiService.generateResponse(
-        systemPrompt,
-        msg,
-      );
-      if (aiResponse) {
-        await this.sendMessage(userId, jid, aiResponse);
-      } else {
-        // Fallback only if AI fails completely (network error etc)
-        await this.sendMessage(
-          userId,
-          jid,
-          'Ainda não tenho uma resposta para isso 😅. Digite *menu* para voltar ou pergunte outra coisa.',
-        );
-        return;
-      }
-    }
-    await this.startQualification(userId, jid, storeName);
-  }
-
-  private async startQualification(
-    userId: string,
-    jid: string,
-    storeName: string,
-  ) {
-    this.userStates.set(`${userId}:${jid}`, { mode: 'WAITING_QUALIFICATION' });
-    await new Promise((r) => setTimeout(r, 2000));
-    await this.sendMessage(
-      userId,
-      jid,
-      `Para eu te ajudar melhor, me conte um pouco mais: você busca esse imóvel para morar ou investir? E qual seria seu orçamento aproximado? 🏠💰`,
-    );
-  }
-
-  private async handleQualification(
-    userId: string,
-    jid: string,
-    msg: string,
-    storeName: string,
-  ) {
-    const qualification = await this.aiService.extractQualification(msg);
-    this.logger.log(
-      `AI Qualification Data for "${msg}": ${JSON.stringify(qualification)}`,
-    );
-
+    // Atualiza qualificação do lead no banco
     if (qualification) {
       await this.leadsService.updateQualification(userId, jid, {
-        budget: qualification.budget,
-        financing: qualification.financing,
-        motivation: qualification.motivation,
-        urgency: qualification.urgency,
-        aiNotes: qualification.notes,
+        budget: qualification.budget || undefined,
+        financing: qualification.financing || undefined,
+        motivation: qualification.motivation || undefined,
+        urgency: qualification.urgency || undefined,
+        isHot: qualification.isHotLead,
       });
 
-      await this.sendMessage(
-        userId,
-        jid,
-        `Perfeito! Já anotei essas informações por aqui e vou passar para nossos consultores. Isso nos ajuda a encontrar as melhores oportunidades para você! 😉`,
-      );
-      await this.sendMainMenu(userId, jid, storeName);
-      this.userStates.set(`${userId}:${jid}`, { mode: 'MENU' });
-    } else {
-      // Fallback if AI fails to extract anything useful
-      await this.sendMessage(
-        userId,
-        jid,
-        `Entendido! Se tiver mais alguma informação que queira compartilhar, como valor máximo ou se precisa de financiamento, pode me dizer agora.`,
-      );
-      await this.sendMainMenu(userId, jid, storeName);
-      this.userStates.set(`${userId}:${jid}`, { mode: 'MENU' });
-    }
-  }
-
-  private async handleCitySelection(
-    userId: string,
-    jid: string,
-    storeName: string,
-  ) {
-    const cities = await this.propertiesService.getCities(userId);
-
-    if (cities.length === 0) {
-      await this.sendMessage(
-        userId,
-        jid,
-        'Ops! No momento não temos imóveis cadastrados em nosso sistema. Tente novamente mais tarde.',
-      );
-      await this.sendMainMenu(userId, jid, storeName);
-      return;
-    }
-
-    let msg = '📍 *Selecione a Cidade:*\n\n';
-    cities.forEach((city, index) => {
-      msg += `*${index + 1}* - ${city}\n`;
-    });
-    msg += '\nDigite o *número* ou o *nome* da cidade.';
-
-    this.userStates.set(`${userId}:${jid}`, { mode: 'WAITING_CITY' });
-    await this.sendMessage(userId, jid, msg);
-  }
-
-  private async handleTypeSelection(
-    userId: string,
-    jid: string,
-    input: string,
-    storeName: string,
-  ) {
-    const cities = await this.propertiesService.getCities(userId);
-    let selectedCity = '';
-
-    // Check if input is index
-    const index = parseInt(input) - 1;
-    if (!isNaN(index) && index >= 0 && index < cities.length) {
-      selectedCity = cities[index];
-    } else {
-      // Check fuzzy match
-      const normalize = (s) =>
-        s
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '');
-      const match = cities.find((c) => normalize(c).includes(normalize(input)));
-      if (match) selectedCity = match;
-    }
-
-    if (!selectedCity) {
-      await this.sendMessage(
-        userId,
-        jid,
-        "Cidade não encontrada. Por favor, tente novamente ou digite 'Menu' para voltar.",
-      );
-      return;
-    }
-
-    const types = await this.propertiesService.getPropertyTypes(
-      userId,
-      selectedCity,
-    );
-
-    if (types.length === 0) {
-      // Should not happen if city exists, but fallback
-      await this.sendMessage(
-        userId,
-        jid,
-        'Não encontrei tipos de imóveis para esta cidade.',
-      );
-      return;
-    }
-
-    let msg = `🏠 *O que você busca em ${selectedCity}?*\n\n`;
-    types.forEach((t, index) => {
-      msg += `*${index + 1}* - ${t}\n`;
-    });
-    msg += '\nDigite o *número* ou o *tipo* (ex: Casa).';
-
-    this.userStates.set(`${userId}:${jid}`, {
-      mode: 'WAITING_TYPE',
-      tempCity: selectedCity,
-    });
-    await this.sendMessage(userId, jid, msg);
-  }
-
-  private async handleNeighborhoodSelection(
-    userId: string,
-    jid: string,
-    input: string,
-    storeName: string,
-    selectedCity: string,
-  ) {
-    const types = await this.propertiesService.getPropertyTypes(
-      userId,
-      selectedCity,
-    );
-    let selectedType = '';
-
-    // Check if input is index
-    const index = parseInt(input) - 1;
-    if (!isNaN(index) && index >= 0 && index < types.length) {
-      selectedType = types[index];
-    } else {
-      const normalize = (s) =>
-        s
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '');
-      const match = types.find((t) => normalize(t).includes(normalize(input)));
-      if (match) selectedType = match;
-    }
-
-    if (!selectedType) {
-      await this.sendMessage(
-        userId,
-        jid,
-        'Tipo de imóvel não encontrado. Tente novamente.',
-      );
-      return;
-    }
-
-    // Fetch Neighborhoods for this city AND type
-    const neighborhoods = await this.propertiesService.getNeighborhoods(
-      userId,
-      selectedCity,
-      selectedType,
-    );
-
-    if (neighborhoods.length === 0) {
-      // Direct search if no neighborhood info
-      await this.handlePropertySearchByLocation(
-        userId,
-        jid,
-        selectedCity,
-        selectedType,
-        null,
-        storeName,
-      );
-      return;
-    }
-
-    let msg = `🏘️ *Bairros com ${selectedType} em ${selectedCity}:*\n\n`;
-    neighborhoods.forEach((n, index) => {
-      msg += `*${index + 1}* - ${n}\n`;
-    });
-    msg += '\nDigite o *número* ou o *nome* do bairro.';
-
-    this.userStates.set(`${userId}:${jid}`, {
-      mode: 'WAITING_NEIGHBORHOOD',
-      tempCity: selectedCity,
-      tempType: selectedType,
-    });
-    await this.sendMessage(userId, jid, msg);
-  }
-
-  private async handlePropertySearchByLocation(
-    userId: string,
-    jid: string,
-    city: string,
-    type: string,
-    inputNeighborhood: string | null,
-    storeName: string,
-  ) {
-    let selectedNeighborhood = '';
-
-    if (inputNeighborhood) {
-      const neighborhoods = await this.propertiesService.getNeighborhoods(
-        userId,
-        city,
-        type,
-      );
-
-      // Check if input is index
-      const index = parseInt(inputNeighborhood) - 1;
-      if (!isNaN(index) && index >= 0 && index < neighborhoods.length) {
-        selectedNeighborhood = neighborhoods[index];
-      } else {
-        // Check fuzzy match
-        const normalize = (s) =>
-          s
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '');
-        const match = neighborhoods.find((n) =>
-          normalize(n).includes(normalize(inputNeighborhood)),
-        );
-        if (match) selectedNeighborhood = match;
+      // Se for LEAD QUENTE, dispara alerta no WhatsApp do Corretor / Dono
+      if (qualification.isHotLead) {
+        await this.sendHotLeadAlertToBroker(userId, jid, name, qualification, msg);
       }
+    }
 
-      if (!selectedNeighborhood) {
+    // 5. Intenção: Falar com Humano
+    if (intentAnalysis.intent === 'TALK') {
+      await this.handleConsultantHandover(userId, jid, name, msg);
+      return;
+    }
+
+    // 6. Intenção: Agendar Visita
+    if (intentAnalysis.intent === 'SCHEDULE') {
+      await this.handleStartScheduling(userId, jid);
+      return;
+    }
+
+    // 7. Intenção: Busca de Imóveis ou Consulta de Estoque
+    if (intentAnalysis.intent === 'SEARCH' || msg.length > 3) {
+      const allProperties = await this.propertiesService.findAll(userId, true);
+      const matchingProperties = this.filterAndScoreProperties(allProperties, intentAnalysis.entities, msg);
+
+      if (matchingProperties.length > 0) {
+        // Gera resposta natural de introdução via IA
+        const summary = await this.aiService.generateSearchSummary(name, msg, matchingProperties);
+        await this.sendMessage(userId, jid, summary);
+
+        // Envia os cards dos melhores imóveis (até 3 imóveis)
+        await this.sendPropertyCards(userId, jid, matchingProperties.slice(0, 3), user);
+
+        // Pergunta aberta consultiva
+        await new Promise((r) => setTimeout(r, 1200));
         await this.sendMessage(
           userId,
           jid,
-          "Bairro não encontrado. Tente novamente ou digite 'Menu'.",
+          `Gostou de alguma dessas opções? Se quiser, posso *agendar uma visita presencial* com nosso corretor especialista para te acompanhar sem compromisso! Ou gostaria de ajustar valores/setor? ☕🏡`,
         );
+        this.userStates.set(stateKey, { mode: 'SEARCH_FINISHED' });
         return;
       }
     }
 
-    this.logger.log(
-      `Searching properties for User: ${userId}, City: ${city}, Type: ${type}, Neighborhood: ${selectedNeighborhood}`,
-    );
+    // 8. Conversa Geral / Dúvidas / FAQ com a Consultora IA
+    const history = await this.getChatHistory(userId, jid);
+    const formattedHistory = history.slice(-6).map((h) => ({
+      fromMe: h.isBot || h.from === 'me',
+      text: h.body,
+    }));
 
-    let properties: any[] = [];
-    if (selectedNeighborhood) {
-      properties = await this.propertiesService.findByLocation(
-        userId,
-        city,
-        selectedNeighborhood,
-        type,
-        true,
-      );
-    }
+    const aiConsultantReply = await this.aiService.chatRealEstateConsultant({
+      storeName,
+      agentName,
+      userMessage: msg,
+      leadName: name,
+      history: formattedHistory,
+      customInstructions: user?.aiCustomInstructions,
+    });
 
-    this.logger.log(`Found ${properties.length} properties.`);
-
-    const user = await this.usersService.findById(userId);
-    const slug = user?.slug || userId;
-
-    await this.sendPropertyResults(userId, jid, properties, storeName, slug, inputNeighborhood || '');
-    // Do NOT reset to MENU here, qualification starts inside sendPropertyResults
+    await this.sendMessage(userId, jid, aiConsultantReply);
   }
 
-  private async sendMainMenu(userId: string, jid: string, storeName: string) {
-    const sock = this.sessions.get(userId);
-    if (!sock) return;
-
-    let to = jid;
-    if (!to.includes('@')) to = `${to.replace(/\D/g, '')}@s.whatsapp.net`;
-
-    const menu = `👋 Olá! Bem-vindo(a) à *${storeName}*
-🏠 _Seu novo imóvel te espera aqui!_
-
-✨ *Como posso te ajudar hoje?*
-
-1️⃣  *Comprar Imóvel* (Busca guiada)
-2️⃣  *Falar com Corretor*
-3️⃣  *Dúvidas Frequentes (IA)*
-4️⃣  *Busca Rápida*
-
-💡 *DICA:* Você pode simplesmente digitar o que procura ou fazer uma pergunta agora mesmo! 
-_Ex: "Procuro uma casa com piscina no centro"_
-
-━━━━━━━━━━━━━━━━━━━━
-🕐 _Atendimento Inteligente 24h_`;
-
-    try {
-      await sock.sendMessage(to, { text: menu });
-      await this.logMessage(
-        userId,
-        to,
-        'me',
-        '[Menu Enviado]',
-        'Atendente',
-        true,
-        undefined,
-      );
-    } catch (e) {
-      this.logger.error('Failed to send menu', e);
-    }
-  }
-
-  private async handlePropertySearch(
+  private async sendConversationalGreeting(
     userId: string,
     jid: string,
-    query: string,
     storeName: string,
-    customerName?: string,
+    agentName: string,
+    leadName?: string,
   ) {
-    // AI INTENT ANALYSIS AGAIN (to get entities)
-    const analysis = await this.aiService.analyzeIntent(query);
-    const { entities } = analysis;
+    const nameStr = leadName && leadName !== jid.split('@')[0] ? ` *${leadName}*` : '';
 
-    const allProperties = await this.propertiesService.findAll(userId, true);
-    let found: any[] = [];
+    const greeting = `👋 Olá${nameStr}! Seja muito bem-vindo(a) à *${storeName}*!
 
-    if (query) {
-      // Smart Token Search
-      const qNormalized = query.toLowerCase().trim();
-      const tokens = qNormalized.split(/\s+/).filter((t) => t.length > 1);
+Me chamo *${agentName}*, consultora imobiliária da equipe. 🤝
 
-      const scored = allProperties.map((p) => {
-        let score = 0;
-        const pTitle = (p.title || '').toLowerCase();
-        const pType = (p.type || '').toLowerCase();
-        const pCity = (p.city || '').toLowerCase();
-        const pNeigh = (p.neighborhood || '').toLowerCase();
-        const pAddress = (p.address || '').toLowerCase();
-        const pCep = (p.cep || '').toLowerCase();
-        const pLocation = (p.location || '').toLowerCase();
+Estou aqui para te ajudar a encontrar o imóvel ideal em Goiás — seja um *apartamento nos melhores setores de Goiânia* (Bueno, Marista, Oeste, Jardim Goiás), uma *casa em condomínio fechado* (Jardins, Alphaville, Aldeia do Vale), um *lote* ou uma *chácara/fazenda*.
 
-        // 1. AI Entity Priority (Highest Boost)
-        if (entities) {
-          if (entities.city && pCity.includes(entities.city.toLowerCase()))
-            score += 50;
-          if (
-            entities.neighborhood &&
-            pNeigh.includes(entities.neighborhood.toLowerCase())
-          )
-            score += 50;
-          if (entities.address && pAddress.includes(entities.address.toLowerCase()))
-            score += 60;
-          if (entities.cep && pCep.includes(entities.cep.replace(/\D/g, '')))
-            score += 70;
-          if (entities.type && pType.includes(entities.type.toLowerCase()))
-            score += 30;
-          if (entities.rooms && p.bedrooms >= parseInt(entities.rooms))
-            score += 20;
-          if (entities.max_price && p.price <= parseFloat(entities.max_price))
-            score += 20;
-        }
+💡 *Me conta:* que tipo de imóvel você está buscando e em qual região você prefere? Se já tiver uma faixa de valor em mente, pode me dizer! ✨`;
 
-        // 2. Token Matching
-        const searchStr = `${pTitle} ${pType} ${pLocation} ${pAddress} ${pCep} ${pCity} ${pNeigh} ${p.bedrooms} quartos ${p.area}m`;
-        for (const token of tokens) {
-          if (searchStr.includes(token)) score += 1;
-          const regex = new RegExp(`\\b${token}\\b`, 'i');
-          if (regex.test(searchStr)) score += 3;
-          if (pType.includes(token)) score += 2;
-          if (pCity.includes(token)) score += 2;
-          if (pNeigh.includes(token)) score += 2;
-        }
-
-        return { property: p, score };
-      });
-
-      // Filter and sort
-      found = scored
-        .filter((item) => item.score > 0)
-        .sort((a, b) => b.score - a.score)
-        .map((item) => item.property);
-    }
-
-    const user = await this.usersService.findById(userId);
-    const slug = user?.slug || userId;
-
-    if (found.length > 0) {
-      // AI Conversational Intro
-      const summary = await this.aiService.generateSearchSummary(
-        customerName || '',
-        query,
-        found,
-      );
-      if (summary) {
-        await this.sendMessage(userId, jid, summary);
-      } else {
-        await this.sendMessage(userId, jid, `Encontrei ${found.length} imóveis que podem te interessar:`);
-      }
-    }
-
-    await this.sendPropertyResults(userId, jid, found, storeName, slug, query);
+    await this.sendMessage(userId, jid, greeting);
   }
 
-  private async sendPropertyResults(
+  private filterAndScoreProperties(
+    properties: any[],
+    entities: any,
+    rawQuery: string,
+  ): any[] {
+    const qLower = (rawQuery || '').toLowerCase();
+    const tokens = qLower.split(/\s+/).filter((t) => t.length > 2);
+
+    const scored = properties.map((p) => {
+      let score = 0;
+      const title = (p.title || '').toLowerCase();
+      const type = (p.type || '').toLowerCase();
+      const city = (p.city || '').toLowerCase();
+      const neighborhood = (p.neighborhood || '').toLowerCase();
+      const description = (p.description || '').toLowerCase();
+      const condoName = (p.condoName || '').toLowerCase();
+
+      // Entity Match (Goiás Specifics)
+      if (entities) {
+        if (entities.neighborhood && (neighborhood.includes(entities.neighborhood.toLowerCase()) || title.includes(entities.neighborhood.toLowerCase()))) {
+          score += 60;
+        }
+        if (entities.city && city.includes(entities.city.toLowerCase())) {
+          score += 40;
+        }
+        if (entities.type && type.includes(entities.type.toLowerCase())) {
+          score += 40;
+        }
+        if (entities.rooms && p.bedrooms >= entities.rooms) {
+          score += 25;
+        }
+        if (entities.max_price && p.price <= entities.max_price) {
+          score += 30;
+        }
+        if (entities.acceptsTrade && p.acceptsTrade) {
+          score += 35;
+        }
+        if (entities.isGatedCommunity && (p.isGatedCommunity || condoName.length > 0)) {
+          score += 40;
+        }
+      }
+
+      // Token Search
+      const searchBlob = `${title} ${type} ${neighborhood} ${city} ${description} ${condoName} ${p.area} ${p.price}`;
+      for (const t of tokens) {
+        if (searchBlob.includes(t)) score += 5;
+        if (neighborhood.includes(t)) score += 15;
+        if (type.includes(t)) score += 10;
+      }
+
+      return { property: p, score };
+    });
+
+    return scored
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map((item) => item.property);
+  }
+
+  private async sendPropertyCards(
     userId: string,
     jid: string,
     properties: any[],
-    storeName: string,
-    slug?: string,
-    query?: string,
+    user: any,
   ) {
-    const stateKey = `${userId}:${jid}`;
+    const frontendUrl =
+      this.configService.get('FRONTEND_URL') || 'https://zapilar.online';
+    const slug = user?.slug || userId;
 
-    if (properties.length > 0) {
-      const limit = 5;
-      const subset = properties.slice(0, limit);
-
-      // Mark interest in the top property
-      try {
-        await this.leadsService.setInterest(
-          userId,
-          jid,
-          `${subset[0].type} - ${subset[0].title}`,
-        );
-      } catch (e) { }
-
-      const frontendUrl =
-        this.configService.get('FRONTEND_URL') || 'https://zapilar.online';
-
-      for (const prop of subset) {
-        // Send Images
-        if (prop.images && prop.images.length > 0) {
-          const firstImage = this.resolveImageUrl(prop.images[0]);
-          await this.sendImage(userId, jid, firstImage);
-          await new Promise((r) => setTimeout(r, 600));
-        }
-
-        // Send Details
-        const price = Number(prop.price || 0).toLocaleString('pt-BR', {
-          minimumFractionDigits: 2,
-        });
-        const propertyLink = `${frontendUrl}/${slug}/imovel/${prop.id}`;
-
-        const specs = `🏠 *${prop.title}*
-📍 *Local:* ${prop.address ? prop.address + (prop.neighborhood ? ', ' + prop.neighborhood : '') + (prop.city ? ' - ' + prop.city : '') : (prop.neighborhood ? prop.neighborhood + ', ' + prop.city : prop.location)}
-${prop.cep ? '📮 *CEP:* ' + prop.cep : ''}
-📐 *Área:* ${prop.area} m² | 🛏️ *Quartos:* ${prop.bedrooms}
-💰 *R$ ${price}*
-
-✨ _Confira todos os detalhes e fotos em nossa apresentação premium:_
-🔗 ${propertyLink}
-
-💬 *Para agendar uma visita*, digite *Agendar*!`;
-
-        await this.sendMessage(userId, jid, specs);
-        await new Promise((r) => setTimeout(r, 1000));
+    for (const prop of properties) {
+      if (prop.images && prop.images.length > 0) {
+        const firstImage = this.resolveImageUrl(prop.images[0]);
+        await this.sendImage(userId, jid, firstImage);
+        await new Promise((r) => setTimeout(r, 600));
       }
 
-      if (properties.length > limit) {
-        await this.sendMessage(
-          userId,
-          jid,
-          `_Exibindo ${limit} de ${properties.length} imóveis encontrados._`,
-        );
+      const priceStr = Number(prop.price || 0).toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+      });
+
+      const areaFormatted = prop.areaUnit === 'alqueire'
+        ? `${prop.area} Alqueires Goianos (~${(prop.area * 4.84).toFixed(1)} ha)`
+        : `${prop.area} m²`;
+
+      const propertyLink = `${frontendUrl}/${slug}/imovel/${prop.id}`;
+
+      let specs = `🏡 *${prop.title}*
+📍 *Localização:* ${prop.neighborhood ? `${prop.neighborhood}, ` : ''}${prop.city || 'Goiás'}
+📐 *Área:* ${areaFormatted}
+🛏️ *Quartos:* ${prop.bedrooms || 0} | 🚿 *Banheiros:* ${prop.bathrooms || 0} | 🚗 *Vagas:* ${prop.parkingSpaces || 0}
+💰 *Valor:* R$ ${priceStr}`;
+
+      if (prop.acceptsTrade) {
+        specs += `\n🔄 *Aceita Permuta:* Sim (avalia veículo/imóvel)`;
+      }
+      if (prop.isGatedCommunity) {
+        specs += `\n🛡️ *Condomínio Fechado:* ${prop.condoName || 'Sim'}`;
+      }
+      if (prop.directFinancing) {
+        specs += `\n📋 *Financiamento Direto c/ Balões*`;
       }
 
-      // 3. Fluxo Pós-Busca (Estado SEARCH_FINISHED)
-      await this.sendMessage(
-        userId,
-        jid,
-        "O que deseja fazer agora?\n\n1️⃣ Procurar outro\n2️⃣ Menu Principal",
-      );
-      this.userStates.set(stateKey, { mode: 'SEARCH_FINISHED' });
+      specs += `\n\n🔗 *Fotos e Tour Completo:*\n${propertyLink}`;
 
-    } else {
-      // 4. Inteligência de Resposta Negativa
-      const lowerQuery = (query || '').toLowerCase().trim();
-      const isQuestion = lowerQuery.includes('?') ||
-        ['qual', 'como', 'onde', 'quanto'].some(word => lowerQuery.startsWith(word));
-
-      if (isQuestion) {
-        await this.sendMessage(
-          userId,
-          jid,
-          'Ainda não tenho essa informação exata, mas um de nossos consultores pode te ajudar agora mesmo! 😉\n\nDigite *2* para falar com um consultor ou *Menu* para voltar.',
-        );
-      } else {
-        await this.sendMessage(
-          userId,
-          jid,
-          '😕 Não encontrei nenhum imóvel com essas características.\n\n💡 *Dica:* Tente buscar por termos mais simples, como apenas o *Bairro* ou o *Tipo* do imóvel (ex: Casa, Apartamento).',
-        );
-        await this.sendMessage(
-          userId,
-          jid,
-          "1️⃣ Tentar nova busca\n2️⃣ Menu Principal",
-        );
-      }
-      this.userStates.set(stateKey, { mode: 'SEARCH_FINISHED' });
+      await this.sendMessage(userId, jid, specs);
+      await new Promise((r) => setTimeout(r, 900));
     }
   }
 
-  // --- Sending Methods ---
+  /**
+   * Alerta Instantâneo de Lead Quente para o WhatsApp Pessoal do Corretor / Dono da Imobiliária
+   */
+  private async sendHotLeadAlertToBroker(
+    userId: string,
+    leadJid: string,
+    leadName: string,
+    qualification: any,
+    lastMsg: string,
+  ) {
+    try {
+      const user = await this.usersService.findById(userId);
+      if (!user || !user.phone || user.notifyHotLeads === false) return;
+
+      const brokerPhone = user.phone.replace(/\D/g, '');
+      if (brokerPhone.length < 10) return;
+
+      const brokerJid = `${brokerPhone}@s.whatsapp.net`;
+      const leadPhone = leadJid.replace(/\D/g, '');
+
+      const alert = `🔥 *ALERTA ZAPILAR: LEAD QUENTE NO WHATSAPP!*
+──────────────────────
+👤 *Cliente:* ${leadName || 'Interessado'}
+📱 *WhatsApp:* wa.me/${leadPhone}
+💰 *Orçamento:* ${qualification.budget || 'A definir'}
+🚗 *Permuta:* ${qualification.tradeOffer || (qualification.acceptsTrade ? 'Sim (avalia permuta)' : 'Não informado')}
+🎯 *Objetivo:* ${qualification.motivation || 'Moradia / Investimento'}
+⚡ *Urgência:* ${qualification.urgency || 'Alta'}
+💬 *Última Mensagem:* "${lastMsg}"
+──────────────────────
+👉 _Assuma o atendimento ou entre em contato com o cliente agora mesmo!_`;
+
+      await this.sendMessage(userId, brokerJid, alert);
+      this.logger.log(`Hot lead alert sent to broker (${brokerPhone}) for lead ${leadJid}`);
+    } catch (err) {
+      this.logger.error('Failed to send hot lead alert to broker:', err);
+    }
+  }
+
+  private async handleConsultantHandover(
+    userId: string,
+    jid: string,
+    customerName: string,
+    lastMsg: string,
+  ) {
+    const user = await this.usersService.findById(userId);
+    const storeName = user?.storeName || 'nossa imobiliária';
+
+    await this.sendMessage(
+      userId,
+      jid,
+      `Perfeito, *${customerName}*! Já avisei um dos nossos corretores especialistas da equipe da *${storeName}*.\n\nEle vai te chamar por aqui em instantes para te dar atendimento prioritário! 🤝\n\n_(Caso queira reiniciar a consulta automática a qualquer momento, basta digitar "Oi" ou "Voltar")_`,
+    );
+
+    this.userStates.set(`${userId}:${jid}`, { mode: 'HANDOVER' });
+
+    // Notifica o corretor no WhatsApp
+    if (user && user.phone) {
+      const brokerPhone = user.phone.replace(/\D/g, '');
+      if (brokerPhone.length >= 10) {
+        const brokerJid = `${brokerPhone}@s.whatsapp.net`;
+        const leadPhone = jid.replace(/\D/g, '');
+        const alert = `🛎️ *SOLICITAÇÃO DE ATENDIMENTO HUMANO!*
+──────────────────────
+👤 *Cliente:* ${customerName}
+📱 *WhatsApp:* wa.me/${leadPhone}
+💬 *Mensagem:* "${lastMsg}"
+──────────────────────
+👉 _O cliente está aguardando você no WhatsApp!_`;
+        await this.sendMessage(userId, brokerJid, alert);
+      }
+    }
+  }
+
+  async handleStartScheduling(userId: string, jid: string) {
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(startDate.getDate() + 7);
+
+    const slots = await this.agendaService.getAvailableSlots(userId, startDate, endDate);
+
+    if (slots.length === 0) {
+      await this.sendMessage(
+        userId,
+        jid,
+        'Desculpe, não encontrei horários na agenda automática para os próximos dias 😕. Mas nosso corretor pode agendar diretamente com você! Deseja que eu peça para ele te chamar?',
+      );
+      return;
+    }
+
+    let msg = '📅 *Selecione o Dia para sua Visita:*\n\n';
+    const weekdays = [
+      'Domingo',
+      'Segunda-feira',
+      'Terça-feira',
+      'Quarta-feira',
+      'Quinta-feira',
+      'Sexta-feira',
+      'Sábado',
+    ];
+
+    slots.forEach((s, index) => {
+      const parts = s.date.split('-');
+      msg += `*${index + 1}* - ${parts[2]}/${parts[1]} (${weekdays[s.dayOfWeek]})\n`;
+    });
+    msg += '\nDigite o *número* da data que você prefere.';
+
+    this.userStates.set(`${userId}:${jid}`, {
+      mode: 'WAITING_SCHEDULE_DATE',
+      slots: slots,
+    });
+    await this.sendMessage(userId, jid, msg);
+  }
+
+  async handleScheduleDateSelection(userId: string, jid: string, input: string) {
+    const stateKey = `${userId}:${jid}`;
+    const stateData = this.userStates.get(stateKey);
+    const slots = stateData?.slots || [];
+
+    const index = parseInt(input) - 1;
+    if (isNaN(index) || index < 0 || index >= slots.length) {
+      await this.sendMessage(userId, jid, 'Por favor, digite o número correspondente à data desejada.');
+      return;
+    }
+
+    const selectedSlot = slots[index];
+    const parts = selectedSlot.date.split('-');
+    let msg = `⏰ *Horários disponíveis para ${parts[2]}/${parts[1]}:*\n\n`;
+
+    selectedSlot.timeSlots.forEach((t: string, i: number) => {
+      msg += `*${i + 1}* - ${t}\n`;
+    });
+    msg += '\nDigite o *número* do horário que fica melhor para você.';
+
+    this.userStates.set(stateKey, {
+      ...stateData,
+      mode: 'WAITING_SCHEDULE_TIME',
+      tempDate: selectedSlot.date,
+    });
+    await this.sendMessage(userId, jid, msg);
+  }
+
+  async handleScheduleTimeSelection(userId: string, jid: string, input: string) {
+    const stateKey = `${userId}:${jid}`;
+    const stateData = this.userStates.get(stateKey);
+    const slots = stateData?.slots || [];
+    const dateStr = stateData?.tempDate || '';
+
+    const selectedSlot = slots.find((s: any) => s.date === dateStr);
+    if (!selectedSlot) {
+      await this.sendMessage(userId, jid, 'Ocorreu um erro no agendamento. Digite *Agendar* para tentar novamente.');
+      this.userStates.set(stateKey, { mode: 'CONVERSATIONAL' });
+      return;
+    }
+
+    const index = parseInt(input) - 1;
+    if (isNaN(index) || index < 0 || index >= selectedSlot.timeSlots.length) {
+      await this.sendMessage(userId, jid, 'Por favor, escolha um dos números de horários disponíveis.');
+      return;
+    }
+
+    const time = selectedSlot.timeSlots[index];
+    const startDateStr = `${dateStr}T${time}:00`;
+    const startObj = new Date(startDateStr);
+    const endObj = new Date(startObj.getTime() + 60 * 60 * 1000);
+
+    await this.agendaService.create(userId, {
+      title: `Visita WhatsApp - ${jid.split('@')[0]}`,
+      start: startObj as any,
+      end: endObj as any,
+      description: `Agendado via WhatsApp Zapilar por ${jid}`,
+      location: 'Imóvel em Goiás',
+    });
+
+    const formattedDate = dateStr.split('-').reverse().join('/');
+    await this.sendMessage(
+      userId,
+      jid,
+      `✅ *Visita Confirmada com Sucesso!*
+
+📅 *Data:* ${formattedDate}
+⏰ *Horário:* ${time}
+📍 *Local:* Nosso corretor entrará em contato para confirmar o ponto de encontro.
+
+Muito obrigado! Qualquer dúvida estamos à disposição.`,
+    );
+
+    // Alerta o corretor
+    const user = await this.usersService.findById(userId);
+    if (user && user.phone) {
+      const brokerPhone = user.phone.replace(/\D/g, '');
+      if (brokerPhone.length >= 10) {
+        const brokerJid = `${brokerPhone}@s.whatsapp.net`;
+        const leadPhone = jid.replace(/\D/g, '');
+        const alert = `📅 *NOVA VISITA AGENDADA VIA BOT!*
+──────────────────────
+👤 *Cliente:* ${jid.split('@')[0]} (wa.me/${leadPhone})
+🗓️ *Data:* ${formattedDate} às ${time}
+──────────────────────
+👉 _Adicionada à sua agenda Zapilar!_`;
+        await this.sendMessage(userId, brokerJid, alert);
+      }
+    }
+
+    this.userStates.set(stateKey, { mode: 'CONVERSATIONAL' });
+  }
+
+  // --- Send Message Primitives ---
 
   async sendMessage(userId: string, to: string, text: string) {
     const sock = this.sessions.get(userId);
-    if (!sock) {
-      // this.logger.warn(`Cannot send message. No session for user ${userId}`);
-      return;
-    }
+    if (!sock) return;
 
     let jid = to;
     if (!jid.includes('@')) jid = `${jid.replace(/\D/g, '')}@s.whatsapp.net`;
@@ -1183,13 +878,10 @@ ${prop.cep ? '📮 *CEP:* ' + prop.cep : ''}
     await this.sendMessage(userId, to, message);
   }
 
-  // --- Helpers ---
-
   private resolveImageUrl(imageUrl: string): string {
     if (!imageUrl) return '';
     if (imageUrl.startsWith('http')) return imageUrl;
 
-    // Localhost fallback
     const appUrl =
       this.configService.get('APP_URL') ||
       `http://localhost:${process.env.PORT || 3000}`;
@@ -1205,12 +897,8 @@ ${prop.cep ? '📮 *CEP:* ' + prop.cep : ''}
   setBotPaused(userId: string, paused: boolean) {
     if (paused) this.pausedUsers.add(userId);
     else this.pausedUsers.delete(userId);
-    this.logger.log(
-      `Bot for user ${userId} is now ${paused ? 'PAUSED' : 'ACTIVE'}`,
-    );
   }
 
-  // Legacy Evolution support / DB Logging
   private async logMessage(
     storeId: string,
     contactId: string,
@@ -1279,115 +967,9 @@ ${prop.cep ? '📮 *CEP:* ' + prop.cep : ''}
     });
   }
 
-  // Stub for controller compatibility
-  async handleWebhook(payload: any) {
-    // No-op
-  }
+  async handleWebhook(payload: any) {}
 
-  // Stub for sync
   async syncSessions() {
     await this.restoreSessions();
-  }
-
-  async handleStartScheduling(userId: string, jid: string) {
-    const startDate = new Date();
-    const endDate = new Date();
-    endDate.setDate(startDate.getDate() + 7);
-
-    const slots = await this.agendaService.getAvailableSlots(userId, startDate, endDate);
-
-    if (slots.length === 0) {
-      await this.sendMessage(userId, jid, "Desculpe, não tenho horários disponíveis para agendamento nos próximos dias. 😕\nDigite *2* para falar com um corretor.");
-      return;
-    }
-
-    let msg = "📅 *Selecione o Dia para sua Visita:*\n\n";
-    const weekdays = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
-
-    slots.forEach((s, index) => {
-      const parts = s.date.split('-');
-      msg += `*${index + 1}* - ${parts[2]}/${parts[1]} (${weekdays[s.dayOfWeek]})\n`;
-    });
-    msg += "\nDigite o *número* da data desejada.";
-
-    this.userStates.set(`${userId}:${jid}`, {
-      mode: 'WAITING_SCHEDULE_DATE',
-      slots: slots,
-    });
-    await this.sendMessage(userId, jid, msg);
-  }
-
-  async handleScheduleDateSelection(userId: string, jid: string, input: string) {
-    const stateKey = `${userId}:${jid}`;
-    const stateData = this.userStates.get(stateKey);
-    const slots = stateData?.slots || [];
-
-    const index = parseInt(input) - 1;
-    if (isNaN(index) || index < 0 || index >= slots.length) {
-      await this.sendMessage(userId, jid, "Opção inválida. Por favor, escolha um número da lista.");
-      return;
-    }
-
-    const selectedSlot = slots[index];
-    const parts = selectedSlot.date.split('-');
-    let msg = `⏰ *Horários disponíveis para ${parts[2]}/${parts[1]}:*\n\n`;
-    
-    selectedSlot.timeSlots.forEach((t, i) => {
-      msg += `*${i + 1}* - ${t}\n`;
-    });
-    msg += "\nDigite o *número* do horário que prefere.";
-
-    this.userStates.set(stateKey, {
-      ...stateData,
-      mode: 'WAITING_SCHEDULE_TIME',
-      tempDate: selectedSlot.date,
-    });
-    await this.sendMessage(userId, jid, msg);
-  }
-
-  async handleScheduleTimeSelection(userId: string, jid: string, input: string) {
-    const stateKey = `${userId}:${jid}`;
-    const stateData = this.userStates.get(stateKey);
-    const slots = stateData?.slots || [];
-    const dateStr = stateData?.tempDate || '';
-
-    const selectedSlot = slots.find(s => s.date === dateStr);
-    if (!selectedSlot) {
-      await this.sendMessage(userId, jid, "Ocorreu um erro. Tente novamente digitando *Agendar*.");
-      this.userStates.set(stateKey, { mode: 'MENU' });
-      return;
-    }
-
-    const index = parseInt(input) - 1;
-    if (isNaN(index) || index < 0 || index >= selectedSlot.timeSlots.length) {
-      await this.sendMessage(userId, jid, "Opção inválida. Por favor, escolha um número da lista.");
-      return;
-    }
-
-    const time = selectedSlot.timeSlots[index];
-
-    // Create Event
-    const startDateStr = `${dateStr}T${time}:00`;
-    const startObj = new Date(startDateStr);
-    const endObj = new Date(startObj.getTime() + 60*60*1000); // 1hr
-
-    await this.agendaService.create(userId, {
-      title: `Visita de Cliente (WhatsApp)`,
-      start: startObj as any,
-      end: endObj as any,
-      description: `Agendado via Bot WhatsApp por cliente ${jid.split('@')[0]}`,
-      location: 'Imóvel'
-    });
-
-    await this.sendMessage(userId, jid, `✅ *Agendamento Confirmado!*
-    
-📅 *Data:* ${dateStr.split('-').reverse().join('/')}
-⏰ *Horário:* ${time}
-
-Um corretor foi notificado e seu compromisso já aparece em nossa agenda. Obrigado!`);
-
-    this.userStates.set(stateKey, { mode: 'MENU' });
-    const user = await this.usersService.findById(userId);
-    await this.sendMainMenu(userId, jid, user?.storeName || 'Imobiliária');
   }
 }

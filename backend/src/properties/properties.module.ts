@@ -2,6 +2,7 @@ import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PropertiesController } from './properties.controller';
 import { PropertiesService } from './properties.service';
+import { PropertiesImporterService } from './properties-importer.service';
 import { Property } from './entities/property.entity';
 
 import { UsersModule } from '../users/users.module';
@@ -16,7 +17,7 @@ import { LeadsModule } from '../leads/leads.module';
     LeadsModule,
   ],
   controllers: [PropertiesController],
-  providers: [PropertiesService],
-  exports: [PropertiesService],
+  providers: [PropertiesService, PropertiesImporterService],
+  exports: [PropertiesService, PropertiesImporterService],
 })
-export class PropertiesModule { }
+export class PropertiesModule {}

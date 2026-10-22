@@ -10,6 +10,7 @@ export class CreatePropertyDto {
   cep?: string;
   location: string;
   area: number;
+  areaUnit?: string;
   bedrooms: number;
   bathrooms: number;
   parkingSpaces: number;
@@ -18,7 +19,16 @@ export class CreatePropertyDto {
   pool?: boolean;
   security?: boolean;
   elevator?: boolean;
-  furnished?: boolean; // mobilado
+  furnished?: boolean;
+  acceptsTrade?: boolean;
+  tradeDetails?: string;
+  isGatedCommunity?: boolean;
+  condoName?: string;
+  ruralAptitude?: string;
+  ruralHasWater?: boolean;
+  ruralCarGeo?: boolean;
+  directFinancing?: boolean;
+  balloonInstallments?: string;
   isShared?: boolean;
   shareCode?: string;
   isSold?: boolean;

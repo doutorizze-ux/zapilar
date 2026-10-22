@@ -53,7 +53,10 @@ export class Property {
   location: string;
 
   @Column('float', { nullable: true })
-  area: number; // in m2
+  area: number; // in m2 or alqueires
+
+  @Column({ default: 'm2' })
+  areaUnit: string; // 'm2' ou 'alqueire' (1 Alqueire Goiano = 4,84 ha = 48.400 m2)
 
   @Column({ nullable: true })
   bedrooms: number;
@@ -86,8 +89,35 @@ export class Property {
   @Column({ default: false })
   furnished: boolean;
 
-  @ManyToOne(() => Store)
-  @ManyToOne(() => Store)
+  // Mercado Imobiliário de Goiás & Região
+  @Column({ default: false })
+  acceptsTrade: boolean; // Aceita Permuta (Carro, Imóvel menor, Gado)
+
+  @Column({ nullable: true })
+  tradeDetails: string; // Ex: "Pega Hilux/SW4 ou lote no Jardins"
+
+  @Column({ default: false })
+  isGatedCommunity: boolean; // Condomínio Fechado (Jardins, Alphaville, Aldeia do Vale, etc.)
+
+  @Column({ nullable: true })
+  condoName: string; // Ex: "Jardins Verona", "Alphaville Flamboyant"
+
+  @Column({ nullable: true })
+  ruralAptitude: string; // 'Agricultura', 'Pecuária', 'Dupla Aptidão', 'Lazer'
+
+  @Column({ default: false })
+  ruralHasWater: boolean; // Represa, Rio, Nascente
+
+  @Column({ default: false })
+  ruralCarGeo: boolean; // CAR e GEO averbados
+
+  @Column({ default: false })
+  directFinancing: boolean; // Financiamento direto construtora/loteadora
+
+  @Column({ nullable: true })
+  balloonInstallments: string; // Balões semestrais/anuais
+
+  @ManyToOne(() => Store, { nullable: true })
   store: Store;
 
   @Column({ nullable: true })
