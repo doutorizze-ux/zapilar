@@ -17,7 +17,7 @@ export class WhatsappController {
   @UseGuards(JwtAuthGuard)
   @Get('status')
   async getStatus(@Request() req) {
-    return this.whatsappService.getSession(req.user.userId);
+    return this.whatsappService.getSessionStatus(req.user.userId);
   }
 
   @UseGuards(JwtAuthGuard)
