@@ -33,6 +33,7 @@ const AgendaPage = lazy(() => import('./pages/AgendaPage').then(m => ({ default:
 const StorePlansPage = lazy(() => import('./pages/StorePlansPage').then(m => ({ default: m.StorePlansPage })));
 const SimulatorPage = lazy(() => import('./pages/SimulatorPage').then(m => ({ default: m.SimulatorPage })));
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const AutomationPage = lazy(() => import('./pages/AutomationPage').then(m => ({ default: m.AutomationPage })));
 
 // Public Pages
 const PublicStorePage = lazy(() => import('./pages/PublicStorePage').then(m => ({ default: m.PublicStorePage })));
@@ -92,6 +93,7 @@ function App() {
               <Route path="plans" element={<StorePlansPage />} />
               <Route path="simulator" element={<SimulatorPage />} />
               <Route path="settings" element={<SettingsPage />} />
+              <Route path="automation" element={<AutomationPage />} />
             </Route>
 
             {/* Public Store Route - Must be last to avoid conflicts */}

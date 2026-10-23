@@ -27,6 +27,7 @@ import { FaqService } from '../faq/faq.service';
 import { LeadsService } from '../leads/leads.service';
 import { AiService } from '../integrations/ai/ai.service';
 import { AgendaService } from '../agenda/agenda.service';
+import { AutomationService } from '../automation/automation.service';
 
 @Injectable()
 export class WhatsappService implements OnModuleInit, OnModuleDestroy {
@@ -81,6 +82,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
     private leadsService: LeadsService,
     private aiService: AiService,
     private agendaService: AgendaService,
+    private automationService: AutomationService,
   ) {
     if (!fs.existsSync(this.SESSIONS_DIR)) {
       fs.mkdirSync(this.SESSIONS_DIR, { recursive: true });
@@ -90,6 +92,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     await this.restoreSessions();
     this.startInactivityCheck();
+    this.startAutomationLoop();
   }
 
   async onModuleDestroy() {
@@ -246,6 +249,168 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         }
       });
     }, 60000);
+  }
+
+  // ─── AUTOMATION ENGINE ──────────────────────────────────────────────────────
+  private startAutomationLoop() {
+    // Every 5 minutes: check follow-ups, visit reminders, post-visit
+    setInterval(() => this.runAutomationCycle(), 5 * 60 * 1000);
+
+    // Weekly report: check every hour, send on Sundays at 8am
+    setInterval(() => this.checkWeeklyReport(), 60 * 60 * 1000);
+
+    this.logger.log('🤖 Automation engine started (5min cycle)');
+  }
+
+  private async runAutomationCycle() {
+    for (const [userId] of this.sessions) {
+      if (!this.sessions.get(userId)) continue;
+
+      try {
+        const settings = this.automationService.getSettings(userId);
+        const user = await this.usersService.findById(userId);
+        const agentName = user?.aiAgentName || 'Sofia';
+
+        // 1. Follow-up automático
+        if (settings.followUpEnabled) {
+          await this.runFollowUp(userId, agentName);
+        }
+
+        // 2. Lembretes de visita
+        if (settings.visitReminderEnabled) {
+          await this.runVisitReminders(userId, agentName);
+        }
+
+        // 3. Pós-visita
+        if (settings.postVisitEnabled) {
+          await this.runPostVisitFollowUp(userId, agentName);
+        }
+      } catch (err) {
+        this.logger.error(`Automation cycle failed for user ${userId}`, err);
+      }
+    }
+  }
+
+  private async runFollowUp(userId: string, agentName: string) {
+    try {
+      const coldLeads = await this.automationService.getColdLeads(userId);
+      // Max 3 follow-ups per cycle to avoid spam
+      for (const lead of coldLeads.slice(0, 3)) {
+        const jid = lead.phone.includes('@')
+          ? lead.phone
+          : `${lead.phone.replace(/\D/g, '')}@s.whatsapp.net`;
+
+        // Don't follow up if bot is paused or lead is in HANDOVER
+        const state = this.userStates.get(`${userId}:${jid}`);
+        if (state?.mode === 'HANDOVER') continue;
+
+        const message = await this.automationService.generateFollowUpMessage(lead, agentName);
+        await this.sendMessage(userId, jid, message);
+        await this.logMessage(userId, jid, 'me', message, agentName, true);
+
+        this.logger.log(`📩 Follow-up sent to ${lead.name || lead.phone}`);
+
+        // Small delay between messages
+        await new Promise(r => setTimeout(r, 3000));
+      }
+    } catch (err) {
+      this.logger.error('Follow-up automation error', err);
+    }
+  }
+
+  private async runVisitReminders(userId: string, agentName: string) {
+    try {
+      const visits = await this.automationService.getUpcomingVisits(userId);
+      for (const visit of visits) {
+        const phone = this.automationService.extractPhoneFromEvent(visit);
+        if (!phone) continue;
+
+        const jid = `${phone.replace(/\D/g, '')}@s.whatsapp.net`;
+        const message = this.automationService.generateVisitReminderMessage(visit, agentName);
+        await this.sendMessage(userId, jid, message);
+        await this.automationService.markReminderSent(visit.id);
+        await this.logMessage(userId, jid, 'me', message, agentName, true);
+
+        this.logger.log(`⏰ Visit reminder sent for event ${visit.title}`);
+      }
+    } catch (err) {
+      this.logger.error('Visit reminder automation error', err);
+    }
+  }
+
+  private async runPostVisitFollowUp(userId: string, agentName: string) {
+    try {
+      const completed = await this.automationService.getCompletedVisitsForFollowup(userId);
+      for (const visit of completed) {
+        const phone = this.automationService.extractPhoneFromEvent(visit);
+        if (!phone) continue;
+
+        const jid = `${phone.replace(/\D/g, '')}@s.whatsapp.net`;
+        const message = this.automationService.generatePostVisitMessage(visit, agentName);
+        await this.sendMessage(userId, jid, message);
+        await this.automationService.markPostVisitSent(visit.id);
+        await this.logMessage(userId, jid, 'me', message, agentName, true);
+
+        this.logger.log(`🏠 Post-visit follow-up sent for event ${visit.title}`);
+      }
+    } catch (err) {
+      this.logger.error('Post-visit automation error', err);
+    }
+  }
+
+  private async checkWeeklyReport() {
+    const now = new Date();
+    // Sunday = 0, at 8am (Brasília timezone ~= UTC-3)
+    if (now.getDay() !== 0 || now.getHours() !== 8) return;
+
+    for (const [userId] of this.sessions) {
+      try {
+        const settings = this.automationService.getSettings(userId);
+        if (!settings.weeklyReportEnabled) continue;
+
+        const user = await this.usersService.findById(userId);
+        if (!user?.phone) continue;
+
+        const report = await this.automationService.generateWeeklyReport(userId);
+        const jid = `${user.phone.replace(/\D/g, '')}@s.whatsapp.net`;
+        await this.sendMessage(userId, jid, report);
+
+        this.logger.log(`📊 Weekly report sent to broker ${user.phone}`);
+      } catch (err) {
+        this.logger.error(`Weekly report failed for user ${userId}`, err);
+      }
+    }
+  }
+
+  // ─── MATCH ALERT: call when a new property is created ───────────────────────
+  async notifyMatchingLeads(userId: string, propertyId: string) {
+    try {
+      const settings = this.automationService.getSettings(userId);
+      if (!settings.matchAlertEnabled) return;
+
+      const user = await this.usersService.findById(userId);
+      const agentName = user?.aiAgentName || 'Sofia';
+      const property = await this.propertiesService.findById(propertyId);
+      if (!property) return;
+
+      const matches = await this.automationService.findMatchingLeadsForProperty(userId, property);
+      this.logger.log(`🏠 Property "${property.title}" matched ${matches.length} leads`);
+
+      for (const lead of matches.slice(0, 5)) {
+        const jid = lead.phone.includes('@')
+          ? lead.phone
+          : `${lead.phone.replace(/\D/g, '')}@s.whatsapp.net`;
+
+        const message = await this.automationService.generateMatchMessage(lead, property, agentName);
+        await this.sendMessage(userId, jid, message);
+        await this.logMessage(userId, jid, 'me', message, agentName, true);
+
+        this.logger.log(`🔗 Match alert sent to ${lead.name || lead.phone}`);
+        await new Promise(r => setTimeout(r, 2000));
+      }
+    } catch (err) {
+      this.logger.error('Match alert failed', err);
+    }
   }
 
   async deleteInstance(userId: string) {

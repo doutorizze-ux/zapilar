@@ -19,6 +19,10 @@ export class PropertiesService {
     private leadsService: LeadsService,
   ) { }
 
+  async findById(id: string): Promise<Property | null> {
+    return this.propertiesRepository.findOne({ where: { id } });
+  }
+
   async checkShareCodeUnique(shareCode: string, excludeId?: string) {
     if (!shareCode) return;
     const query = this.propertiesRepository.createQueryBuilder('property')

@@ -10,6 +10,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChatMessage } from './entities/chat-message.entity';
 import { AiModule } from '../integrations/ai/ai.module';
 import { AgendaModule } from '../agenda/agenda.module';
+import { AutomationModule } from '../automation/automation.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { AgendaModule } from '../agenda/agenda.module';
     LeadsModule,
     AiModule,
     AgendaModule,
+    AutomationModule,
   ],
   providers: [WhatsappService, ChatGateway],
   exports: [WhatsappService, ChatGateway],
