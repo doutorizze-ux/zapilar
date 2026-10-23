@@ -12,15 +12,16 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['logo-z-green.png', 'logo-dark.png'],
       manifest: {
-        name: 'zapilar',
-        short_name: 'zapilar',
-        description: 'Sua plataforma imobiliária.',
+        name: 'Zapilar - Corretor Digital',
+        short_name: 'Zapilar',
+        description: 'Consultora IA imobiliaria. Automacao de leads, WhatsApp inteligente e CRM completo.',
         theme_color: '#0B2B26',
         background_color: '#0B2B26',
         display: 'standalone',
         scope: '/',
-        start_url: '/',
+        start_url: '/dashboard',
         orientation: 'portrait',
+        categories: ['business', 'productivity'],
         icons: [
           {
             src: '/logo-z-green.png',
